@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Daily English Buddy</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <header>
+    <h1>Daily English Buddy</h1>
+    <p class="tagline">Learn from your mistakes, every day.</p>
+  </header>
+
+  <main>
+
+    <!-- Correction Panel -->
+    <section class="card" id="correction-panel">
+      <h2>Check My Sentence</h2>
+      <div class="input-row">
+        <textarea
+          id="sentence-input"
+          placeholder="Type your sentence here..."
+          rows="3"
+          maxlength="500"
+        ></textarea>
+        <button id="submit-btn">Check</button>
+      </div>
+
+      <div id="result" class="result hidden">
+        <div class="result-original">
+          <span class="label">You wrote:</span>
+          <span id="result-original-text"></span>
+        </div>
+        <div class="result-corrected">
+          <span class="label">Corrected:</span>
+          <span id="result-corrected-text"></span>
+        </div>
+        <div class="result-meta">
+          <span class="badge" id="result-type"></span>
+          <span id="result-explanation"></span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Stats Panel -->
+    <section class="card" id="stats-panel">
+      <h2>Your Progress</h2>
+      <div id="stats-grid" class="stats-grid">
+        <div class="stat-box">
+          <span class="stat-number" id="stat-total">—</span>
+          <span class="stat-label">Total checked</span>
+        </div>
+        <div class="stat-box">
+          <span class="stat-number" id="stat-grammar">—</span>
+          <span class="stat-label">Grammar</span>
+        </div>
+        <div class="stat-box">
+          <span class="stat-number" id="stat-spelling">—</span>
+          <span class="stat-label">Spelling</span>
+        </div>
+        <div class="stat-box">
+          <span class="stat-number" id="stat-punctuation">—</span>
+          <span class="stat-label">Punctuation</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- History Panel -->
+    <section class="card" id="history-panel">
+      <div class="history-header">
+        <h2>Mistake History</h2>
+        <div class="filter-row">
+          <label for="filter-type">Filter:</label>
+          <select id="filter-type">
+            <option value="">All</option>
+            <option value="grammar">Grammar</option>
+            <option value="spelling">Spelling</option>
+            <option value="punctuation">Punctuation</option>
+            <option value="vocabulary">Vocabulary</option>
+            <option value="no_mistake">No mistake</option>
+          </select>
+        </div>
+      </div>
+
+      <ul id="mistake-list" class="mistake-list">
+        <li class="empty-state">No history yet. Submit a sentence above!</li>
+      </ul>
+    </section>
+
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>
