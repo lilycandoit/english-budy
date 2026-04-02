@@ -376,32 +376,130 @@ function scoreMessage(pct) {
   return "Keep studying — you'll get there!";
 }
 
+const SESSIONS_PREVIEW = 5;
+
 async function loadSessions() {
   const sessions = await api("GET", API_LEARNING + "/sessions").catch(() => []);
-  const list = document.getElementById("sessions-list");
-  list.innerHTML = "";
+  const list      = document.getElementById("sessions-list");
+  const toggleBtn = document.getElementById("sessions-toggle-btn");
+  list.innerHTML  = "";
 
   if (!sessions.length) {
     list.innerHTML = '<li class="empty-state">No sessions yet. Generate your first lesson above!</li>';
+    toggleBtn.style.display = "none";
     return;
   }
 
-  sessions.forEach((s) => {
-    const li = document.createElement("li");
-    li.className = "session-item";
-    const wordsHtml = s.words.map((w) => `<strong>${escapeHtml(w)}</strong>`).join(", ");
-    const scoreHtml = s.score != null
-      ? `<span class="session-score">${s.score}/${s.total}</span>`
-      : `<span class="session-score" style="color:var(--muted)">—</span>`;
-    li.innerHTML = `
-      <span class="session-words">${wordsHtml}</span>
-      <span class="session-meta">
-        ${scoreHtml}
-        <span class="session-date">${formatDate(s.created_at)}</span>
-      </span>
-    `;
-    list.appendChild(li);
-  });
+  let showAll = false;
+
+  function render() {
+    list.innerHTML = "";
+    const visible = showAll ? sessions : sessions.slice(0, SESSIONS_PREVIEW);
+
+    visible.forEach((s) => {
+      const li = document.createElement("li");
+      li.className = "session-item";
+
+      const scoreHtml = s.score != null
+        ? `<span class="session-score">${s.score}/${s.total}</span>`
+        : `<span class="session-score" style="color:var(--muted)">—</span>`;
+
+      // Build word chips
+      const chipsHtml = s.words
+        .map((w) => `<button class="wb-chip session-word-chip" data-word="${escapeHtml(w.toLowerCase())}">${escapeHtml(w)}</button>`)
+        .join("");
+
+      li.innerHTML = `
+        <div class="session-item-top">
+          <span class="session-words">${chipsHtml}</span>
+          <span class="session-meta">
+            ${scoreHtml}
+            <span class="session-date">${formatDate(s.created_at)}</span>
+          </span>
+        </div>
+        <div class="session-word-detail hidden"></div>
+      `;
+
+      // Wire up chip clicks
+      const detailEl = li.querySelector(".session-word-detail");
+      li.querySelectorAll(".session-word-chip").forEach((chip) => {
+        chip.addEventListener("click", () => {
+          const word = chip.dataset.word;
+          const isOpen = chip.classList.contains("active");
+
+          // Deactivate all chips in this session
+          li.querySelectorAll(".session-word-chip").forEach((c) => c.classList.remove("active"));
+
+          if (isOpen) {
+            detailEl.classList.add("hidden");
+            detailEl.innerHTML = "";
+            return;
+          }
+
+          chip.classList.add("active");
+
+          const bankMap = {};
+          wordBankData.forEach((e) => { bankMap[e.word.toLowerCase()] = e; });
+          const entry = bankMap[word];
+
+          if (!entry) {
+            detailEl.innerHTML = `<p class="session-detail-missing">No word bank entry for "<strong>${escapeHtml(word)}</strong>" yet — generate a lesson for it to populate.</p>`;
+          } else {
+            const info = entry.word_info;
+            const meaningsHtml = (info.meanings || []).map((m) => `<li>${escapeHtml(m)}</li>`).join("");
+            const tagsHtml = (arr, cls) =>
+              (arr || []).map((t) => `<span class="tag ${cls}">${escapeHtml(t)}</span>`).join("");
+            const examplesHtml = (info.examples || []).map((e) => `<li>${escapeHtml(e)}</li>`).join("");
+            detailEl.innerHTML = `
+              <div class="word-card-header">
+                <span class="word-title">${escapeHtml(info.word || entry.word)}</span>
+                <span class="word-ipa">${escapeHtml(info.ipa || "")}</span>
+                <span class="word-stress">${escapeHtml(info.stress || "")}</span>
+              </div>
+              <div class="word-card-body">
+                <div>
+                  <div class="word-section-label">Meanings</div>
+                  <ol class="meanings-list">${meaningsHtml}</ol>
+                </div>
+                <div class="word-row">
+                  <div>
+                    <div class="word-section-label">Synonyms</div>
+                    <div class="tag-list">${tagsHtml(info.synonyms, "synonym")}</div>
+                  </div>
+                  <div>
+                    <div class="word-section-label">Antonyms</div>
+                    <div class="tag-list">${tagsHtml(info.antonyms, "antonym")}</div>
+                  </div>
+                </div>
+                <div>
+                  <div class="word-section-label">Collocations</div>
+                  <div class="tag-list">${tagsHtml(info.collocations, "collocation")}</div>
+                </div>
+                <div>
+                  <div class="word-section-label">Examples</div>
+                  <ul class="examples-list">${examplesHtml}</ul>
+                </div>
+              </div>
+            `;
+          }
+          detailEl.classList.remove("hidden");
+          detailEl.scrollIntoView({ behavior: "smooth", block: "nearest" });
+        });
+      });
+
+      list.appendChild(li);
+    });
+
+    if (sessions.length <= SESSIONS_PREVIEW) {
+      toggleBtn.style.display = "none";
+    } else {
+      toggleBtn.style.display = "";
+      toggleBtn.textContent = showAll ? "Show less" : `Show all (${sessions.length})`;
+    }
+  }
+
+  toggleBtn.onclick = () => { showAll = !showAll; render(); };
+  render();
 }
 
 // ── Word Bank ─────────────────────────────────────────────────────────────────
