@@ -12,11 +12,11 @@ You write a sentence. The app corrects it, explains the mistake, and saves it. O
 
 ## Tech Stack
 
-| Layer    | Technology                        |
-|----------|-----------------------------------|
-| Backend  | Python 3.9+ · FastAPI · Uvicorn   |
-| Database | SQLite · SQLAlchemy ORM           |
-| Frontend | Vanilla HTML · CSS · JavaScript   |
+| Layer    | Technology                      |
+| -------- | ------------------------------- |
+| Backend  | Python 3.9+ · FastAPI · Uvicorn |
+| Database | SQLite · SQLAlchemy ORM         |
+| Frontend | Vanilla HTML · CSS · JavaScript |
 
 No JavaScript framework. No build step. Easy to read and modify.
 
@@ -69,28 +69,61 @@ Interactive API docs: [http://localhost:8000/docs](http://localhost:8000/docs)
 
 ## API Endpoints
 
-| Method | Path                  | Description                              |
-|--------|-----------------------|------------------------------------------|
-| POST   | `/api/mistakes`       | Submit a sentence for correction         |
+| Method | Path                  | Description                                    |
+| ------ | --------------------- | ---------------------------------------------- |
+| POST   | `/api/mistakes`       | Submit a sentence for correction               |
 | GET    | `/api/mistakes`       | List history (filter: `?mistake_type=grammar`) |
-| GET    | `/api/mistakes/stats` | Mistake counts by type                   |
-| DELETE | `/api/mistakes/{id}`  | Remove a mistake                         |
+| GET    | `/api/mistakes/stats` | Mistake counts by type                         |
+| DELETE | `/api/mistakes/{id}`  | Remove a mistake                               |
 
 ---
 
 ## Roadmap
 
-| Phase | Feature                        | Status      |
-|-------|--------------------------------|-------------|
-| 1     | Sentence correction + tracking | ✅ Done      |
-| 2     | AI story + quiz generator      | Planned     |
-| 3     | Flashcards + spaced repetition | Planned     |
+| Phase | Feature                        | Status  |
+| ----- | ------------------------------ | ------- |
+| 1     | Sentence correction + tracking | ✅ Done |
+| 2     | AI story + quiz generator      | Planned |
+| 3     | Flashcards + spaced repetition | Planned |
 
 ---
 
-## Upgrading to a real AI
+## AI Provider Setup (Groq / Gemini / Mock)
 
-Open `backend/services/ai_service.py` and replace the body of `correct_sentence()` with a Claude API call. No other file needs to change.
+`backend/services/ai_service.py` now supports multiple providers via environment variables.
+
+### Default behavior
+
+- If no provider is configured, it uses `mock` rules (offline, no API key).
+- If provider/API call fails, it safely falls back to `mock`.
+
+### Use Groq
+
+```bash
+cd backend
+export AI_PROVIDER=groq
+export GROQ_API_KEY=your_groq_api_key
+# optional
+export GROQ_MODEL=llama-3.3-70b-versatile
+uvicorn main:app --reload
+```
+
+### Use Gemini
+
+```bash
+cd backend
+export AI_PROVIDER=gemini
+export GEMINI_API_KEY=your_gemini_api_key
+# optional
+export GEMINI_MODEL=gemini-2.0-flash
+uvicorn main:app --reload
+```
+
+### Optional timeout
+
+```bash
+export AI_TIMEOUT_SECONDS=20
+```
 
 ## Upgrading to PostgreSQL
 

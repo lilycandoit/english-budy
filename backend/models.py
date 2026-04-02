@@ -24,28 +24,33 @@ class Mistake(Base):
 
 
 # ---------------------------------------------------------------------------
-# Phase 2 — AI Learning Generator (tables defined here for schema planning,
-#           populated and used in Phase 2 implementation)
+# Phase 2 — AI Learning Generator
 # ---------------------------------------------------------------------------
 
-# class LearningSession(Base):
-#     __tablename__ = "learning_sessions"
-#     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-#     user_id: Mapped[int] = mapped_column(Integer, default=1)
-#     words: Mapped[str] = mapped_column(Text)          # JSON list of vocab words
-#     story: Mapped[str] = mapped_column(Text)
-#     created_at: Mapped[datetime] = mapped_column(DateTime, ...)
+class LearningSession(Base):
+    __tablename__ = "learning_sessions"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    user_id: Mapped[int] = mapped_column(Integer, default=1, index=True)
+    words: Mapped[str] = mapped_column(Text, nullable=False)             # JSON list of vocab words
+    word_info: Mapped[str] = mapped_column("story", Text, nullable=False)  # JSON word info (DB col: story)
+    quiz: Mapped[str] = mapped_column(Text, nullable=False)               # JSON quiz data
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime, default=lambda: datetime.now(timezone.utc)
+    )
 
 
-# class QuizResult(Base):
-#     __tablename__ = "quiz_results"
-#     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-#     session_id: Mapped[int] = mapped_column(Integer, ForeignKey("learning_sessions.id"))
-#     question: Mapped[str] = mapped_column(Text)
-#     user_answer: Mapped[str] = mapped_column(Text)
-#     correct_answer: Mapped[str] = mapped_column(Text)
-#     is_correct: Mapped[bool] = mapped_column(...)
-#     created_at: Mapped[datetime] = mapped_column(DateTime, ...)
+class QuizResult(Base):
+    __tablename__ = "quiz_results"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    session_id: Mapped[int] = mapped_column(Integer, ForeignKey("learning_sessions.id"), index=True)
+    score: Mapped[int] = mapped_column(Integer, nullable=False)
+    total: Mapped[int] = mapped_column(Integer, nullable=False)
+    answers: Mapped[str] = mapped_column(Text, nullable=False)  # JSON list of submitted answers
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime, default=lambda: datetime.now(timezone.utc)
+    )
 
 
 # ---------------------------------------------------------------------------

@@ -13,81 +13,160 @@
     <p class="tagline">Learn from your mistakes, every day.</p>
   </header>
 
+  <!-- Tab navigation -->
+  <nav class="tab-nav">
+    <button class="tab-btn active" data-tab="sentence-check">Sentence Check</button>
+    <button class="tab-btn" data-tab="vocab-builder">Vocabulary Builder</button>
+    <button class="tab-btn" data-tab="words-review">Words Review</button>
+  </nav>
+
   <main>
 
-    <!-- Correction Panel -->
-    <section class="card" id="correction-panel">
-      <h2>Check My Sentence</h2>
-      <div class="input-row">
-        <textarea
-          id="sentence-input"
-          placeholder="Type your sentence here..."
-          rows="3"
-          maxlength="500"
-        ></textarea>
-        <button id="submit-btn">Check</button>
-      </div>
+    <!-- ═══════════════════════════════════════════════════════
+         TAB 1: Sentence Check
+    ════════════════════════════════════════════════════════ -->
+    <div id="tab-sentence-check" class="tab-panel active">
 
-      <div id="result" class="result hidden">
-        <div class="result-original">
-          <span class="label">You wrote:</span>
-          <span id="result-original-text"></span>
+      <!-- Correction Panel -->
+      <section class="card" id="correction-panel">
+        <h2>Check My Sentence</h2>
+        <div class="input-row">
+          <textarea
+            id="sentence-input"
+            placeholder="Type your sentence here..."
+            rows="3"
+            maxlength="500"
+          ></textarea>
+          <button id="submit-btn">Check</button>
         </div>
-        <div class="result-corrected">
-          <span class="label">Corrected:</span>
-          <span id="result-corrected-text"></span>
-        </div>
-        <div class="result-meta">
-          <span class="badge" id="result-type"></span>
-          <span id="result-explanation"></span>
-        </div>
-      </div>
-    </section>
 
-    <!-- Stats Panel -->
-    <section class="card" id="stats-panel">
-      <h2>Your Progress</h2>
-      <div id="stats-grid" class="stats-grid">
-        <div class="stat-box">
-          <span class="stat-number" id="stat-total">—</span>
-          <span class="stat-label">Total checked</span>
+        <div id="result" class="result hidden">
+          <div class="result-original">
+            <span class="label">You wrote:</span>
+            <span id="result-original-text"></span>
+          </div>
+          <div class="result-corrected">
+            <span class="label">Corrected:</span>
+            <span id="result-corrected-text"></span>
+          </div>
+          <div class="result-meta">
+            <span class="badge" id="result-type"></span>
+            <span id="result-explanation"></span>
+          </div>
         </div>
-        <div class="stat-box">
-          <span class="stat-number" id="stat-grammar">—</span>
-          <span class="stat-label">Grammar</span>
-        </div>
-        <div class="stat-box">
-          <span class="stat-number" id="stat-spelling">—</span>
-          <span class="stat-label">Spelling</span>
-        </div>
-        <div class="stat-box">
-          <span class="stat-number" id="stat-punctuation">—</span>
-          <span class="stat-label">Punctuation</span>
-        </div>
-      </div>
-    </section>
+      </section>
 
-    <!-- History Panel -->
-    <section class="card" id="history-panel">
-      <div class="history-header">
-        <h2>Mistake History</h2>
-        <div class="filter-row">
-          <label for="filter-type">Filter:</label>
-          <select id="filter-type">
-            <option value="">All</option>
-            <option value="grammar">Grammar</option>
-            <option value="spelling">Spelling</option>
-            <option value="punctuation">Punctuation</option>
-            <option value="vocabulary">Vocabulary</option>
-            <option value="no_mistake">No mistake</option>
-          </select>
+      <!-- Stats Panel -->
+      <section class="card" id="stats-panel">
+        <h2>Your Progress</h2>
+        <div id="stats-grid" class="stats-grid">
+          <div class="stat-box">
+            <span class="stat-number" id="stat-total">—</span>
+            <span class="stat-label">Total checked</span>
+          </div>
+          <div class="stat-box">
+            <span class="stat-number" id="stat-grammar">—</span>
+            <span class="stat-label">Grammar</span>
+          </div>
+          <div class="stat-box">
+            <span class="stat-number" id="stat-spelling">—</span>
+            <span class="stat-label">Spelling</span>
+          </div>
+          <div class="stat-box">
+            <span class="stat-number" id="stat-punctuation">—</span>
+            <span class="stat-label">Punctuation</span>
+          </div>
         </div>
-      </div>
+      </section>
 
-      <ul id="mistake-list" class="mistake-list">
-        <li class="empty-state">No history yet. Submit a sentence above!</li>
-      </ul>
-    </section>
+      <!-- History Panel -->
+      <section class="card" id="history-panel">
+        <div class="history-header">
+          <h2>Mistake History</h2>
+          <div class="filter-row">
+            <label for="filter-type">Filter:</label>
+            <select id="filter-type">
+              <option value="">All</option>
+              <option value="grammar">Grammar</option>
+              <option value="spelling">Spelling</option>
+              <option value="punctuation">Punctuation</option>
+              <option value="vocabulary">Vocabulary</option>
+              <option value="no_mistake">No mistake</option>
+            </select>
+          </div>
+        </div>
+
+        <ul id="mistake-list" class="mistake-list">
+          <li class="empty-state">No history yet. Submit a sentence above!</li>
+        </ul>
+      </section>
+
+    </div><!-- /tab-sentence-check -->
+
+
+    <!-- ═══════════════════════════════════════════════════════
+         TAB 2: Vocabulary Builder
+    ════════════════════════════════════════════════════════ -->
+    <div id="tab-vocab-builder" class="tab-panel hidden">
+
+      <!-- Input Panel -->
+      <section class="card">
+        <h2>Vocabulary Builder</h2>
+        <p class="section-desc">Enter words (comma-separated) — AI breaks down each word in detail, then quizzes you.</p>
+        <div class="input-row">
+          <input
+            type="text"
+            id="vocab-input"
+            placeholder="e.g. ambiguous, resilient, eloquent"
+            maxlength="300"
+          />
+          <button id="generate-btn">Generate</button>
+        </div>
+        <div id="vocab-error" class="vocab-error hidden"></div>
+      </section>
+
+      <!-- Story + Quiz Panel (shown after generation) -->
+      <section class="card hidden" id="lesson-panel">
+        <div id="loading-state" class="loading-state hidden">
+          <div class="spinner"></div>
+          <span>AI is writing your story…</span>
+        </div>
+
+        <div id="lesson-content" class="hidden">
+          <div id="word-infos"></div>
+
+          <h2 class="quiz-heading">Quiz</h2>
+          <div id="quiz-questions"></div>
+
+          <div id="quiz-footer">
+            <button id="submit-quiz-btn" class="btn-primary">Submit Quiz</button>
+          </div>
+
+          <div id="quiz-score" class="quiz-score hidden"></div>
+        </div>
+      </section>
+
+      <!-- Past Sessions -->
+      <section class="card" id="sessions-panel">
+        <h2>Past Sessions</h2>
+        <ul id="sessions-list" class="sessions-list">
+          <li class="empty-state">No sessions yet. Generate your first lesson above!</li>
+        </ul>
+      </section>
+
+    </div><!-- /tab-vocab-builder -->
+
+
+    <!-- ═══════════════════════════════════════════════════════
+         TAB 3: Words Review
+    ════════════════════════════════════════════════════════ -->
+    <div id="tab-words-review" class="tab-panel hidden">
+      <section class="card coming-soon-card">
+        <div class="coming-soon-icon">📖</div>
+        <h2>Words Review</h2>
+        <p>Coming soon — all words you've studied today will be grouped here, and AI will weave them into a single story for review.</p>
+      </section>
+    </div><!-- /tab-words-review -->
 
   </main>
 

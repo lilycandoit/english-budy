@@ -41,6 +41,5 @@ env/
 *.log
 uvicorn.log
 
-
-# Claude context:
-CLAUDE.md
+# internal and pending context
+/internal-info/
