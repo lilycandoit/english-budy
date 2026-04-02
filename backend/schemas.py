@@ -107,3 +107,39 @@ class ReviewSessionSummary(BaseModel):
     words: List[str]
     story: str
     created_at: datetime
+
+
+# ---------------------------------------------------------------------------
+# Phase 3b — Word Bank
+# ---------------------------------------------------------------------------
+
+class WordBankEntry(BaseModel):
+    word: str
+    word_info: dict
+    updated_at: datetime
+
+    model_config = {"from_attributes": True}
+
+
+class WordBankStats(BaseModel):
+    total: int
+    this_week: int
+    today: int
+
+
+class WordBankResponse(BaseModel):
+    stats: WordBankStats
+    words: List[WordBankEntry]
+
+
+# ---------------------------------------------------------------------------
+# Phase 4 — Flashcard Reviews
+# ---------------------------------------------------------------------------
+
+class FlashcardReviewItem(BaseModel):
+    word: str
+    result: str  # "known" | "review"
+
+
+class FlashcardReviewBatch(BaseModel):
+    reviews: List[FlashcardReviewItem]

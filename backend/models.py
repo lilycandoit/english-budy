@@ -70,16 +70,37 @@ class ReviewSession(Base):
 
 
 # ---------------------------------------------------------------------------
-# Phase 4 — Flashcards & Spaced Repetition
+# Phase 3b — Word Bank (cumulative vocabulary store, max 200 words)
 # ---------------------------------------------------------------------------
 
-# class Flashcard(Base):
-#     __tablename__ = "flashcards"
-#     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-#     user_id: Mapped[int] = mapped_column(Integer, default=1)
-#     front: Mapped[str] = mapped_column(Text)
-#     back: Mapped[str] = mapped_column(Text)
-#     times_shown: Mapped[int] = mapped_column(Integer, default=0)
-#     times_correct: Mapped[int] = mapped_column(Integer, default=0)
-#     next_review: Mapped[datetime] = mapped_column(DateTime, nullable=True)
-#     created_at: Mapped[datetime] = mapped_column(DateTime, ...)
+class WordEntry(Base):
+    __tablename__ = "word_entries"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    user_id: Mapped[int] = mapped_column(Integer, default=1, index=True)
+    word: Mapped[str] = mapped_column(String(100), nullable=False, index=True)
+    word_info: Mapped[str] = mapped_column(Text, nullable=False)  # JSON WordInfo object
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime, default=lambda: datetime.now(timezone.utc)
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime,
+        default=lambda: datetime.now(timezone.utc),
+        onupdate=lambda: datetime.now(timezone.utc),
+    )
+
+
+# ---------------------------------------------------------------------------
+# Phase 4 — Flashcard Reviews (for spaced repetition)
+# ---------------------------------------------------------------------------
+
+class FlashcardReview(Base):
+    __tablename__ = "flashcard_reviews"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    user_id: Mapped[int] = mapped_column(Integer, default=1, index=True)
+    word: Mapped[str] = mapped_column(String(100), nullable=False)
+    result: Mapped[str] = mapped_column(String(20), nullable=False)  # "known" | "review"
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime, default=lambda: datetime.now(timezone.utc)
+    )

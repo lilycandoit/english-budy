@@ -2,13 +2,15 @@ from __future__ import annotations
 
 import json
 from collections import defaultdict
+from datetime import datetime, timedelta, timezone
 
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from database import get_db
-from models import LearningSession, QuizResult, ReviewSession
+from models import FlashcardReview, LearningSession, QuizResult, ReviewSession, WordEntry
 from schemas import (
+    FlashcardReviewBatch,
     LessonRequest,
     LessonResponse,
     QuizQuestion,
@@ -19,6 +21,9 @@ from schemas import (
     ReviewResponse,
     ReviewSessionSummary,
     SessionSummary,
+    WordBankEntry,
+    WordBankResponse,
+    WordBankStats,
     WordInfo,
     WordsByDate,
 )
@@ -27,6 +32,41 @@ from services.ai_service import generate_lesson, generate_review_story
 router = APIRouter(prefix="/api/learning", tags=["learning"])
 
 USER_ID = 1  # hardcoded until auth is added
+WORD_BANK_LIMIT = 200
+
+
+def _upsert_word_bank(db: Session, user_id: int, word_infos: list) -> None:
+    """Insert or update word_entries for each word; enforce 200-word cap."""
+    for info in word_infos:
+        word_lower = info.get("word", "").strip().lower()
+        if not word_lower:
+            continue
+        existing = (
+            db.query(WordEntry)
+            .filter(WordEntry.user_id == user_id, WordEntry.word == word_lower)
+            .first()
+        )
+        if existing:
+            existing.word_info = json.dumps(info)
+            existing.updated_at = datetime.now(timezone.utc)
+        else:
+            db.add(WordEntry(user_id=user_id, word=word_lower, word_info=json.dumps(info)))
+
+    db.flush()
+
+    # Enforce cap: delete oldest entries beyond the limit
+    total = db.query(WordEntry).filter(WordEntry.user_id == user_id).count()
+    if total > WORD_BANK_LIMIT:
+        overflow = total - WORD_BANK_LIMIT
+        oldest_ids = (
+            db.query(WordEntry.id)
+            .filter(WordEntry.user_id == user_id)
+            .order_by(WordEntry.updated_at.asc())
+            .limit(overflow)
+            .all()
+        )
+        ids = [row[0] for row in oldest_ids]
+        db.query(WordEntry).filter(WordEntry.id.in_(ids)).delete(synchronize_session=False)
 
 
 @router.post("/generate", response_model=LessonResponse, status_code=201)
@@ -54,6 +94,9 @@ def generate(req: LessonRequest, db: Session = Depends(get_db)):
         quiz=json.dumps(raw_quiz),
     )
     db.add(session)
+    db.flush()  # get session.id before commit
+
+    _upsert_word_bank(db, USER_ID, raw_word_infos)
     db.commit()
     db.refresh(session)
 
@@ -205,3 +248,34 @@ def list_sessions(db: Session = Depends(get_db)):
             )
         )
     return summaries
+
+
+@router.get("/word-bank", response_model=WordBankResponse)
+def word_bank(db: Session = Depends(get_db)):
+    now = datetime.now(timezone.utc)
+    today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
+    week_start = today_start - timedelta(days=today_start.weekday())
+
+    entries = (
+        db.query(WordEntry)
+        .filter(WordEntry.user_id == USER_ID)
+        .order_by(WordEntry.updated_at.desc())
+        .all()
+    )
+
+    total = len(entries)
+    this_week = sum(1 for e in entries if e.updated_at.replace(tzinfo=timezone.utc) >= week_start)
+    today = sum(1 for e in entries if e.updated_at.replace(tzinfo=timezone.utc) >= today_start)
+
+    words = [
+        WordBankEntry(word=e.word, word_info=json.loads(e.word_info), updated_at=e.updated_at)
+        for e in entries
+    ]
+    return WordBankResponse(stats=WordBankStats(total=total, this_week=this_week, today=today), words=words)
+
+
+@router.post("/flashcards/review", status_code=204)
+def save_flashcard_reviews(req: FlashcardReviewBatch, db: Session = Depends(get_db)):
+    for item in req.reviews:
+        db.add(FlashcardReview(user_id=USER_ID, word=item.word, result=item.result))
+    db.commit()

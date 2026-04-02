@@ -154,6 +154,23 @@
         </ul>
       </section>
 
+      <!-- Word Bank -->
+      <section class="card" id="word-bank-panel">
+        <div class="wb-header">
+          <h2>Word Bank</h2>
+          <div class="wb-stats-row" id="wb-stats-row">
+            <span id="wb-stat-total">—</span> words &middot;
+            <span id="wb-stat-week">—</span> this week &middot;
+            <span id="wb-stat-today">—</span> today
+          </div>
+        </div>
+        <input type="text" id="wb-search" class="wb-search-input" placeholder="Search your word bank…" />
+        <div id="wb-grid" class="word-bank-grid">
+          <p class="empty-state">No words yet — generate your first lesson above!</p>
+        </div>
+        <div id="wb-detail" class="wb-detail hidden"></div>
+      </section>
+
     </div><!-- /tab-vocab-builder -->
 
 
@@ -207,7 +224,10 @@
         </div>
 
         <div id="review-error" class="vocab-error hidden"></div>
-        <button id="generate-review-btn" class="btn-primary" style="margin-top:1rem" disabled>Generate Story</button>
+        <div class="review-action-row">
+          <button id="generate-review-btn" class="btn-primary" disabled>Generate Story</button>
+          <button id="generate-flashcards-btn" class="btn-secondary" disabled>Generate Flashcards</button>
+        </div>
       </section>
 
       <!-- Story output -->
@@ -219,6 +239,35 @@
         <div id="review-story-content" class="hidden">
           <h2>Review Story</h2>
           <div id="review-story-text" class="review-story-text"></div>
+        </div>
+      </section>
+
+      <!-- Flashcard viewer -->
+      <section class="card hidden" id="flashcard-panel">
+        <h2>Flashcards</h2>
+        <div class="fc-progress-track">
+          <div id="fc-progress-bar" class="fc-progress-bar"></div>
+        </div>
+        <div id="fc-counter" class="fc-counter">Card 1 of 1</div>
+
+        <div class="fc-card-scene" id="fc-card-scene">
+          <div class="fc-card" id="fc-card">
+            <div class="fc-face fc-front">
+              <span id="fc-word" class="fc-word-text"></span>
+              <span class="fc-tap-hint">tap to flip</span>
+            </div>
+            <div class="fc-face fc-back" id="fc-back"></div>
+          </div>
+        </div>
+
+        <div class="fc-rating hidden" id="fc-rating">
+          <button id="fc-review-btn" class="btn-fc-review">Review Again</button>
+          <button id="fc-known-btn" class="btn-fc-known">Known</button>
+        </div>
+
+        <div class="fc-summary hidden" id="fc-summary">
+          <div class="fc-summary-numbers" id="fc-summary-numbers"></div>
+          <button id="fc-save-btn" class="btn-primary">Save &amp; Finish</button>
         </div>
       </section>
 

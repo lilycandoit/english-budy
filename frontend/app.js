@@ -23,10 +23,20 @@ let currentQuiz = [];
 let currentSessionId = null;
 let quizSubmitted = false;
 
+// Word bank cache (populated on Vocab Builder tab load)
+let wordBankData = [];   // [{word, word_info, updated_at}, ...]
+
+// Flashcard state
+let fcCards = [];        // [{word, word_info}, ...]
+let fcIndex = 0;
+let fcRatings = {};      // {word: "known"|"review"}
+let fcFlipped = false;
+
 // ── Init ────────────────────────────────────────────────────────────────────
 loadHistory();
 loadStats();
 loadSessions();
+loadWordBank();
 
 // ── Tab switching ────────────────────────────────────────────────────────────
 document.querySelectorAll(".tab-btn").forEach((btn) => {
@@ -41,6 +51,7 @@ document.querySelectorAll(".tab-btn").forEach((btn) => {
     panel.classList.remove("hidden");
     panel.classList.add("active");
     if (btn.dataset.tab === "words-review") initWordsReview();
+    if (btn.dataset.tab === "vocab-builder") loadWordBank();
   });
 });
 
@@ -196,6 +207,7 @@ async function generateLesson() {
     lessonContent.classList.remove("hidden");
     lessonPanel.scrollIntoView({ behavior: "smooth", block: "start" });
     loadSessions();
+    loadWordBank();
   } catch (err) {
     loadingState.classList.add("hidden");
     lessonPanel.classList.add("hidden");
@@ -392,6 +404,111 @@ async function loadSessions() {
   });
 }
 
+// ── Word Bank ─────────────────────────────────────────────────────────────────
+
+async function loadWordBank() {
+  const data = await api("GET", API_LEARNING + "/word-bank").catch(() => null);
+  if (!data) return;
+
+  wordBankData = data.words || [];
+
+  // Stats
+  document.getElementById("wb-stat-total").textContent = data.stats.total;
+  document.getElementById("wb-stat-week").textContent  = data.stats.this_week;
+  document.getElementById("wb-stat-today").textContent = data.stats.today;
+
+  renderWordBank("");
+}
+
+function renderWordBank(query) {
+  const grid = document.getElementById("wb-grid");
+  const q = query.toLowerCase().trim();
+  const filtered = q
+    ? wordBankData.filter((e) => e.word.toLowerCase().includes(q))
+    : wordBankData;
+
+  if (!filtered.length) {
+    grid.innerHTML = wordBankData.length
+      ? '<p class="empty-state">No words match your search.</p>'
+      : '<p class="empty-state">No words yet — generate your first lesson above!</p>';
+    return;
+  }
+
+  grid.innerHTML = "";
+  filtered.forEach((entry) => {
+    const chip = document.createElement("button");
+    chip.className = "wb-chip";
+    chip.textContent = entry.word;
+    chip.addEventListener("click", () => toggleWordDetail(entry, chip));
+    grid.appendChild(chip);
+  });
+}
+
+function toggleWordDetail(entry, chipEl) {
+  const detail = document.getElementById("wb-detail");
+  const isOpen = chipEl.classList.contains("active");
+
+  // Deactivate all chips
+  document.querySelectorAll(".wb-chip").forEach((c) => c.classList.remove("active"));
+
+  if (isOpen) {
+    detail.classList.add("hidden");
+    detail.innerHTML = "";
+    return;
+  }
+
+  chipEl.classList.add("active");
+
+  // Render a mini word card inside the detail panel
+  const info = entry.word_info;
+  const meaningsHtml = (info.meanings || []).map((m) => `<li>${escapeHtml(m)}</li>`).join("");
+  const tagsHtml = (arr, cls) =>
+    (arr || []).map((t) => `<span class="tag ${cls}">${escapeHtml(t)}</span>`).join("");
+  const examplesHtml = (info.examples || []).map((e) => `<li>${escapeHtml(e)}</li>`).join("");
+
+  detail.innerHTML = `
+    <div class="word-card-header">
+      <span class="word-title">${escapeHtml(info.word || entry.word)}</span>
+      <span class="word-ipa">${escapeHtml(info.ipa || "")}</span>
+      <span class="word-stress">${escapeHtml(info.stress || "")}</span>
+    </div>
+    <div class="word-card-body">
+      <div>
+        <div class="word-section-label">Meanings</div>
+        <ol class="meanings-list">${meaningsHtml}</ol>
+      </div>
+      <div class="word-row">
+        <div>
+          <div class="word-section-label">Synonyms</div>
+          <div class="tag-list">${tagsHtml(info.synonyms, "synonym")}</div>
+        </div>
+        <div>
+          <div class="word-section-label">Antonyms</div>
+          <div class="tag-list">${tagsHtml(info.antonyms, "antonym")}</div>
+        </div>
+      </div>
+      <div>
+        <div class="word-section-label">Collocations</div>
+        <div class="tag-list">${tagsHtml(info.collocations, "collocation")}</div>
+      </div>
+      <div>
+        <div class="word-section-label">Examples</div>
+        <ul class="examples-list">${examplesHtml}</ul>
+      </div>
+    </div>
+  `;
+  detail.classList.remove("hidden");
+  detail.scrollIntoView({ behavior: "smooth", block: "nearest" });
+}
+
+document.getElementById("wb-search").addEventListener("input", (e) => {
+  renderWordBank(e.target.value);
+  // close any open detail when searching
+  document.getElementById("wb-detail").classList.add("hidden");
+  document.getElementById("wb-detail").innerHTML = "";
+  document.querySelectorAll(".wb-chip").forEach((c) => c.classList.remove("active"));
+});
+
 // ── Words Review ─────────────────────────────────────────────────────────────
 
 let reviewSelectedWords = new Set();
@@ -411,6 +528,7 @@ document.querySelectorAll(".mode-btn").forEach((btn) => {
 document.getElementById("shuffle-btn").addEventListener("click", shuffleReviewWords);
 document.getElementById("add-custom-btn").addEventListener("click", addCustomWords);
 document.getElementById("generate-review-btn").addEventListener("click", generateReviewStory);
+document.getElementById("generate-flashcards-btn").addEventListener("click", startFlashcards);
 document.getElementById("clear-chips-btn").addEventListener("click", () => {
   reviewSelectedWords.clear();
   renderReviewChips();
@@ -475,17 +593,19 @@ function addReviewWord(word) {
 }
 
 function renderReviewChips() {
-  const container = document.getElementById("review-chips");
-  const countEl   = document.getElementById("chip-count");
-  const clearBtn  = document.getElementById("clear-chips-btn");
-  const generateBtn = document.getElementById("generate-review-btn");
+  const container     = document.getElementById("review-chips");
+  const countEl       = document.getElementById("chip-count");
+  const clearBtn      = document.getElementById("clear-chips-btn");
+  const genStoryBtn   = document.getElementById("generate-review-btn");
+  const genFlashBtn   = document.getElementById("generate-flashcards-btn");
 
   countEl.textContent = `(${reviewSelectedWords.size})`;
 
   if (!reviewSelectedWords.size) {
     container.innerHTML = '<span class="empty-chips">No words selected yet</span>';
     clearBtn.classList.add("hidden");
-    generateBtn.disabled = true;
+    genStoryBtn.disabled = true;
+    genFlashBtn.disabled = true;
     return;
   }
 
@@ -502,7 +622,8 @@ function renderReviewChips() {
   });
 
   clearBtn.classList.remove("hidden");
-  generateBtn.disabled = false;
+  genStoryBtn.disabled = false;
+  genFlashBtn.disabled = false;
 }
 
 async function generateReviewStory() {
@@ -591,6 +712,169 @@ function formatDateOnly(isoDate) {
     weekday: "short", month: "short", day: "numeric",
   });
 }
+
+// ── Flashcards ────────────────────────────────────────────────────────────────
+
+function startFlashcards() {
+  const selected = Array.from(reviewSelectedWords);
+  if (!selected.length) return;
+
+  // Match selected words against word bank (case-insensitive)
+  const bankMap = {};
+  wordBankData.forEach((e) => { bankMap[e.word.toLowerCase()] = e; });
+
+  fcCards = selected
+    .map((w) => bankMap[w.toLowerCase()])
+    .filter(Boolean);
+
+  const missing = selected.filter((w) => !bankMap[w.toLowerCase()]);
+
+  if (!fcCards.length) {
+    alert("None of the selected words are in your Word Bank.\nGenerate a Vocabulary Builder lesson for them first.");
+    return;
+  }
+
+  if (missing.length) {
+    const msg = `These words aren't in your Word Bank and will be skipped:\n${missing.join(", ")}\n\nContinue with ${fcCards.length} word(s)?`;
+    if (!confirm(msg)) return;
+  }
+
+  // Shuffle cards
+  fcCards = [...fcCards].sort(() => Math.random() - 0.5);
+  fcIndex = 0;
+  fcRatings = {};
+  fcFlipped = false;
+
+  const panel = document.getElementById("flashcard-panel");
+  panel.classList.remove("hidden");
+  document.getElementById("fc-summary").classList.add("hidden");
+  document.getElementById("fc-rating").classList.add("hidden");
+
+  renderFlashcard(0);
+  panel.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+function renderFlashcard(idx) {
+  const card    = document.getElementById("fc-card");
+  const wordEl  = document.getElementById("fc-word");
+  const backEl  = document.getElementById("fc-back");
+  const counter = document.getElementById("fc-counter");
+  const bar     = document.getElementById("fc-progress-bar");
+  const ratingEl = document.getElementById("fc-rating");
+
+  // Reset flip
+  fcFlipped = false;
+  card.classList.remove("flipped");
+
+  const entry = fcCards[idx];
+  wordEl.textContent = entry.word;
+
+  // Build back content (reuse word card structure)
+  const info = entry.word_info;
+  const meaningsHtml = (info.meanings || []).map((m) => `<li>${escapeHtml(m)}</li>`).join("");
+  const tagsHtml = (arr, cls) =>
+    (arr || []).map((t) => `<span class="tag ${cls}">${escapeHtml(t)}</span>`).join("");
+  const examplesHtml = (info.examples || []).slice(0, 1).map((e) => `<li>${escapeHtml(e)}</li>`).join("");
+
+  backEl.innerHTML = `
+    <div class="word-card-header">
+      <span class="word-title">${escapeHtml(info.word || entry.word)}</span>
+      <span class="word-ipa">${escapeHtml(info.ipa || "")}</span>
+    </div>
+    <div class="word-card-body">
+      <div>
+        <div class="word-section-label">Meanings</div>
+        <ol class="meanings-list">${meaningsHtml}</ol>
+      </div>
+      <div class="word-row">
+        <div>
+          <div class="word-section-label">Synonyms</div>
+          <div class="tag-list">${tagsHtml(info.synonyms, "synonym")}</div>
+        </div>
+        <div>
+          <div class="word-section-label">Antonyms</div>
+          <div class="tag-list">${tagsHtml(info.antonyms, "antonym")}</div>
+        </div>
+      </div>
+      <div>
+        <div class="word-section-label">Example</div>
+        <ul class="examples-list">${examplesHtml}</ul>
+      </div>
+    </div>
+  `;
+
+  counter.textContent = `Card ${idx + 1} of ${fcCards.length}`;
+  bar.style.width = `${((idx) / fcCards.length) * 100}%`;
+  ratingEl.classList.add("hidden");
+}
+
+// Card scene click → flip
+document.getElementById("fc-card-scene").addEventListener("click", () => {
+  if (document.getElementById("fc-summary").classList.contains("hidden") === false) return;
+
+  const card = document.getElementById("fc-card");
+  const ratingEl = document.getElementById("fc-rating");
+
+  fcFlipped = !fcFlipped;
+  card.classList.toggle("flipped", fcFlipped);
+  if (fcFlipped) {
+    ratingEl.classList.remove("hidden");
+  }
+});
+
+function fcRate(result) {
+  const entry = fcCards[fcIndex];
+  fcRatings[entry.word] = result;
+  fcIndex++;
+
+  if (fcIndex >= fcCards.length) {
+    showFlashcardSummary();
+  } else {
+    renderFlashcard(fcIndex);
+    document.getElementById("fc-rating").classList.add("hidden");
+  }
+}
+
+document.getElementById("fc-known-btn").addEventListener("click", () => fcRate("known"));
+document.getElementById("fc-review-btn").addEventListener("click", () => fcRate("review"));
+
+function showFlashcardSummary() {
+  const card    = document.getElementById("fc-card");
+  const ratingEl = document.getElementById("fc-rating");
+  const bar     = document.getElementById("fc-progress-bar");
+  const summary  = document.getElementById("fc-summary");
+  const numbersEl = document.getElementById("fc-summary-numbers");
+
+  card.classList.remove("flipped");
+  ratingEl.classList.add("hidden");
+  bar.style.width = "100%";
+
+  const knownCount  = Object.values(fcRatings).filter((r) => r === "known").length;
+  const reviewCount = Object.values(fcRatings).filter((r) => r === "review").length;
+
+  numbersEl.innerHTML = `
+    <div class="fc-summary-stat known">
+      <span class="num">${knownCount}</span>
+      <span class="lbl">Known</span>
+    </div>
+    <div class="fc-summary-stat review">
+      <span class="num">${reviewCount}</span>
+      <span class="lbl">Review Again</span>
+    </div>
+  `;
+  summary.classList.remove("hidden");
+}
+
+document.getElementById("fc-save-btn").addEventListener("click", async () => {
+  const reviews = Object.entries(fcRatings).map(([word, result]) => ({ word, result }));
+  try {
+    await api("POST", API_LEARNING + "/flashcards/review", { reviews });
+  } catch (_) {
+    // non-critical — don't block the user
+  }
+  document.getElementById("flashcard-panel").classList.add("hidden");
+  document.getElementById("fc-summary").classList.add("hidden");
+});
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
