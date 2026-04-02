@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import os
 import re
+import socket
 from urllib import error, request
 
 MISTAKE_TYPES = ("grammar", "spelling", "punctuation", "vocabulary", "no_mistake")
@@ -291,7 +292,7 @@ def _post_json(url: str, payload: dict, headers: dict) -> dict | None:
     data = json.dumps(payload).encode("utf-8")
     all_headers = {"User-Agent": "english-buddy/1.0", **headers}
     req = request.Request(url, data=data, headers=all_headers, method="POST")
-    timeout_seconds = float(os.getenv("AI_TIMEOUT_SECONDS", "20"))
+    timeout_seconds = float(os.getenv("AI_TIMEOUT_SECONDS", "40"))
 
     try:
         with request.urlopen(req, timeout=timeout_seconds) as response:
@@ -304,7 +305,7 @@ def _post_json(url: str, payload: dict, headers: dict) -> dict | None:
     except error.URLError as e:
         print(f"[ai_service] URL error: {e.reason}")
         return None
-    except (TimeoutError, json.JSONDecodeError, ValueError) as e:
+    except (TimeoutError, socket.timeout, json.JSONDecodeError, ValueError, OSError) as e:
         print(f"[ai_service] Error: {e}")
         return None
 
