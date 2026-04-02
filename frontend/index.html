@@ -161,11 +161,75 @@
          TAB 3: Words Review
     ════════════════════════════════════════════════════════ -->
     <div id="tab-words-review" class="tab-panel hidden">
-      <section class="card coming-soon-card">
-        <div class="coming-soon-icon">📖</div>
+
+      <!-- Word Selection Card -->
+      <section class="card">
         <h2>Words Review</h2>
-        <p>Coming soon — all words you've studied today will be grouped here, and AI will weave them into a single story for review.</p>
+        <p class="section-desc">Pick words from your study history — AI writes a story weaving them all together.</p>
+
+        <div class="mode-tabs">
+          <button class="mode-btn active" data-mode="by-date">📅 By Date</button>
+          <button class="mode-btn" data-mode="random">🎲 Random</button>
+          <button class="mode-btn" data-mode="custom">✏️ Custom</button>
+        </div>
+
+        <!-- By Date panel -->
+        <div id="mode-by-date" class="mode-panel">
+          <div id="date-groups-list" class="date-groups-list">
+            <p class="empty-state">Loading…</p>
+          </div>
+        </div>
+
+        <!-- Random panel -->
+        <div id="mode-random" class="mode-panel hidden">
+          <div class="random-controls">
+            <span>Pick</span>
+            <input type="number" id="random-count" value="5" min="1" max="20" class="number-input" />
+            <span>random words from my history</span>
+            <button id="shuffle-btn" class="btn-secondary">Shuffle</button>
+          </div>
+          <p id="no-history-msg" class="empty-state hidden">No word history yet — complete some Vocabulary Builder sessions first.</p>
+        </div>
+
+        <!-- Custom panel -->
+        <div id="mode-custom" class="mode-panel hidden">
+          <textarea id="custom-words-input" placeholder="Paste words here, comma or newline separated..." rows="3"></textarea>
+          <button id="add-custom-btn" class="btn-secondary" style="margin-top:0.5rem">Add Words</button>
+        </div>
+
+        <!-- Selected chips -->
+        <div class="chips-section">
+          <div class="chips-label">Selected words <span id="chip-count">(0)</span></div>
+          <div id="review-chips" class="chips-container">
+            <span class="empty-chips">No words selected yet</span>
+          </div>
+          <button id="clear-chips-btn" class="clear-chips-btn hidden">Clear all</button>
+        </div>
+
+        <div id="review-error" class="vocab-error hidden"></div>
+        <button id="generate-review-btn" class="btn-primary" style="margin-top:1rem" disabled>Generate Story</button>
       </section>
+
+      <!-- Story output -->
+      <section class="card hidden" id="review-story-panel">
+        <div id="review-loading" class="loading-state hidden">
+          <div class="spinner"></div>
+          <span>AI is writing your review story…</span>
+        </div>
+        <div id="review-story-content" class="hidden">
+          <h2>Review Story</h2>
+          <div id="review-story-text" class="review-story-text"></div>
+        </div>
+      </section>
+
+      <!-- Past review stories -->
+      <section class="card">
+        <h2>Past Review Stories</h2>
+        <div id="past-reviews-list">
+          <p class="empty-state">No review stories yet. Generate your first one above!</p>
+        </div>
+      </section>
+
     </div><!-- /tab-words-review -->
 
   </main>

@@ -82,3 +82,28 @@ class SessionSummary(BaseModel):
     created_at: datetime
 
     model_config = {"from_attributes": True}
+
+
+# ---------------------------------------------------------------------------
+# Phase 3 — Words Review
+# ---------------------------------------------------------------------------
+
+class WordsByDate(BaseModel):
+    date: str
+    words: List[str]
+
+
+class ReviewRequest(BaseModel):
+    words: List[str]
+
+
+class ReviewResponse(BaseModel):
+    session_id: int
+    story: str
+
+
+class ReviewSessionSummary(BaseModel):
+    id: int
+    words: List[str]
+    story: str
+    created_at: datetime

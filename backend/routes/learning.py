@@ -1,12 +1,13 @@
 from __future__ import annotations
 
 import json
+from collections import defaultdict
 
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from database import get_db
-from models import LearningSession, QuizResult
+from models import LearningSession, QuizResult, ReviewSession
 from schemas import (
     LessonRequest,
     LessonResponse,
@@ -14,10 +15,14 @@ from schemas import (
     QuizResultItem,
     QuizResultResponse,
     QuizSubmission,
+    ReviewRequest,
+    ReviewResponse,
+    ReviewSessionSummary,
     SessionSummary,
     WordInfo,
+    WordsByDate,
 )
-from services.ai_service import generate_lesson
+from services.ai_service import generate_lesson, generate_review_story
 
 router = APIRouter(prefix="/api/learning", tags=["learning"])
 
@@ -96,6 +101,80 @@ def submit(req: QuizSubmission, db: Session = Depends(get_db)):
     db.commit()
 
     return QuizResultResponse(score=score, total=len(raw_quiz), results=results)
+
+
+@router.get("/words-by-date", response_model=list[WordsByDate])
+def words_by_date(db: Session = Depends(get_db)):
+    sessions = (
+        db.query(LearningSession)
+        .filter(LearningSession.user_id == USER_ID)
+        .order_by(LearningSession.created_at.desc())
+        .all()
+    )
+    groups: dict = defaultdict(list)
+    seen_per_date: dict = defaultdict(set)
+    for s in sessions:
+        date_key = s.created_at.strftime("%Y-%m-%d")
+        for word in json.loads(s.words):
+            key = word.lower()
+            if key not in seen_per_date[date_key]:
+                seen_per_date[date_key].add(key)
+                groups[date_key].append(word)
+    return [{"date": date, "words": words} for date, words in groups.items()]
+
+
+@router.get("/all-words")
+def all_words(db: Session = Depends(get_db)):
+    sessions = db.query(LearningSession).filter(LearningSession.user_id == USER_ID).all()
+    seen: set = set()
+    result = []
+    for s in sessions:
+        for word in json.loads(s.words):
+            key = word.lower()
+            if key not in seen:
+                seen.add(key)
+                result.append(word)
+    return {"words": result}
+
+
+@router.post("/review", response_model=ReviewResponse, status_code=201)
+def generate_review(req: ReviewRequest, db: Session = Depends(get_db)):
+    words = [w.strip() for w in req.words if w.strip()]
+    if not words:
+        raise HTTPException(status_code=422, detail="Provide at least one word.")
+
+    story = generate_review_story(words)
+    if not story:
+        raise HTTPException(
+            status_code=503,
+            detail="AI provider unavailable. Set AI_PROVIDER + API key to enable stories.",
+        )
+
+    review = ReviewSession(user_id=USER_ID, words=json.dumps(words), story=story)
+    db.add(review)
+    db.commit()
+    db.refresh(review)
+    return ReviewResponse(session_id=review.id, story=story)
+
+
+@router.get("/reviews", response_model=list[ReviewSessionSummary])
+def list_reviews(db: Session = Depends(get_db)):
+    reviews = (
+        db.query(ReviewSession)
+        .filter(ReviewSession.user_id == USER_ID)
+        .order_by(ReviewSession.created_at.desc())
+        .limit(20)
+        .all()
+    )
+    return [
+        ReviewSessionSummary(
+            id=r.id,
+            words=json.loads(r.words),
+            story=r.story,
+            created_at=r.created_at,
+        )
+        for r in reviews
+    ]
 
 
 @router.get("/sessions", response_model=list[SessionSummary])

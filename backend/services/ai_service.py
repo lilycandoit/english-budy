@@ -11,7 +11,8 @@ MISTAKE_TYPES = ("grammar", "spelling", "punctuation", "vocabulary", "no_mistake
 
 # System messages (role context, kept short — Groq caches these)
 _SYSTEM_CORRECTION = "You are an English writing assistant. Reply with valid JSON only."
-_SYSTEM_LESSON    = "You are an English teacher. Reply with valid JSON only."
+_SYSTEM_LESSON     = "You are an English teacher. Reply with valid JSON only."
+_SYSTEM_REVIEW     = "You are a creative English teacher. Reply with valid JSON only."
 
 # User-turn messages (task + format, no role repetition)
 _USER_CORRECTION = (
@@ -33,6 +34,14 @@ _USER_LESSON = (
     '"examples":["Australian English style sentence","second example sentence"]'
     '}}],'
     '"quiz":[{{"question":"...","options":["A. ...","B. ...","C. ...","D. ..."],"correct":"A","explanation":"one sentence"}}]}}'
+)
+
+
+_USER_REVIEW_STORY = (
+    "Write a natural, engaging 250-word story that uses ALL of these vocabulary words: {words}\n\n"
+    "Use each word in a context that makes its meaning clear from the surrounding text. "
+    "The story should have a clear beginning, middle, and end.\n\n"
+    'Return JSON: {{"story":"full story text here"}}'
 )
 
 
@@ -89,6 +98,69 @@ def generate_lesson(words: list[str]) -> dict | None:
         return _call_gemini_raw(words_str)
 
     return None
+
+
+def generate_review_story(words: list[str]) -> str | None:
+    """Generate a 250-word review story using the given vocab words. Returns story string or None."""
+    words_str = ", ".join(words)
+    provider = os.getenv("AI_PROVIDER", "mock").strip().lower()
+
+    if provider == "groq":
+        return _call_groq_review(words_str)
+    elif provider == "gemini":
+        return _call_gemini_review(words_str)
+    return None
+
+
+def _call_groq_review(words_str: str) -> str | None:
+    api_key = os.getenv("GROQ_API_KEY", "").strip()
+    if not api_key:
+        return None
+
+    payload = {
+        "model": os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile"),
+        "response_format": {"type": "json_object"},
+        "temperature": 0.8,
+        "max_tokens": 500,
+        "messages": [
+            {"role": "system", "content": _SYSTEM_REVIEW},
+            {"role": "user", "content": _USER_REVIEW_STORY.format(words=words_str)},
+        ],
+    }
+    headers = {"Authorization": f"Bearer {os.getenv('GROQ_API_KEY','').strip()}", "Content-Type": "application/json"}
+    raw = _post_json("https://api.groq.com/openai/v1/chat/completions", payload, headers)
+    if not raw:
+        return None
+    try:
+        content = raw["choices"][0]["message"]["content"]
+        return json.loads(content).get("story")
+    except (KeyError, IndexError, TypeError, json.JSONDecodeError):
+        return None
+
+
+def _call_gemini_review(words_str: str) -> str | None:
+    api_key = os.getenv("GEMINI_API_KEY", "").strip()
+    if not api_key:
+        return None
+
+    model = os.getenv("GEMINI_MODEL", "gemini-2.0-flash")
+    url = (
+        "https://generativelanguage.googleapis.com/v1beta/models/"
+        f"{model}:generateContent?key={api_key}"
+    )
+    combined = _SYSTEM_REVIEW + "\n\n" + _USER_REVIEW_STORY.format(words=words_str)
+    payload = {
+        "contents": [{"role": "user", "parts": [{"text": combined}]}],
+        "generationConfig": {"temperature": 0.8, "maxOutputTokens": 500, "responseMimeType": "application/json"},
+    }
+    raw = _post_json(url, payload, {"Content-Type": "application/json"})
+    if not raw:
+        return None
+    try:
+        content = raw["candidates"][0]["content"]["parts"][0]["text"]
+        return json.loads(content).get("story")
+    except (KeyError, IndexError, TypeError, json.JSONDecodeError):
+        return None
 
 
 def _call_groq_raw(words_str: str) -> dict | None:

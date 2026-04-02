@@ -40,6 +40,7 @@ document.querySelectorAll(".tab-btn").forEach((btn) => {
     const panel = document.getElementById("tab-" + btn.dataset.tab);
     panel.classList.remove("hidden");
     panel.classList.add("active");
+    if (btn.dataset.tab === "words-review") initWordsReview();
   });
 });
 
@@ -388,6 +389,206 @@ async function loadSessions() {
       </span>
     `;
     list.appendChild(li);
+  });
+}
+
+// ── Words Review ─────────────────────────────────────────────────────────────
+
+let reviewSelectedWords = new Set();
+let allHistoryWordsList = [];
+let reviewDateGroups = [];
+
+// Mode switching
+document.querySelectorAll(".mode-btn").forEach((btn) => {
+  btn.addEventListener("click", () => {
+    document.querySelectorAll(".mode-btn").forEach((b) => b.classList.remove("active"));
+    btn.classList.add("active");
+    document.querySelectorAll(".mode-panel").forEach((p) => p.classList.add("hidden"));
+    document.getElementById("mode-" + btn.dataset.mode).classList.remove("hidden");
+  });
+});
+
+document.getElementById("shuffle-btn").addEventListener("click", shuffleReviewWords);
+document.getElementById("add-custom-btn").addEventListener("click", addCustomWords);
+document.getElementById("generate-review-btn").addEventListener("click", generateReviewStory);
+document.getElementById("clear-chips-btn").addEventListener("click", () => {
+  reviewSelectedWords.clear();
+  renderReviewChips();
+});
+
+async function initWordsReview() {
+  const [datesData, wordsData] = await Promise.all([
+    api("GET", API_LEARNING + "/words-by-date").catch(() => []),
+    api("GET", API_LEARNING + "/all-words").catch(() => ({ words: [] })),
+  ]);
+  reviewDateGroups = datesData;
+  allHistoryWordsList = (wordsData.words || []);
+  renderDateGroups();
+  loadPastReviews();
+}
+
+function renderDateGroups() {
+  const list = document.getElementById("date-groups-list");
+  if (!reviewDateGroups.length) {
+    list.innerHTML = '<p class="empty-state">No vocab sessions yet — use Vocabulary Builder first.</p>';
+    return;
+  }
+  list.innerHTML = "";
+  reviewDateGroups.forEach((group) => {
+    const item = document.createElement("div");
+    item.className = "date-group-item";
+    const preview = group.words.slice(0, 4).join(", ") +
+      (group.words.length > 4 ? ` +${group.words.length - 4} more` : "");
+    item.innerHTML = `
+      <span class="date-group-date">${formatDateOnly(group.date)}</span>
+      <span class="date-group-words">${escapeHtml(preview)}</span>
+      <button class="btn-secondary btn-sm">Add</button>
+    `;
+    item.querySelector("button").addEventListener("click", () => {
+      group.words.forEach((w) => addReviewWord(w));
+    });
+    list.appendChild(item);
+  });
+}
+
+function shuffleReviewWords() {
+  if (!allHistoryWordsList.length) {
+    document.getElementById("no-history-msg").classList.remove("hidden");
+    return;
+  }
+  const count = parseInt(document.getElementById("random-count").value) || 5;
+  const shuffled = [...allHistoryWordsList].sort(() => Math.random() - 0.5);
+  shuffled.slice(0, count).forEach((w) => addReviewWord(w));
+}
+
+function addCustomWords() {
+  const raw = document.getElementById("custom-words-input").value;
+  raw.split(/[,\n]+/).map((w) => w.trim()).filter(Boolean).forEach((w) => addReviewWord(w));
+  document.getElementById("custom-words-input").value = "";
+}
+
+function addReviewWord(word) {
+  const key = word.toLowerCase().trim();
+  if (!key) return;
+  reviewSelectedWords.add(key);
+  renderReviewChips();
+}
+
+function renderReviewChips() {
+  const container = document.getElementById("review-chips");
+  const countEl   = document.getElementById("chip-count");
+  const clearBtn  = document.getElementById("clear-chips-btn");
+  const generateBtn = document.getElementById("generate-review-btn");
+
+  countEl.textContent = `(${reviewSelectedWords.size})`;
+
+  if (!reviewSelectedWords.size) {
+    container.innerHTML = '<span class="empty-chips">No words selected yet</span>';
+    clearBtn.classList.add("hidden");
+    generateBtn.disabled = true;
+    return;
+  }
+
+  container.innerHTML = "";
+  reviewSelectedWords.forEach((word) => {
+    const chip = document.createElement("span");
+    chip.className = "chip";
+    chip.innerHTML = `${escapeHtml(word)}<button class="chip-remove" aria-label="Remove">×</button>`;
+    chip.querySelector(".chip-remove").addEventListener("click", () => {
+      reviewSelectedWords.delete(word);
+      renderReviewChips();
+    });
+    container.appendChild(chip);
+  });
+
+  clearBtn.classList.remove("hidden");
+  generateBtn.disabled = false;
+}
+
+async function generateReviewStory() {
+  const words = Array.from(reviewSelectedWords);
+  if (!words.length) return;
+
+  const storyPanel   = document.getElementById("review-story-panel");
+  const loadingEl    = document.getElementById("review-loading");
+  const storyContent = document.getElementById("review-story-content");
+  const errorEl      = document.getElementById("review-error");
+  const generateBtn  = document.getElementById("generate-review-btn");
+
+  errorEl.classList.add("hidden");
+  storyPanel.classList.remove("hidden");
+  loadingEl.classList.remove("hidden");
+  storyContent.classList.add("hidden");
+  generateBtn.disabled = true;
+  generateBtn.textContent = "Generating…";
+
+  try {
+    const data = await api("POST", API_LEARNING + "/review", { words });
+    document.getElementById("review-story-text").innerHTML = highlightWords(data.story, words);
+    loadingEl.classList.add("hidden");
+    storyContent.classList.remove("hidden");
+    storyPanel.scrollIntoView({ behavior: "smooth", block: "start" });
+    loadPastReviews();
+  } catch (err) {
+    loadingEl.classList.add("hidden");
+    storyPanel.classList.add("hidden");
+    errorEl.textContent = "Error: " + err.message;
+    errorEl.classList.remove("hidden");
+  } finally {
+    generateBtn.disabled = false;
+    generateBtn.textContent = "Generate Story";
+  }
+}
+
+async function loadPastReviews() {
+  const reviews = await api("GET", API_LEARNING + "/reviews").catch(() => []);
+  const list = document.getElementById("past-reviews-list");
+
+  if (!reviews.length) {
+    list.innerHTML = '<p class="empty-state">No review stories yet. Generate your first one above!</p>';
+    return;
+  }
+
+  list.innerHTML = "";
+  reviews.forEach((r) => {
+    const item = document.createElement("div");
+    item.className = "past-review-item";
+    const wordsHtml = r.words.map((w) => `<span class="tag collocation">${escapeHtml(w)}</span>`).join("");
+    const preview = r.story.slice(0, 180) + (r.story.length > 180 ? "…" : "");
+
+    item.innerHTML = `
+      <div class="past-review-header">
+        <div class="tag-list">${wordsHtml}</div>
+        <span class="session-date">${formatDate(r.created_at)}</span>
+      </div>
+      <p class="past-review-preview">${escapeHtml(preview)}</p>
+      <div class="past-review-full hidden">${highlightWords(r.story, r.words)}</div>
+      <button class="read-more-btn" data-expanded="false">Read more</button>
+    `;
+    item.querySelector(".read-more-btn").addEventListener("click", function () {
+      const expanded = this.dataset.expanded === "true";
+      item.querySelector(".past-review-full").classList.toggle("hidden", expanded);
+      item.querySelector(".past-review-preview").classList.toggle("hidden", !expanded);
+      this.textContent = expanded ? "Read more" : "Show less";
+      this.dataset.expanded = String(!expanded);
+    });
+    list.appendChild(item);
+  });
+}
+
+function highlightWords(story, words) {
+  let result = escapeHtml(story);
+  words.forEach((word) => {
+    const safe = word.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    result = result.replace(new RegExp(`\\b(${safe})\\b`, "gi"), '<mark class="vocab-highlight">$1</mark>');
+  });
+  return result;
+}
+
+function formatDateOnly(isoDate) {
+  const [y, m, d] = isoDate.split("-").map(Number);
+  return new Date(y, m - 1, d).toLocaleDateString(undefined, {
+    weekday: "short", month: "short", day: "numeric",
   });
 }
 

@@ -54,7 +54,23 @@ class QuizResult(Base):
 
 
 # ---------------------------------------------------------------------------
-# Phase 3 — Flashcards & Review System
+# Phase 3 — Words Review (daily story from studied words)
+# ---------------------------------------------------------------------------
+
+class ReviewSession(Base):
+    __tablename__ = "review_sessions"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    user_id: Mapped[int] = mapped_column(Integer, default=1, index=True)
+    words: Mapped[str] = mapped_column(Text, nullable=False)   # JSON list
+    story: Mapped[str] = mapped_column(Text, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime, default=lambda: datetime.now(timezone.utc)
+    )
+
+
+# ---------------------------------------------------------------------------
+# Phase 4 — Flashcards & Spaced Repetition
 # ---------------------------------------------------------------------------
 
 # class Flashcard(Base):
