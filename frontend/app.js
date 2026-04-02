@@ -219,54 +219,123 @@ async function generateLesson() {
   }
 }
 
+function buildWordCardEl(w, isDrillDown = false) {
+  const card = document.createElement("div");
+  card.className = isDrillDown ? "word-card drilldown-card" : "word-card";
+
+  const meaningsHtml = (w.meanings || [])
+    .map((m) => `<li>${escapeHtml(m)}</li>`).join("");
+
+  // Clickable tags for synonyms, antonyms, collocations
+  const tagsHtml = (arr, cls) =>
+    (arr || []).map((t) =>
+      `<button class="tag ${cls} tag-link" data-word="${escapeHtml(t)}">${escapeHtml(t)}</button>`
+    ).join("");
+
+  const examplesHtml = (w.examples || [])
+    .map((e) => `<li>${escapeHtml(e)}</li>`).join("");
+
+  const drillHeader = isDrillDown
+    ? `<div class="drilldown-header">
+         <span class="drilldown-label">Word lookup</span>
+         <button class="drilldown-close" title="Close">×</button>
+       </div>`
+    : "";
+
+  card.innerHTML = `
+    ${drillHeader}
+    <div class="word-card-header">
+      <span class="word-title">${escapeHtml(w.word)}</span>
+      <span class="word-ipa">${escapeHtml(w.ipa || "")}</span>
+      <span class="word-stress">${escapeHtml(w.stress || "")}</span>
+    </div>
+    <div class="word-card-body">
+      <div>
+        <div class="word-section-label">Meanings</div>
+        <ol class="meanings-list">${meaningsHtml}</ol>
+      </div>
+      <div class="word-row">
+        <div>
+          <div class="word-section-label">Synonyms</div>
+          <div class="tag-list">${tagsHtml(w.synonyms, "synonym")}</div>
+        </div>
+        <div>
+          <div class="word-section-label">Antonyms</div>
+          <div class="tag-list">${tagsHtml(w.antonyms, "antonym")}</div>
+        </div>
+      </div>
+      <div>
+        <div class="word-section-label">Collocations</div>
+        <div class="tag-list">${tagsHtml(w.collocations, "collocation")}</div>
+      </div>
+      <div>
+        <div class="word-section-label">Examples</div>
+        <ul class="examples-list">${examplesHtml}</ul>
+      </div>
+    </div>
+  `;
+
+  if (isDrillDown) {
+    card.querySelector(".drilldown-close").addEventListener("click", () => card.remove());
+  }
+
+  // Wire up tag-link clicks — drill down into that word
+  card.querySelectorAll(".tag-link").forEach((btn) => {
+    btn.addEventListener("click", () => fetchAndShowDrillDown(btn.dataset.word, card));
+  });
+
+  return card;
+}
+
 function renderWordInfos(wordInfos) {
   wordInfosEl.innerHTML = "";
   wordInfos.forEach((w) => {
-    const card = document.createElement("div");
-    card.className = "word-card";
-
-    const meaningsHtml = (w.meanings || [])
-      .map((m) => `<li>${escapeHtml(m)}</li>`).join("");
-
-    const tagsHtml = (arr, cls) =>
-      (arr || []).map((t) => `<span class="tag ${cls}">${escapeHtml(t)}</span>`).join("");
-
-    const examplesHtml = (w.examples || [])
-      .map((e) => `<li>${escapeHtml(e)}</li>`).join("");
-
-    card.innerHTML = `
-      <div class="word-card-header">
-        <span class="word-title">${escapeHtml(w.word)}</span>
-        <span class="word-ipa">${escapeHtml(w.ipa || "")}</span>
-        <span class="word-stress">${escapeHtml(w.stress || "")}</span>
-      </div>
-      <div class="word-card-body">
-        <div>
-          <div class="word-section-label">Meanings</div>
-          <ol class="meanings-list">${meaningsHtml}</ol>
-        </div>
-        <div class="word-row">
-          <div>
-            <div class="word-section-label">Synonyms</div>
-            <div class="tag-list">${tagsHtml(w.synonyms, "synonym")}</div>
-          </div>
-          <div>
-            <div class="word-section-label">Antonyms</div>
-            <div class="tag-list">${tagsHtml(w.antonyms, "antonym")}</div>
-          </div>
-        </div>
-        <div>
-          <div class="word-section-label">Collocations</div>
-          <div class="tag-list">${tagsHtml(w.collocations, "collocation")}</div>
-        </div>
-        <div>
-          <div class="word-section-label">Examples</div>
-          <ul class="examples-list">${examplesHtml}</ul>
-        </div>
-      </div>
-    `;
-    wordInfosEl.appendChild(card);
+    wordInfosEl.appendChild(buildWordCardEl(w, false));
   });
+}
+
+async function fetchAndShowDrillDown(word, anchorCard) {
+  // Remove any existing drilldown attached to this anchor
+  const existing = anchorCard.nextElementSibling;
+  if (existing && existing.classList.contains("drilldown-card")) existing.remove();
+
+  // Insert loading placeholder
+  const placeholder = document.createElement("div");
+  placeholder.className = "word-card drilldown-card drilldown-loading";
+  placeholder.innerHTML = `
+    <div class="loading-state" style="padding:0.5rem 0">
+      <div class="spinner"></div>
+      <span>Looking up <strong>${escapeHtml(word)}</strong>…</span>
+    </div>
+  `;
+  anchorCard.insertAdjacentElement("afterend", placeholder);
+  placeholder.scrollIntoView({ behavior: "smooth", block: "nearest" });
+
+  try {
+    const data = await api("POST", API_LEARNING + "/generate", { words: [word] });
+    const info = data.word_infos?.[0];
+    if (!info) throw new Error("No word info returned.");
+
+    const drillCard = buildWordCardEl(info, true);
+    placeholder.replaceWith(drillCard);
+    drillCard.scrollIntoView({ behavior: "smooth", block: "nearest" });
+
+    // Refresh word bank + sessions silently
+    loadWordBank();
+    loadSessions();
+  } catch (err) {
+    placeholder.className = "word-card drilldown-card";
+    placeholder.innerHTML = `
+      <div class="drilldown-header">
+        <span class="drilldown-label">Word lookup</span>
+        <button class="drilldown-close">×</button>
+      </div>
+      <p style="padding:0.75rem 1.25rem;color:var(--danger);font-size:0.9rem">
+        Could not look up "${escapeHtml(word)}": ${escapeHtml(err.message)}
+      </p>
+    `;
+    placeholder.querySelector(".drilldown-close").addEventListener("click", () => placeholder.remove());
+  }
 }
 
 function renderQuiz(quiz) {

@@ -508,6 +508,52 @@ button#generate-btn:disabled { background: var(--muted); cursor: not-allowed; }
 .tag.antonym { border-color: #fca5a5; background: #fef2f2; color: #991b1b; }
 .tag.collocation { border-color: #93c5fd; background: #eff6ff; color: #1e40af; }
 
+.tag-link {
+  cursor: pointer;
+  transition: filter 0.12s, transform 0.1s;
+  font-family: inherit;
+}
+.tag-link:hover { filter: brightness(0.92); transform: translateY(-1px); }
+.tag-link:active { transform: translateY(0); }
+
+/* ── Drill-down card ───────────────────────────────────────── */
+.drilldown-card {
+  border-left: 3px solid var(--primary);
+  margin-left: 1rem;
+  position: relative;
+}
+
+.drilldown-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.45rem 1.25rem 0;
+}
+
+.drilldown-label {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--primary);
+}
+
+.drilldown-close {
+  background: none;
+  border: none;
+  font-size: 1.2rem;
+  line-height: 1;
+  cursor: pointer;
+  color: var(--muted);
+  padding: 0 0.2rem;
+  transition: color 0.12s;
+}
+.drilldown-close:hover { color: var(--danger); }
+
+.drilldown-loading {
+  padding: 0.75rem 1.25rem;
+}
+
 .examples-list {
   list-style: none;
   display: flex;
