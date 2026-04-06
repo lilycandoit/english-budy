@@ -1,6 +1,6 @@
 # Daily English Buddy
 
-A personal English learning web app — correct your writing, build vocabulary with AI, and review words through stories and flashcards.
+A personal English learning web app — correct your writing, build vocabulary with AI, review words through stories and flashcards, and learn from topic-based conversations every day.
 
 ---
 
@@ -8,10 +8,11 @@ A personal English learning web app — correct your writing, build vocabulary w
 
 | Tab | Feature |
 |-----|---------|
-| **Sentence Check** | Paste a sentence → AI corrects it and explains the mistake → history + stats saved |
-| **Vocabulary Builder** | Enter words → AI generates detailed word breakdowns (IPA, meanings, synonyms, collocations, examples) + a 5-question quiz → results saved |
-| **Words Review** | Pick words from your history → AI writes a review story OR generate flashcards with flip animation and Known/Review Again ratings |
-| **Word Bank** | Automatically tracks every word studied (up to 200) — searchable chip grid with expandable detail panel |
+| **Sentence Check** | Write a sentence → AI corrects grammar/spelling → shows a "native speaker" rewrite with a naturalness tip → history + stats saved |
+| **Vocabulary Builder** | Enter words → AI generates detailed word breakdowns (IPA, stress, meanings, synonyms, antonyms, collocations, examples) + 5-question quiz → click any synonym/antonym/collocation to drill down into that word |
+| **Daily Topic** | Pick a topic or type your own → AI writes a dialog or story using 12 everyday Australian English words → vocabulary summary with definitions and context sentences → past topics expandable accordion |
+| **Words Review** | Pick words from history → AI writes a review story OR generate flashcards with flip animation and Known/Review Again ratings |
+| **Word Bank** | Auto-tracks every word studied (up to 200) — searchable chip grid with expandable detail, visible on the Vocabulary Builder tab |
 
 ---
 
@@ -37,7 +38,8 @@ english-buddy/
 │   ├── schemas.py            Pydantic request/response models
 │   ├── routes/
 │   │   ├── mistakes.py       /api/mistakes endpoints
-│   │   └── learning.py       /api/learning endpoints
+│   │   ├── learning.py       /api/learning endpoints
+│   │   └── topic.py          /api/topic endpoints
 │   ├── services/
 │   │   └── ai_service.py     AI provider logic (Groq / Gemini / mock)
 │   ├── .env                  API keys (not committed)
@@ -63,7 +65,7 @@ pip install -r requirements.txt
 
 Create `backend/.env`:
 
-```bash
+```env
 AI_PROVIDER=groq          # or: gemini | mock
 GROQ_API_KEY=gsk_...      # get from console.groq.com
 # GEMINI_API_KEY=...      # alternative
@@ -89,7 +91,7 @@ uvicorn main:app --reload
 
 | Method | Path                  | Description                                    |
 |--------|-----------------------|------------------------------------------------|
-| POST   | `/api/mistakes`       | Submit a sentence for correction               |
+| POST   | `/api/mistakes`       | Submit sentence → correction + native rewrite  |
 | GET    | `/api/mistakes`       | List history (filter: `?mistake_type=grammar`) |
 | GET    | `/api/mistakes/stats` | Mistake counts by type                         |
 | DELETE | `/api/mistakes/{id}`  | Remove a mistake entry                         |
@@ -98,7 +100,7 @@ uvicorn main:app --reload
 
 | Method | Path                          | Description                                        |
 |--------|-------------------------------|----------------------------------------------------|
-| POST   | `/api/learning/generate`      | AI word breakdown + 5-question quiz                |
+| POST   | `/api/learning/generate`      | AI word breakdown + 5-question quiz (auto-saves to Word Bank) |
 | POST   | `/api/learning/submit`        | Submit quiz answers → score + feedback             |
 | GET    | `/api/learning/sessions`      | Past Vocab Builder sessions                        |
 | GET    | `/api/learning/word-bank`     | Word bank with stats (total / this week / today)   |
@@ -113,13 +115,21 @@ uvicorn main:app --reload
 | GET    | `/api/learning/all-words`          | All unique studied words                 |
 | POST   | `/api/learning/flashcards/review`  | Save flashcard Known/Review ratings      |
 
+### Daily Topic
+
+| Method | Path                    | Description                                           |
+|--------|-------------------------|-------------------------------------------------------|
+| POST   | `/api/topic/generate`   | AI dialog or story with 12 everyday Australian words  |
+| GET    | `/api/topic/sessions`   | Past topic sessions (full content included)           |
+
 ---
 
 ## Database Schema
 
 ```
 mistakes
-  id, user_id, original_text, corrected_text, mistake_type, explanation, created_at
+  id, user_id, original_text, corrected_text, natural_text,
+  mistake_type, explanation, naturalness_tip, created_at
 
 learning_sessions
   id, user_id, words (JSON), word_info (JSON), quiz (JSON), created_at
@@ -130,10 +140,13 @@ quiz_results
 review_sessions
   id, user_id, words (JSON), story, created_at
 
+topic_sessions
+  id, user_id, topic, format ("dialog"|"story"), title, content, words (JSON), created_at
+
 word_entries                     ← Word Bank (max 200 per user)
   id, user_id, word, word_info (JSON), created_at, updated_at
 
-flashcard_reviews                ← Flashcard ratings for future spaced repetition
+flashcard_reviews                ← Flashcard ratings for spaced repetition
   id, user_id, word, result ("known"|"review"), created_at
 ```
 
@@ -141,20 +154,27 @@ flashcard_reviews                ← Flashcard ratings for future spaced repetit
 
 ## AI Provider Notes
 
-- **Default (no key):** uses rule-based mock for sentence correction. Vocab Builder and review features return 503 without a real provider.
+- **Default (no key):** mock rules for sentence correction only. Vocab Builder, Topic, and review features return 503.
 - **Groq** (recommended): fast, generous free tier. Model: `llama-3.3-70b-versatile`.
-- **Gemini**: good JSON reliability. Model: `gemini-2.0-flash`.
-- Token caps: correction `max_tokens=150`, lesson `max_tokens=1500`, review story `max_tokens=500`.
-- HTTP calls use stdlib `urllib` only — no SDK dependency.
+- **Gemini**: reliable JSON output. Model: `gemini-2.0-flash`.
+- All HTTP calls use stdlib `urllib` — no SDK dependency.
+
+| Feature | max_tokens | temp |
+|---------|-----------|------|
+| Sentence correction | 300 | 0.2 |
+| Vocab lesson + quiz | 1500 | 0.7 |
+| Review story | 500 | 0.8 |
+| Topic dialog/story | 1500 | 0.8 |
 
 ---
 
 ## Roadmap
 
-| Phase | Feature                                | Status       |
-|-------|----------------------------------------|--------------|
-| 1     | Sentence correction + mistake history  | ✅ Done       |
-| 2     | AI vocab breakdown + quiz              | ✅ Done       |
-| 3     | Words Review (story) + Word Bank + Flashcards | ✅ Done |
-| 4     | Spaced repetition (SM-2 algorithm)     | Planned      |
-| 5     | Auth / multi-user                      | Planned      |
+| Phase | Feature                                        | Status       |
+|-------|------------------------------------------------|--------------|
+| 1     | Sentence correction + mistake history          | ✅ Done       |
+| 2     | Vocab Builder (AI word breakdown + quiz)       | ✅ Done       |
+| 3     | Words Review + Word Bank + Flashcards          | ✅ Done       |
+| 3b    | Daily Topic (dialog/story + vocab summary)     | ✅ Done       |
+| **4** | **Spaced repetition (SM-2, Due Today queue)**  | **Next**     |
+| 5     | Auth / multi-user                              | Later        |
