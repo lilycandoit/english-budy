@@ -73,6 +73,25 @@ class ReviewSession(Base):
 
 
 # ---------------------------------------------------------------------------
+# Phase 3b — Daily Topic Learning
+# ---------------------------------------------------------------------------
+
+class TopicSession(Base):
+    __tablename__ = "topic_sessions"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    user_id: Mapped[int] = mapped_column(Integer, default=1, index=True)
+    topic: Mapped[str] = mapped_column(String(200), nullable=False)
+    format: Mapped[str] = mapped_column(String(20), nullable=False)   # "dialog" | "story"
+    title: Mapped[str] = mapped_column(String(200), nullable=False)
+    content: Mapped[str] = mapped_column(Text, nullable=False)
+    words: Mapped[str] = mapped_column(Text, nullable=False)           # JSON [{word, definition, context}]
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime, default=lambda: datetime.now(timezone.utc)
+    )
+
+
+# ---------------------------------------------------------------------------
 # Phase 3b — Word Bank (cumulative vocabulary store, max 200 words)
 # ---------------------------------------------------------------------------
 

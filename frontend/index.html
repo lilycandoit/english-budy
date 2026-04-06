@@ -17,6 +17,7 @@
   <nav class="tab-nav">
     <button class="tab-btn active" data-tab="sentence-check">Sentence Check</button>
     <button class="tab-btn" data-tab="vocab-builder">Vocabulary Builder</button>
+    <button class="tab-btn" data-tab="daily-topic">Daily Topic</button>
     <button class="tab-btn" data-tab="words-review">Words Review</button>
   </nav>
 
@@ -185,7 +186,76 @@
 
 
     <!-- ═══════════════════════════════════════════════════════
-         TAB 3: Words Review
+         TAB 3: Daily Topic
+    ════════════════════════════════════════════════════════ -->
+    <div id="tab-daily-topic" class="tab-panel hidden">
+
+      <!-- Input Card -->
+      <section class="card">
+        <h2>Daily Topic</h2>
+        <p class="section-desc">Pick a topic — AI writes a conversation or story weaving in 12 intermediate words, then summarises them for you.</p>
+
+        <!-- Quick suggestions -->
+        <div class="topic-suggestions">
+          <button class="topic-chip" data-topic="Job Interview">Job Interview</button>
+          <button class="topic-chip" data-topic="Australian Daily Life">Australian Daily Life</button>
+          <button class="topic-chip" data-topic="Technology &amp; AI">Technology &amp; AI</button>
+          <button class="topic-chip" data-topic="Health &amp; Wellness">Health &amp; Wellness</button>
+          <button class="topic-chip" data-topic="Food &amp; Dining">Food &amp; Dining</button>
+          <button class="topic-chip" data-topic="Travel &amp; Holidays">Travel &amp; Holidays</button>
+          <button class="topic-chip" data-topic="Money &amp; Finance">Money &amp; Finance</button>
+          <button class="topic-chip" data-topic="Environment">Environment</button>
+          <button class="topic-chip" data-topic="Making New Friends">Making New Friends</button>
+          <button class="topic-chip" data-topic="Study &amp; University">Study &amp; University</button>
+        </div>
+
+        <!-- Topic input + format toggle -->
+        <div class="topic-input-row">
+          <input type="text" id="topic-input" placeholder="Or type your own topic…" maxlength="150" />
+          <div class="format-toggle">
+            <button class="format-btn active" data-format="dialog">💬 Dialog</button>
+            <button class="format-btn" data-format="story">📖 Story</button>
+          </div>
+          <button id="generate-topic-btn" class="btn-primary">Generate</button>
+        </div>
+        <div id="topic-error" class="vocab-error hidden"></div>
+      </section>
+
+      <!-- Content Panel -->
+      <section class="card hidden" id="topic-content-panel">
+        <div id="topic-loading" class="loading-state hidden">
+          <div class="spinner"></div>
+          <span>AI is writing your lesson…</span>
+        </div>
+        <div id="topic-lesson" class="hidden">
+          <div class="topic-meta-row">
+            <span class="topic-format-badge" id="topic-format-badge"></span>
+            <h2 id="topic-title" class="topic-title"></h2>
+          </div>
+          <div id="topic-text" class="topic-text"></div>
+
+          <div class="topic-words-section">
+            <div class="topic-words-header">
+              <h3 class="topic-words-heading">Vocabulary <span id="topic-word-count"></span></h3>
+            </div>
+            <div id="topic-words-list" class="topic-words-list"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Past Topics -->
+      <section class="card" id="past-topics-panel">
+        <h2>Past Topics</h2>
+        <div id="past-topics-list">
+          <p class="empty-state">No topics yet. Generate your first lesson above!</p>
+        </div>
+      </section>
+
+    </div><!-- /tab-daily-topic -->
+
+
+    <!-- ═══════════════════════════════════════════════════════
+         TAB 4: Words Review
     ════════════════════════════════════════════════════════ -->
     <div id="tab-words-review" class="tab-panel hidden">
 

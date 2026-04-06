@@ -358,7 +358,7 @@ select {
   border-radius: var(--radius) var(--radius) 0 0;
 }
 
-.tab-btn:first-child { border-right: none; }
+.tab-btn:not(:last-child) { border-right: none; }
 
 .tab-btn.active {
   color: var(--primary);
@@ -1009,6 +1009,316 @@ mark.vocab-highlight {
 .session-date {
   font-size: 0.75rem;
   color: var(--muted);
+}
+
+/* ── Daily Topic ───────────────────────────────────────────── */
+.topic-suggestions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-bottom: 0.85rem;
+}
+
+.topic-chip {
+  padding: 0.3rem 0.75rem;
+  border-radius: 999px;
+  font-size: 0.82rem;
+  font-weight: 500;
+  background: var(--bg);
+  border: 1.5px solid var(--border);
+  color: var(--text);
+  cursor: pointer;
+  transition: background 0.12s, border-color 0.12s;
+  font-family: inherit;
+}
+
+.topic-chip:hover { background: #eff6ff; border-color: var(--primary); }
+.topic-chip.active { background: var(--primary); color: white; border-color: var(--primary); }
+
+.topic-input-row {
+  display: flex;
+  gap: 0.6rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+#topic-input {
+  flex: 1;
+  min-width: 160px;
+  padding: 0.65rem 0.9rem;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
+  font-size: 0.95rem;
+  font-family: inherit;
+  transition: border-color 0.15s;
+}
+
+#topic-input:focus { outline: none; border-color: var(--primary); }
+
+.format-toggle {
+  display: flex;
+  gap: 0.2rem;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.2rem;
+  flex-shrink: 0;
+}
+
+.format-btn {
+  padding: 0.35rem 0.85rem;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 0.82rem;
+  font-weight: 500;
+  font-family: inherit;
+  transition: background 0.15s, color 0.15s;
+  white-space: nowrap;
+}
+
+.format-btn.active {
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: var(--shadow);
+}
+
+/* Topic content */
+.topic-meta-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+}
+
+.topic-format-badge {
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+  background: #eff6ff;
+  color: var(--primary);
+  border: 1px solid #bfdbfe;
+  flex-shrink: 0;
+}
+
+.topic-title {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--text);
+  margin: 0;
+}
+
+/* Dialog rendering */
+.topic-text {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.25rem 1.5rem;
+  font-size: 0.95rem;
+  line-height: 1.85;
+  margin-bottom: 1.75rem;
+}
+
+.dialog-line {
+  display: flex;
+  gap: 0.65rem;
+  margin-bottom: 0.6rem;
+  align-items: flex-start;
+}
+
+.dialog-speaker {
+  font-weight: 700;
+  color: var(--primary);
+  min-width: 3rem;
+  flex-shrink: 0;
+  padding-top: 0.05em;
+}
+
+.dialog-text { flex: 1; }
+
+/* Story rendering */
+.topic-text p { margin-bottom: 0.85rem; }
+.topic-text p:last-child { margin-bottom: 0; }
+
+mark.topic-highlight {
+  background: #fef9c3;
+  color: #854d0e;
+  padding: 0.05em 0.2em;
+  border-radius: 3px;
+  font-weight: 700;
+  font-style: normal;
+}
+
+/* Vocabulary summary */
+.topic-words-section {
+  border-top: 1px solid var(--border);
+  padding-top: 1.25rem;
+}
+
+.topic-words-heading {
+  font-size: 1rem;
+  font-weight: 600;
+  margin-bottom: 0.85rem;
+  color: var(--text);
+}
+
+.topic-words-heading span {
+  font-size: 0.8rem;
+  color: var(--muted);
+  font-weight: 400;
+}
+
+.topic-words-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.topic-word-card {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.75rem 1rem;
+}
+
+.topic-word-top {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.3rem;
+  flex-wrap: wrap;
+}
+
+.topic-word-name {
+  font-weight: 700;
+  font-size: 1rem;
+  color: var(--text);
+}
+
+.topic-word-def {
+  font-size: 0.875rem;
+  color: var(--muted);
+  margin-bottom: 0.4rem;
+}
+
+.topic-word-context {
+  font-size: 0.82rem;
+  color: var(--text);
+  font-style: italic;
+  padding-left: 0.75rem;
+  border-left: 3px solid #fde68a;
+  line-height: 1.55;
+}
+
+.btn-study {
+  padding: 0.2rem 0.6rem;
+  background: none;
+  border: 1.5px solid var(--primary);
+  border-radius: 6px;
+  color: var(--primary);
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.12s;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.btn-study:hover { background: #eff6ff; }
+.btn-study.loading { opacity: 0.6; cursor: wait; }
+
+/* Drill-down inside topic word card */
+.topic-word-drilldown {
+  margin-top: 0.6rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  border-left: 3px solid var(--primary);
+}
+
+/* Past topics */
+.past-topic-item {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.75rem 1rem;
+  margin-bottom: 0.6rem;
+}
+
+.past-topic-header {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-bottom: 0.4rem;
+  flex-wrap: wrap;
+}
+
+.past-topic-toggle {
+  cursor: pointer;
+  user-select: none;
+  border-radius: 6px;
+  padding: 0.15rem 0.25rem;
+  margin: -0.15rem -0.25rem 0.25rem;
+  transition: background 0.12s;
+}
+
+.past-topic-toggle:hover { background: var(--bg); }
+
+.past-topic-chevron {
+  color: var(--muted);
+  font-size: 0.85rem;
+  transition: transform 0.15s;
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+.past-topic-expanded {
+  margin-top: 0.75rem;
+  border-top: 1px solid var(--border);
+  padding-top: 0.85rem;
+}
+
+.past-topic-content .topic-text {
+  margin-bottom: 1.25rem;
+  font-size: 0.9rem;
+}
+
+.past-topic-content .topic-words-section {
+  border-top: 1px solid var(--border);
+  padding-top: 1rem;
+}
+
+.past-topic-content .topic-words-heading {
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+  margin-bottom: 0.65rem;
+}
+
+.past-topic-content .topic-word-card {
+  font-size: 0.875rem;
+}
+
+.past-topic-title {
+  font-weight: 600;
+  font-size: 0.9rem;
+  flex: 1;
+}
+
+.past-topic-words {
+  font-size: 0.8rem;
+  color: var(--muted);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
 }
 
 /* ── Review action row ─────────────────────────────────────── */

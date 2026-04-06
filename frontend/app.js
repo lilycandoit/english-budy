@@ -52,6 +52,7 @@ document.querySelectorAll(".tab-btn").forEach((btn) => {
     panel.classList.add("active");
     if (btn.dataset.tab === "words-review") initWordsReview();
     if (btn.dataset.tab === "vocab-builder") loadWordBank();
+    if (btn.dataset.tab === "daily-topic") loadPastTopics();
   });
 });
 
@@ -590,6 +591,285 @@ async function loadSessions() {
 
   toggleBtn.onclick = () => { showAll = !showAll; render(); };
   render();
+}
+
+// ── Daily Topic ───────────────────────────────────────────────────────────────
+
+const API_TOPIC = "/api/topic";
+const TOPIC_SUGGESTIONS = [
+  "Job Interview", "Australian Daily Life", "Technology & AI",
+  "Health & Wellness", "Food & Dining", "Travel & Holidays",
+  "Money & Finance", "Environment", "Making New Friends", "Study & University",
+];
+
+let selectedFormat = "dialog";
+let currentTopicWords = []; // [{word, definition, context}] from current lesson
+
+// Format toggle
+document.querySelectorAll(".format-btn").forEach((btn) => {
+  btn.addEventListener("click", () => {
+    document.querySelectorAll(".format-btn").forEach((b) => b.classList.remove("active"));
+    btn.classList.add("active");
+    selectedFormat = btn.dataset.format;
+  });
+});
+
+// Topic suggestion chips — click fills input
+document.querySelectorAll(".topic-chip").forEach((chip) => {
+  chip.addEventListener("click", () => {
+    document.getElementById("topic-input").value = chip.dataset.topic;
+    document.querySelectorAll(".topic-chip").forEach((c) => c.classList.remove("active"));
+    chip.classList.add("active");
+  });
+});
+
+// Generate button + Enter key
+document.getElementById("generate-topic-btn").addEventListener("click", generateTopicLesson);
+document.getElementById("topic-input").addEventListener("keydown", (e) => {
+  if (e.key === "Enter") generateTopicLesson();
+});
+
+async function generateTopicLesson() {
+  const topic = document.getElementById("topic-input").value.trim();
+  if (!topic) return;
+
+  const errorEl   = document.getElementById("topic-error");
+  const panel     = document.getElementById("topic-content-panel");
+  const loadingEl = document.getElementById("topic-loading");
+  const lessonEl  = document.getElementById("topic-lesson");
+  const genBtn    = document.getElementById("generate-topic-btn");
+
+  errorEl.classList.add("hidden");
+  panel.classList.remove("hidden");
+  loadingEl.classList.remove("hidden");
+  lessonEl.classList.add("hidden");
+  genBtn.disabled = true;
+  genBtn.textContent = "Generating…";
+
+  try {
+    const data = await api("POST", API_TOPIC + "/generate", {
+      topic,
+      format: selectedFormat,
+    });
+
+    currentTopicWords = data.words || [];
+
+    document.getElementById("topic-format-badge").textContent =
+      data.format === "dialog" ? "💬 Dialog" : "📖 Story";
+    document.getElementById("topic-title").textContent = data.title;
+    document.getElementById("topic-text").innerHTML =
+      renderTopicContent(data.content, data.format, currentTopicWords);
+
+    const wordCount = currentTopicWords.length;
+    document.getElementById("topic-word-count").textContent =
+      `(${wordCount} word${wordCount !== 1 ? "s" : ""})`;
+
+    renderTopicWordList(currentTopicWords);
+
+    loadingEl.classList.add("hidden");
+    lessonEl.classList.remove("hidden");
+    panel.scrollIntoView({ behavior: "smooth", block: "start" });
+    loadPastTopics();
+  } catch (err) {
+    loadingEl.classList.add("hidden");
+    panel.classList.add("hidden");
+    errorEl.textContent = "Error: " + err.message;
+    errorEl.classList.remove("hidden");
+  } finally {
+    genBtn.disabled = false;
+    genBtn.textContent = "Generate";
+  }
+}
+
+function renderTopicContent(content, format, words) {
+  if (format === "dialog") {
+    const lines = content.split("\n").map((l) => l.trim()).filter(Boolean);
+    return lines.map((line) => {
+      const match = line.match(/^([^:]{1,20}):\s*(.+)$/);
+      if (match) {
+        return `<div class="dialog-line">
+          <span class="dialog-speaker">${escapeHtml(match[1])}:</span>
+          <span class="dialog-text">${highlightTopicWords(escapeHtml(match[2]), words)}</span>
+        </div>`;
+      }
+      return `<p>${highlightTopicWords(escapeHtml(line), words)}</p>`;
+    }).join("");
+  } else {
+    return content
+      .split(/\n{2,}/)
+      .map((p) => p.trim())
+      .filter(Boolean)
+      .map((p) => `<p>${highlightTopicWords(escapeHtml(p), words)}</p>`)
+      .join("");
+  }
+}
+
+function highlightTopicWords(text, words) {
+  words.forEach((w) => {
+    const safe = w.word.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    text = text.replace(
+      new RegExp(`\\b(${safe})\\b`, "gi"),
+      '<mark class="topic-highlight">$1</mark>'
+    );
+  });
+  return text;
+}
+
+function renderTopicWordList(words) {
+  const list = document.getElementById("topic-words-list");
+  list.innerHTML = "";
+
+  words.forEach((w) => {
+    const card = document.createElement("div");
+    card.className = "topic-word-card";
+
+    const contextHighlighted = highlightTopicWords(escapeHtml(w.context), [w]);
+
+    card.innerHTML = `
+      <div class="topic-word-top">
+        <span class="topic-word-name">${escapeHtml(w.word)}</span>
+        <button class="btn-study" data-word="${escapeHtml(w.word)}">Study in depth</button>
+      </div>
+      <div class="topic-word-def">${escapeHtml(w.definition)}</div>
+      <div class="topic-word-context">${contextHighlighted}</div>
+      <div class="topic-word-drilldown hidden"></div>
+    `;
+
+    card.querySelector(".btn-study").addEventListener("click", async (e) => {
+      const btn = e.currentTarget;
+      const word = btn.dataset.word;
+      const drillEl = card.querySelector(".topic-word-drilldown");
+      const isOpen = !drillEl.classList.contains("hidden");
+
+      if (isOpen) {
+        drillEl.classList.add("hidden");
+        drillEl.innerHTML = "";
+        btn.textContent = "Study in depth";
+        return;
+      }
+
+      btn.disabled = true;
+      btn.classList.add("loading");
+      btn.textContent = "Loading…";
+
+      try {
+        const data = await api("POST", API_LEARNING + "/generate", { words: [word] });
+        const info = data.word_infos?.[0];
+        if (!info) throw new Error("No info returned.");
+
+        const drillCard = buildWordCardEl(info, false);
+        drillEl.innerHTML = "";
+        drillEl.appendChild(drillCard);
+        drillEl.classList.remove("hidden");
+        btn.textContent = "Close";
+
+        loadWordBank();
+        loadSessions();
+      } catch (err) {
+        drillEl.innerHTML = `<p style="padding:0.75rem;color:var(--danger);font-size:0.85rem">Error: ${escapeHtml(err.message)}</p>`;
+        drillEl.classList.remove("hidden");
+        btn.textContent = "Study in depth";
+      } finally {
+        btn.disabled = false;
+        btn.classList.remove("loading");
+      }
+    });
+
+    list.appendChild(card);
+  });
+}
+
+async function loadPastTopics() {
+  const sessions = await api("GET", API_TOPIC + "/sessions").catch(() => []);
+  const list = document.getElementById("past-topics-list");
+
+  if (!sessions.length) {
+    list.innerHTML = '<p class="empty-state">No topics yet. Generate your first lesson above!</p>';
+    return;
+  }
+
+  list.innerHTML = "";
+
+  // Accordion state — only one item open at a time
+  let activeClose = null;  // function to close the currently open item
+
+  sessions.forEach((s) => {
+    const item = document.createElement("div");
+    item.className = "past-topic-item";
+    const formatLabel = s.format === "dialog" ? "💬 Dialog" : "📖 Story";
+    const wordsHtml = s.words
+      .map((w) => `<span class="tag collocation">${escapeHtml(w.word)}</span>`)
+      .join("");
+
+    item.innerHTML = `
+      <div class="past-topic-header past-topic-toggle" role="button" tabindex="0">
+        <span class="topic-format-badge">${formatLabel}</span>
+        <span class="past-topic-title">${escapeHtml(s.title)}</span>
+        <span class="past-topic-chevron">▸</span>
+        <span class="session-date">${formatDate(s.created_at)}</span>
+      </div>
+      <div class="past-topic-words tag-list">${wordsHtml}</div>
+      <div class="past-topic-expanded hidden"></div>
+    `;
+
+    const toggle   = item.querySelector(".past-topic-toggle");
+    const chevron  = item.querySelector(".past-topic-chevron");
+    const expanded = item.querySelector(".past-topic-expanded");
+    let rendered   = false;
+
+    function close() {
+      expanded.classList.add("hidden");
+      chevron.textContent = "▸";
+    }
+
+    function openTopic() {
+      const isOpen = !expanded.classList.contains("hidden");
+
+      // Close whatever is currently open
+      if (activeClose) activeClose();
+      activeClose = null;
+
+      if (isOpen) return;  // was already this one — just close it
+
+      // Render content once
+      if (!rendered) {
+        const textHtml = renderTopicContent(s.content, s.format, s.words);
+        const wordListHtml = s.words.map((w) => {
+          const ctxHighlighted = highlightTopicWords(escapeHtml(w.context), [w]);
+          return `
+            <div class="topic-word-card">
+              <div class="topic-word-top">
+                <span class="topic-word-name">${escapeHtml(w.word)}</span>
+              </div>
+              <div class="topic-word-def">${escapeHtml(w.definition)}</div>
+              <div class="topic-word-context">${ctxHighlighted}</div>
+            </div>
+          `;
+        }).join("");
+
+        expanded.innerHTML = `
+          <div class="past-topic-content">
+            <div class="topic-text">${textHtml}</div>
+            <div class="topic-words-section">
+              <div class="topic-words-heading">Vocabulary</div>
+              <div class="topic-words-list">${wordListHtml}</div>
+            </div>
+          </div>
+        `;
+        rendered = true;
+      }
+
+      expanded.classList.remove("hidden");
+      chevron.textContent = "▾";
+      activeClose = close;
+      item.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+
+    toggle.addEventListener("click", openTopic);
+    toggle.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") openTopic(); });
+
+    list.appendChild(item);
+  });
 }
 
 // ── Word Bank ─────────────────────────────────────────────────────────────────

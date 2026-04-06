@@ -112,6 +112,42 @@ class ReviewSessionSummary(BaseModel):
 
 
 # ---------------------------------------------------------------------------
+# Phase 3b — Daily Topic Learning
+# ---------------------------------------------------------------------------
+
+class TopicRequest(BaseModel):
+    topic: str
+    format: str = "dialog"   # "dialog" | "story"
+
+
+class TopicWord(BaseModel):
+    word: str
+    definition: str
+    context: str
+
+
+class TopicResponse(BaseModel):
+    session_id: int
+    topic: str
+    format: str
+    title: str
+    content: str
+    words: List[TopicWord]
+
+
+class TopicSessionSummary(BaseModel):
+    id: int
+    topic: str
+    format: str
+    title: str
+    content: str
+    words: List[TopicWord]
+    created_at: datetime
+
+    model_config = {"from_attributes": True}
+
+
+# ---------------------------------------------------------------------------
 # Phase 3b — Word Bank
 # ---------------------------------------------------------------------------
 

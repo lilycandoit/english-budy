@@ -51,6 +51,43 @@ _USER_REVIEW_STORY = (
     'Return JSON: {{"story":"full story text here"}}'
 )
 
+_USER_TOPIC_DIALOG = (
+    "Write a relaxed, natural conversation between two Australians called Alex and Sam about: {topic}\n\n"
+    "Choose exactly 12 vocabulary words or phrases that are genuinely useful in everyday "
+    "Australian life — the kind you hear in cafes, at work, in shops, or at a mate's place.\n\n"
+    "Target word style (aim for this mix):\n"
+    "- Common useful verbs/phrases: reckon, keen, sorted, grab, pop in, check out, flat out, "
+    "catch up, head off, chuck, sort out, follow up\n"
+    "- Everyday descriptors: dodgy, cheeky, heaps, stoked, gutted, cranky, lovely, proper\n"
+    "- Distinctly Australian expressions: arvo, no worries, fair enough, good on ya, "
+    "how ya going, no dramas, mate, brekkie, servo, bottle-o\n\n"
+    "Avoid literary or academic words (do NOT use: eclectic, flamboyant, commendable, "
+    "mesmerising, endeavour, perplexing, renowned, culinary, niche)\n\n"
+    "Style: 300-350 words, warm conversational Aussie tone, use contractions\n"
+    "Format each line as 'Alex: ...' or 'Sam: ...'\n\n"
+    'Return JSON: {{"title":"...","content":"full dialog text",'
+    '"words":[{{"word":"...","definition":"simple one-sentence definition",'
+    '"context":"exact sentence from the dialog containing this word"}}]}}'
+)
+
+_USER_TOPIC_STORY = (
+    "Write a short, engaging story about: {topic}, set in Australia\n\n"
+    "Choose exactly 12 vocabulary words or phrases that are genuinely useful in everyday "
+    "Australian life — the kind you hear in cafes, at work, in shops, or at a mate's place.\n\n"
+    "Target word style (aim for this mix):\n"
+    "- Common useful verbs/phrases: reckon, keen, sorted, grab, pop in, check out, flat out, "
+    "catch up, head off, chuck, sort out, follow up\n"
+    "- Everyday descriptors: dodgy, cheeky, heaps, stoked, gutted, cranky, lovely, proper\n"
+    "- Distinctly Australian expressions: arvo, no worries, fair enough, good on ya, "
+    "how ya going, no dramas, brekkie, servo, bottle-o\n\n"
+    "Avoid literary or academic words (do NOT use: eclectic, flamboyant, commendable, "
+    "mesmerising, endeavour, perplexing, renowned, culinary, niche)\n\n"
+    "Style: 300-350 words, warm Aussie tone, write in paragraphs separated by blank lines\n\n"
+    'Return JSON: {{"title":"...","content":"full story text",'
+    '"words":[{{"word":"...","definition":"simple one-sentence definition",'
+    '"context":"exact sentence from the story containing this word"}}]}}'
+)
+
 
 def correct_sentence(text: str) -> dict:
     """
@@ -117,6 +154,70 @@ def generate_review_story(words: list[str]) -> str | None:
     elif provider == "gemini":
         return _call_gemini_review(words_str)
     return None
+
+
+def generate_topic_lesson(topic: str, fmt: str) -> dict | None:
+    """Generate a topic-based dialog or story with embedded vocabulary. Returns dict or None."""
+    provider = os.getenv("AI_PROVIDER", "mock").strip().lower()
+
+    if provider == "groq":
+        return _call_groq_topic(topic, fmt)
+    elif provider == "gemini":
+        return _call_gemini_topic(topic, fmt)
+    return None
+
+
+def _call_groq_topic(topic: str, fmt: str) -> dict | None:
+    api_key = os.getenv("GROQ_API_KEY", "").strip()
+    if not api_key:
+        return None
+
+    prompt = _USER_TOPIC_DIALOG if fmt == "dialog" else _USER_TOPIC_STORY
+    payload = {
+        "model": os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile"),
+        "response_format": {"type": "json_object"},
+        "temperature": 0.8,
+        "max_tokens": 1500,
+        "messages": [
+            {"role": "system", "content": _SYSTEM_LESSON},
+            {"role": "user", "content": prompt.format(topic=topic)},
+        ],
+    }
+    headers = {"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"}
+    raw = _post_json("https://api.groq.com/openai/v1/chat/completions", payload, headers)
+    if not raw:
+        return None
+    try:
+        content = raw["choices"][0]["message"]["content"]
+        return json.loads(content)
+    except (KeyError, IndexError, TypeError, json.JSONDecodeError):
+        return None
+
+
+def _call_gemini_topic(topic: str, fmt: str) -> dict | None:
+    api_key = os.getenv("GEMINI_API_KEY", "").strip()
+    if not api_key:
+        return None
+
+    model = os.getenv("GEMINI_MODEL", "gemini-2.0-flash")
+    url = (
+        "https://generativelanguage.googleapis.com/v1beta/models/"
+        f"{model}:generateContent?key={api_key}"
+    )
+    prompt = _USER_TOPIC_DIALOG if fmt == "dialog" else _USER_TOPIC_STORY
+    combined = _SYSTEM_LESSON + "\n\n" + prompt.format(topic=topic)
+    payload = {
+        "contents": [{"role": "user", "parts": [{"text": combined}]}],
+        "generationConfig": {"temperature": 0.8, "maxOutputTokens": 1500, "responseMimeType": "application/json"},
+    }
+    raw = _post_json(url, payload, {"Content-Type": "application/json"})
+    if not raw:
+        return None
+    try:
+        content = raw["candidates"][0]["content"]["parts"][0]["text"]
+        return json.loads(content)
+    except (KeyError, IndexError, TypeError, json.JSONDecodeError):
+        return None
 
 
 def _call_groq_review(words_str: str) -> str | None:

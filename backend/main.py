@@ -8,6 +8,7 @@ from fastapi.staticfiles import StaticFiles
 from database import Base, engine
 from routes.mistakes import router as mistakes_router
 from routes.learning import router as learning_router
+from routes.topic import router as topic_router
 
 # Create all tables on startup (safe to run multiple times)
 Base.metadata.create_all(bind=engine)
@@ -28,6 +29,7 @@ app.add_middleware(
 
 app.include_router(mistakes_router)
 app.include_router(learning_router)
+app.include_router(topic_router)
 
 # Serve the frontend from /  (backend serves everything in one process)
 app.mount("/", StaticFiles(directory="../frontend", html=True), name="frontend")
