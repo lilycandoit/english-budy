@@ -1,0 +1,17 @@
+# deps
+node_modules/
+
+# Next.js build
+.next/
+out/
+
+# env files — never commit these
+.env
+.env.local
+.env.production
+
+# Prisma generated
+prisma/migrations/
+
+# misc
+.DS_Store
