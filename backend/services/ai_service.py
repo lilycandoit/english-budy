@@ -11,14 +11,20 @@ from urllib import error, request
 MISTAKE_TYPES = ("grammar", "spelling", "punctuation", "vocabulary", "no_mistake")
 
 # System messages (role context, kept short — Groq caches these)
-_SYSTEM_CORRECTION = "You are an English writing assistant. Reply with valid JSON only."
+_SYSTEM_CORRECTION = "You are an English writing coach. Reply with valid JSON only."
 _SYSTEM_LESSON     = "You are an English teacher. Reply with valid JSON only."
 _SYSTEM_REVIEW     = "You are a creative English teacher. Reply with valid JSON only."
 
 # User-turn messages (task + format, no role repetition)
 _USER_CORRECTION = (
-    "Correct this sentence. Return JSON: "
-    '{{"corrected_text":"...","mistake_type":"grammar|spelling|punctuation|vocabulary|no_mistake","explanation":"one sentence"}}.'
+    "Analyse this sentence and return JSON:\n"
+    '{{'
+    '"corrected_text":"fix only grammar/spelling/punctuation",'
+    '"natural_text":"rewrite as a fluent native Australian English speaker — concise, clear, eloquent; preserve meaning",'
+    '"mistake_type":"grammar|spelling|punctuation|vocabulary|no_mistake",'
+    '"explanation":"one sentence explaining the correction, or No errors found. if correct",'
+    '"naturalness_tip":"one sentence on why the native version sounds better, or null if natural_text equals corrected_text"'
+    '}}'
     "\n\nSentence: {text}"
 )
 
@@ -231,8 +237,8 @@ def _correct_with_groq(text: str) -> dict | None:
     payload = {
         "model": os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile"),
         "response_format": {"type": "json_object"},
-        "temperature": 0.1,
-        "max_tokens": 150,
+        "temperature": 0.2,
+        "max_tokens": 300,
         "messages": [
             {"role": "system", "content": _SYSTEM_CORRECTION},
             {"role": "user", "content": _USER_CORRECTION.format(text=text)},
@@ -270,8 +276,8 @@ def _correct_with_gemini(text: str) -> dict | None:
     payload = {
         "contents": [{"role": "user", "parts": [{"text": combined}]}],
         "generationConfig": {
-            "temperature": 0.1,
-            "maxOutputTokens": 150,
+            "temperature": 0.2,
+            "maxOutputTokens": 300,
             "responseMimeType": "application/json",
         },
     }
@@ -315,17 +321,28 @@ def _normalize_result(payload: dict) -> dict | None:
     mistake_type = str(payload.get("mistake_type", "")).strip().lower()
     explanation = str(payload.get("explanation", "")).strip()
 
+    raw_natural = payload.get("natural_text") or ""
+    natural_text = str(raw_natural).strip() or corrected_text
+
+    raw_tip = payload.get("naturalness_tip")
+    naturalness_tip: str | None = str(raw_tip).strip() if raw_tip and str(raw_tip).lower() != "null" else None
+
     if not corrected_text:
         return None
     if mistake_type not in MISTAKE_TYPES:
         mistake_type = "no_mistake"
     if not explanation:
         explanation = "No explanation provided."
+    # Suppress tip when natural version is the same as corrected
+    if natural_text == corrected_text:
+        naturalness_tip = None
 
     return {
         "corrected_text": corrected_text,
+        "natural_text": natural_text,
         "mistake_type": mistake_type,
         "explanation": explanation,
+        "naturalness_tip": naturalness_tip,
     }
 
 
@@ -468,6 +485,8 @@ def _apply_rules(text: str) -> dict:
 
     return {
         "corrected_text": corrected,
+        "natural_text": corrected,   # mock can't improve naturalness
         "mistake_type": found_type,
         "explanation": found_explanation,
+        "naturalness_tip": None,
     }

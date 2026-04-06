@@ -108,8 +108,7 @@ async function deleteMistake(id) {
 function showResult(data) {
   const hasMistake = data.mistake_type !== "no_mistake";
 
-  resultBox.classList.remove("hidden", "has-mistake");
-  if (hasMistake) resultBox.classList.add("has-mistake");
+  resultBox.classList.remove("hidden");
 
   document.getElementById("result-original-text").textContent = data.original_text;
   document.getElementById("result-corrected-text").textContent = data.corrected_text;
@@ -119,6 +118,25 @@ function showResult(data) {
   badge.className = "badge " + data.mistake_type;
 
   document.getElementById("result-explanation").textContent = data.explanation;
+
+  // Native speaker version (only show when different from corrected)
+  const naturalRow = document.getElementById("result-natural-row");
+  const tipRow     = document.getElementById("result-tip-row");
+  const naturalText = data.natural_text || "";
+
+  if (naturalText && naturalText !== data.corrected_text) {
+    document.getElementById("result-natural-text").textContent = naturalText;
+    naturalRow.classList.remove("hidden");
+  } else {
+    naturalRow.classList.add("hidden");
+  }
+
+  if (data.naturalness_tip) {
+    document.getElementById("result-naturalness-tip").textContent = data.naturalness_tip;
+    tipRow.classList.remove("hidden");
+  } else {
+    tipRow.classList.add("hidden");
+  }
 
   resultBox.scrollIntoView({ behavior: "smooth", block: "nearest" });
 }
@@ -139,6 +157,7 @@ async function loadHistory() {
   items.forEach((m) => {
     const li = document.createElement("li");
     li.className = "mistake-item";
+    const showNatural = m.natural_text && m.natural_text !== m.corrected_text;
     li.innerHTML = `
       <div class="mistake-item-header">
         <span class="badge ${m.mistake_type}">${m.mistake_type.replace("_", " ")}</span>
@@ -150,8 +169,10 @@ async function loadHistory() {
       <div class="mistake-item-texts">
         <span class="mistake-item-original">${escapeHtml(m.original_text)}</span>
         <span class="mistake-item-corrected">${escapeHtml(m.corrected_text)}</span>
+        ${showNatural ? `<span class="mistake-item-natural">${escapeHtml(m.natural_text)}</span>` : ""}
       </div>
       <div class="mistake-item-explanation">${escapeHtml(m.explanation)}</div>
+      ${m.naturalness_tip ? `<div class="mistake-item-tip">${escapeHtml(m.naturalness_tip)}</div>` : ""}
     `;
     list.appendChild(li);
   });

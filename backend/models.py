@@ -1,4 +1,5 @@
 from datetime import datetime, timezone
+from typing import Optional
 from sqlalchemy import Integer, String, Text, DateTime, Float, ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column
 from database import Base
@@ -15,9 +16,11 @@ class Mistake(Base):
     user_id: Mapped[int] = mapped_column(Integer, default=1, index=True)  # future auth
     original_text: Mapped[str] = mapped_column(Text, nullable=False)
     corrected_text: Mapped[str] = mapped_column(Text, nullable=False)
+    natural_text: Mapped[Optional[str]] = mapped_column(Text, nullable=True)   # native-speaker version
     # Type values: grammar | spelling | punctuation | vocabulary | no_mistake
     mistake_type: Mapped[str] = mapped_column(String(50), nullable=False)
     explanation: Mapped[str] = mapped_column(Text, nullable=False)
+    naturalness_tip: Mapped[Optional[str]] = mapped_column(Text, nullable=True) # why native version sounds better
     created_at: Mapped[datetime] = mapped_column(
         DateTime, default=lambda: datetime.now(timezone.utc)
     )

@@ -23,8 +23,10 @@ def submit_sentence(body: CorrectionRequest, db: Session = Depends(get_db)):
         user_id=1,  # hardcoded until auth is added in a future phase
         original_text=body.text,
         corrected_text=ai_result["corrected_text"],
+        natural_text=ai_result.get("natural_text"),
         mistake_type=ai_result["mistake_type"],
         explanation=ai_result["explanation"],
+        naturalness_tip=ai_result.get("naturalness_tip"),
     )
     db.add(mistake)
     db.commit()
