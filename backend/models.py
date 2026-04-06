@@ -113,7 +113,7 @@ class WordEntry(Base):
 
 
 # ---------------------------------------------------------------------------
-# Phase 4 — Flashcard Reviews (for spaced repetition)
+# Phase 4 — Flashcard Reviews + Spaced Repetition Schedules
 # ---------------------------------------------------------------------------
 
 class FlashcardReview(Base):
@@ -126,3 +126,17 @@ class FlashcardReview(Base):
     created_at: Mapped[datetime] = mapped_column(
         DateTime, default=lambda: datetime.now(timezone.utc)
     )
+
+
+class WordSchedule(Base):
+    """SM-2 spaced-repetition schedule, one row per (user, word)."""
+    __tablename__ = "word_schedules"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    user_id: Mapped[int] = mapped_column(Integer, default=1, index=True)
+    word: Mapped[str] = mapped_column(String(100), nullable=False, index=True)
+    ease_factor: Mapped[float] = mapped_column(Float, default=2.5)
+    interval_days: Mapped[int] = mapped_column(Integer, default=1)
+    repetitions: Mapped[int] = mapped_column(Integer, default=0)
+    next_review_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)
+    last_reviewed_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)

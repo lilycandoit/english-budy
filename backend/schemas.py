@@ -181,3 +181,14 @@ class FlashcardReviewItem(BaseModel):
 
 class FlashcardReviewBatch(BaseModel):
     reviews: List[FlashcardReviewItem]
+
+
+class DueCard(BaseModel):
+    word: str
+    word_info: dict
+    days_overdue: int
+
+
+class DueCardsResponse(BaseModel):
+    due_count: int
+    cards: List[DueCard]

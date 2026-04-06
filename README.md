@@ -105,7 +105,7 @@ uvicorn main:app --reload
 | GET    | `/api/learning/sessions`      | Past Vocab Builder sessions                        |
 | GET    | `/api/learning/word-bank`     | Word bank with stats (total / this week / today)   |
 
-### Words Review
+### Words Review & Flashcards
 
 | Method | Path                               | Description                              |
 |--------|------------------------------------|------------------------------------------|
@@ -113,7 +113,8 @@ uvicorn main:app --reload
 | GET    | `/api/learning/reviews`            | Past review stories                      |
 | GET    | `/api/learning/words-by-date`      | Studied words grouped by date            |
 | GET    | `/api/learning/all-words`          | All unique studied words                 |
-| POST   | `/api/learning/flashcards/review`  | Save flashcard Known/Review ratings      |
+| POST   | `/api/learning/flashcards/review`  | Save flashcard ratings + run SM-2        |
+| GET    | `/api/learning/flashcards/due`     | Get words due for review today           |
 
 ### Daily Topic
 
@@ -146,8 +147,12 @@ topic_sessions
 word_entries                     ← Word Bank (max 200 per user)
   id, user_id, word, word_info (JSON), created_at, updated_at
 
-flashcard_reviews                ← Flashcard ratings for spaced repetition
+flashcard_reviews                ← Raw flashcard ratings log
   id, user_id, word, result ("known"|"review"), created_at
+
+word_schedules                   ← SM-2 spaced repetition schedule
+  id, user_id, word, ease_factor, interval_days, repetitions,
+  next_review_at, last_reviewed_at
 ```
 
 ---
@@ -176,5 +181,5 @@ flashcard_reviews                ← Flashcard ratings for spaced repetition
 | 2     | Vocab Builder (AI word breakdown + quiz)       | ✅ Done       |
 | 3     | Words Review + Word Bank + Flashcards          | ✅ Done       |
 | 3b    | Daily Topic (dialog/story + vocab summary)     | ✅ Done       |
-| **4** | **Spaced repetition (SM-2, Due Today queue)**  | **Next**     |
+| 4     | Spaced repetition (SM-2, Due Today queue)      | ✅ Done       |
 | 5     | Auth / multi-user                              | Later        |

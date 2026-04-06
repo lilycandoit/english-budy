@@ -803,10 +803,14 @@ async function loadPastTopics() {
 
     item.innerHTML = `
       <div class="past-topic-header past-topic-toggle" role="button" tabindex="0">
-        <span class="topic-format-badge">${formatLabel}</span>
-        <span class="past-topic-title">${escapeHtml(s.title)}</span>
-        <span class="past-topic-chevron">▸</span>
-        <span class="session-date">${formatDate(s.created_at)}</span>
+        <div class="past-topic-meta">
+          <span class="topic-format-badge">${formatLabel}</span>
+          <span class="session-date">${formatDate(s.created_at)}</span>
+        </div>
+        <div class="past-topic-title-row">
+          <span class="past-topic-title">${escapeHtml(s.title)}</span>
+          <span class="past-topic-chevron">▸</span>
+        </div>
       </div>
       <div class="past-topic-words tag-list">${wordsHtml}</div>
       <div class="past-topic-expanded hidden"></div>
@@ -1011,7 +1015,41 @@ async function initWordsReview() {
   allHistoryWordsList = (wordsData.words || []);
   renderDateGroups();
   loadPastReviews();
+  loadDueFlashcards();
 }
+
+async function loadDueFlashcards() {
+  const data = await api("GET", API_LEARNING + "/flashcards/due").catch(() => null);
+  const banner = document.getElementById("due-banner");
+  if (!data || data.due_count === 0) {
+    banner.classList.add("hidden");
+    return;
+  }
+  document.getElementById("due-banner-count").textContent = data.due_count;
+  banner.classList.remove("hidden");
+  // Store cards for the Start Review button
+  banner._dueCards = data.cards;
+}
+
+document.getElementById("start-due-btn").addEventListener("click", () => {
+  const banner = document.getElementById("due-banner");
+  const cards = banner._dueCards || [];
+  if (!cards.length) return;
+
+  // Load due words into flashcard viewer
+  fcCards = cards.map((c) => ({ word: c.word, word_info: c.word_info }));
+  fcIndex = 0;
+  fcRatings = {};
+  fcFlipped = false;
+
+  const panel = document.getElementById("flashcard-panel");
+  panel.classList.remove("hidden");
+  document.getElementById("fc-summary").classList.add("hidden");
+  document.getElementById("fc-rating").classList.add("hidden");
+
+  renderFlashcard(0);
+  panel.scrollIntoView({ behavior: "smooth", block: "start" });
+});
 
 function renderDateGroups() {
   const list = document.getElementById("date-groups-list");
@@ -1342,6 +1380,7 @@ document.getElementById("fc-save-btn").addEventListener("click", async () => {
   }
   document.getElementById("flashcard-panel").classList.add("hidden");
   document.getElementById("fc-summary").classList.add("hidden");
+  loadDueFlashcards();
 });
 
 // ── Helpers ──────────────────────────────────────────────────────────────────

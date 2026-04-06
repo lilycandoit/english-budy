@@ -8,8 +8,10 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from database import get_db
-from models import FlashcardReview, LearningSession, QuizResult, ReviewSession, WordEntry
+from models import FlashcardReview, LearningSession, QuizResult, ReviewSession, WordEntry, WordSchedule
 from schemas import (
+    DueCard,
+    DueCardsResponse,
     FlashcardReviewBatch,
     LessonRequest,
     LessonResponse,
@@ -276,6 +278,82 @@ def word_bank(db: Session = Depends(get_db)):
 
 @router.post("/flashcards/review", status_code=204)
 def save_flashcard_reviews(req: FlashcardReviewBatch, db: Session = Depends(get_db)):
+    now = datetime.now(timezone.utc)
+
     for item in req.reviews:
+        # 1. Save raw review record
         db.add(FlashcardReview(user_id=USER_ID, word=item.word, result=item.result))
+
+        # 2. Upsert SM-2 schedule
+        sched = (
+            db.query(WordSchedule)
+            .filter(WordSchedule.user_id == USER_ID, WordSchedule.word == item.word)
+            .first()
+        )
+        if not sched:
+            sched = WordSchedule(
+                user_id=USER_ID,
+                word=item.word,
+                ease_factor=2.5,
+                interval_days=1,
+                repetitions=0,
+                next_review_at=now,
+                last_reviewed_at=now,
+            )
+            db.add(sched)
+            db.flush()
+
+        # 3. Apply SM-2 algorithm
+        if item.result == "known":
+            if sched.repetitions == 0:
+                new_interval = 1
+            elif sched.repetitions == 1:
+                new_interval = 3
+            else:
+                new_interval = round(sched.interval_days * sched.ease_factor)
+            new_ease = min(round(sched.ease_factor + 0.1, 2), 3.0)
+            new_reps = sched.repetitions + 1
+        else:  # "review"
+            new_interval = 1
+            new_ease = max(round(sched.ease_factor - 0.2, 2), 1.3)
+            new_reps = 0
+
+        sched.interval_days = new_interval
+        sched.ease_factor = new_ease
+        sched.repetitions = new_reps
+        sched.next_review_at = now + timedelta(days=new_interval)
+        sched.last_reviewed_at = now
+
     db.commit()
+
+
+@router.get("/flashcards/due", response_model=DueCardsResponse)
+def get_due_flashcards(db: Session = Depends(get_db)):
+    now = datetime.now(timezone.utc)
+
+    due = (
+        db.query(WordSchedule)
+        .filter(WordSchedule.user_id == USER_ID, WordSchedule.next_review_at <= now)
+        .order_by(WordSchedule.next_review_at.asc())
+        .all()
+    )
+
+    cards = []
+    for sched in due:
+        entry = (
+            db.query(WordEntry)
+            .filter(WordEntry.user_id == USER_ID, WordEntry.word == sched.word)
+            .first()
+        )
+        if not entry:
+            continue  # word was removed from bank; skip
+        overdue_days = max(0, (now - sched.next_review_at.replace(tzinfo=timezone.utc)).days)
+        cards.append(
+            DueCard(
+                word=sched.word,
+                word_info=json.loads(entry.word_info),
+                days_overdue=overdue_days,
+            )
+        )
+
+    return DueCardsResponse(due_count=len(cards), cards=cards)
