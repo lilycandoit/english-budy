@@ -24,6 +24,10 @@ model User {
   mistakes         Mistake[]
   learningSessions LearningSession[]
   wordEntries      WordEntry[]
+  topicSessions    TopicSession[]
+  reviewSessions   ReviewSession[]
+  flashcardReviews FlashcardReview[]
+  wordSchedules    WordSchedule[]
 }
 
 model Mistake {
@@ -107,6 +111,58 @@ model WordEntry {
 
   @@unique([userId, word])
   @@index([userId, updatedAt])
+}
+
+model TopicSession {
+  id        String   @id @default(cuid())
+  userId    String
+  topic     String
+  format    String   // "dialog" | "story"
+  title     String
+  content   String   @db.Text
+  words     String   @db.Text // JSON: TopicWord[]
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@index([userId, createdAt])
+}
+
+model ReviewSession {
+  id        String   @id @default(cuid())
+  userId    String
+  words     String   @db.Text // JSON: string[]
+  story     String   @db.Text
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@index([userId, createdAt])
+}
+
+model FlashcardReview {
+  id        String   @id @default(cuid())
+  userId    String
+  word      String
+  result    String   // "known" | "review"
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@index([userId, createdAt])
+}
+
+model WordSchedule {
+  id             String   @id @default(cuid())
+  userId         String
+  word           String
+  easeFactor     Float    @default(2.5)
+  intervalDays   Int      @default(1)
+  repetitions    Int      @default(0)
+  nextReviewAt   DateTime
+  lastReviewedAt DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, word])
+  @@index([userId, nextReviewAt])
 }
 
 model VerificationToken {

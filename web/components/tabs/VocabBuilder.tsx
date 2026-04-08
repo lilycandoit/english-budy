@@ -31,7 +31,7 @@ interface GenerateResult {
 interface QuizFeedback {
   score: number;
   total: number;
-  feedback: { correct: boolean; correctAnswer: string; selected: string }[];
+  feedback: { correct: boolean; correctAnswer: string; selected: string; explanation: string }[];
 }
 
 interface PastSession {
@@ -257,7 +257,14 @@ export function VocabBuilder() {
                       {fb.correct ? "✓" : "✗"} Your answer: {fb.selected || "(no answer)"}
                     </p>
                     {!fb.correct && (
-                      <p className="text-slate-500 mt-0.5">Correct: {fb.correctAnswer}</p>
+                      <>
+                        <p className="text-slate-600 mt-0.5">Correct: <span className="font-medium">{fb.correctAnswer}</span></p>
+                        {fb.explanation && (
+                          <p className="text-slate-500 text-xs mt-1.5 leading-relaxed border-l-2 border-red-200 pl-2">
+                            {fb.explanation}
+                          </p>
+                        )}
+                      </>
                     )}
                   </div>
                 );

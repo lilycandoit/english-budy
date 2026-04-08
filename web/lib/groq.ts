@@ -55,5 +55,41 @@ export async function groqChat(
 export function extractJson(text: string): unknown {
   const match = text.match(/\{[\s\S]*\}/);
   if (!match) throw new Error("No JSON found in AI response");
-  return JSON.parse(match[0]);
+
+  const raw = match[0];
+
+  // Try direct parse first
+  try {
+    return JSON.parse(raw);
+  } catch {
+    // AI often returns literal newlines/tabs inside JSON string values, which
+    // breaks JSON.parse. Walk char-by-char and escape them only inside strings.
+    let out = "";
+    let inString = false;
+    let escaped = false;
+
+    for (const ch of raw) {
+      if (escaped) {
+        out += ch;
+        escaped = false;
+        continue;
+      }
+      if (ch === "\\" && inString) {
+        out += ch;
+        escaped = true;
+        continue;
+      }
+      if (ch === '"') {
+        inString = !inString;
+        out += ch;
+        continue;
+      }
+      if (inString && ch === "\n") { out += "\\n"; continue; }
+      if (inString && ch === "\r") { out += "\\r"; continue; }
+      if (inString && ch === "\t") { out += "\\t"; continue; }
+      out += ch;
+    }
+
+    return JSON.parse(out);
+  }
 }

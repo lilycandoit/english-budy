@@ -28,6 +28,7 @@ function buildPrompt(words: string[]): string {
     `      "question": "What does 'example' mean?",\n` +
     `      "options": ["option A", "option B", "option C", "option D"],\n` +
     `      "answer": "option A",\n` +
+    `      "explanation": "Explanation of why this answer is correct and what the word means in context.",\n` +
     `      "word": "example"\n` +
     `    }\n` +
     `  ]\n` +
@@ -37,7 +38,8 @@ function buildPrompt(words: string[]): string {
     `- Use everyday Australian English in example sentences (reckon, keen, arvo, no worries, etc. where natural)\n` +
     `- Generate exactly 5 quiz questions across the words\n` +
     `- Each quiz question must have exactly 4 options\n` +
-    `- The "answer" field must exactly match one of the options`
+    `- The "answer" field must exactly match one of the options\n` +
+    `- The "explanation" field: 1-2 sentences explaining why the correct answer is right`
   );
 }
 

@@ -3,6 +3,8 @@
 import { useState } from "react";
 import { SentenceCheck } from "@/components/tabs/SentenceCheck";
 import { VocabBuilder } from "@/components/tabs/VocabBuilder";
+import { DailyTopic } from "@/components/tabs/DailyTopic";
+import { WordsReview } from "@/components/tabs/WordsReview";
 
 const TABS = [
   { id: "sentence", label: "Sentence Check", icon: "✏️" },
@@ -40,18 +42,8 @@ export function TabShell() {
       <div className="p-6">
         {active === "sentence" && <SentenceCheck />}
         {active === "vocab" && <VocabBuilder />}
-        {active === "topic" && (
-          <ComingSoon
-            title="Daily Topic"
-            desc="Pick a topic → AI generates a dialog or story using everyday Australian English."
-          />
-        )}
-        {active === "review" && (
-          <ComingSoon
-            title="Words Review"
-            desc="Review words through AI stories and spaced-repetition flashcards."
-          />
-        )}
+        {active === "topic" && <DailyTopic />}
+        {active === "review" && <WordsReview />}
       </div>
     </div>
   );

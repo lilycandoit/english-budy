@@ -21,13 +21,14 @@ export async function POST(req: NextRequest) {
     question: string;
     options: string[];
     answer: string;
+    explanation?: string;
     word: string;
   }[];
 
   const feedback = quiz.map((q, i) => {
     const selected = answers[i] ?? "";
     const correct = selected.trim().toLowerCase() === q.answer.trim().toLowerCase();
-    return { correct, correctAnswer: q.answer, selected };
+    return { correct, correctAnswer: q.answer, selected, explanation: q.explanation ?? "" };
   });
 
   const score = feedback.filter((f) => f.correct).length;
