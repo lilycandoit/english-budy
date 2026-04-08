@@ -334,25 +334,27 @@ export function VocabBuilder() {
 
           <div className="flex flex-wrap gap-2">
             {filteredWb.map((entry) => (
-              <div key={entry.id}>
-                <button
-                  onClick={() => setExpandedWord(expandedWord === entry.word ? null : entry.word)}
-                  className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
-                    expandedWord === entry.word
-                      ? "bg-blue-600 text-white border-blue-600"
-                      : "bg-white border-slate-200 text-slate-600 hover:border-blue-400 hover:text-blue-600"
-                  }`}
-                >
-                  {entry.word}
-                </button>
-                {expandedWord === entry.word && (
-                  <div className="mt-2 mb-1">
-                    <WordCard w={entry.wordInfo} onDrilldown={() => {}} compact />
-                  </div>
-                )}
-              </div>
+              <button
+                key={entry.id}
+                onClick={() => setExpandedWord(expandedWord === entry.word ? null : entry.word)}
+                className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
+                  expandedWord === entry.word
+                    ? "bg-blue-600 text-white border-blue-600"
+                    : "bg-white border-slate-200 text-slate-600 hover:border-blue-400 hover:text-blue-600"
+                }`}
+              >
+                {entry.word}
+              </button>
             ))}
           </div>
+          {expandedWord && (() => {
+            const entry = filteredWb.find((e) => e.word === expandedWord);
+            return entry ? (
+              <div className="mt-3">
+                <WordCard w={entry.wordInfo} onDrilldown={() => {}} />
+              </div>
+            ) : null;
+          })()}
           {filteredWb.length === 0 && wbSearch && (
             <p className="text-sm text-slate-400">No words match &quot;{wbSearch}&quot;</p>
           )}
@@ -375,24 +377,42 @@ export function VocabBuilder() {
           </div>
           <div className="space-y-2">
             {visibleSessions.map((s) => (
-              <div key={s.id} className="flex items-center justify-between border border-slate-200 rounded-xl px-4 py-3 text-sm">
-                <div className="flex flex-wrap gap-1.5 flex-1 mr-3">
-                  {s.words.map((w) => (
-                    <span key={w} className="text-xs bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full">
-                      {w}
+              <div key={s.id} className="border border-slate-200 rounded-xl px-4 py-3 text-sm">
+                <div className="flex items-center justify-between">
+                  <div className="flex flex-wrap gap-1.5 flex-1 mr-3">
+                    {s.words.map((w) => (
+                      <button
+                        key={w}
+                        onClick={() => setExpandedWord(expandedWord === w ? null : w)}
+                        className={`text-xs px-2 py-0.5 rounded-full transition-colors ${
+                          expandedWord === w
+                            ? "bg-blue-600 text-white"
+                            : "bg-slate-100 text-slate-600 hover:bg-blue-50 hover:text-blue-600"
+                        }`}
+                      >
+                        {w}
+                      </button>
+                    ))}
+                  </div>
+                  <div className="flex items-center gap-3 flex-shrink-0">
+                    {s.score !== null && (
+                      <span className="text-xs font-medium text-blue-600">
+                        {s.score}/{s.total}
+                      </span>
+                    )}
+                    <span className="text-xs text-slate-400">
+                      {new Date(s.createdAt).toLocaleDateString("en-AU", { day: "numeric", month: "short" })}
                     </span>
-                  ))}
+                  </div>
                 </div>
-                <div className="flex items-center gap-3 flex-shrink-0">
-                  {s.score !== null && (
-                    <span className="text-xs font-medium text-blue-600">
-                      {s.score}/{s.total}
-                    </span>
-                  )}
-                  <span className="text-xs text-slate-400">
-                    {new Date(s.createdAt).toLocaleDateString("en-AU", { day: "numeric", month: "short" })}
-                  </span>
-                </div>
+                {s.words.some((w) => w === expandedWord) && (() => {
+                  const entry = wordBank.find((e) => e.word === expandedWord);
+                  return entry ? (
+                    <div className="mt-3">
+                      <WordCard w={entry.wordInfo} onDrilldown={() => {}} />
+                    </div>
+                  ) : null;
+                })()}
               </div>
             ))}
           </div>

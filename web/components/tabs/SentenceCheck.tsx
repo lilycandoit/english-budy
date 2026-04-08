@@ -100,6 +100,12 @@ export function SentenceCheck() {
         <textarea
           value={input}
           onChange={(e) => setInput(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && !e.shiftKey) {
+              e.preventDefault();
+              if (input.trim() && !loading) handleSubmit(e as unknown as React.FormEvent);
+            }
+          }}
           rows={3}
           placeholder="e.g. I have went to the shops yesterday and buyed some milk."
           className="w-full border border-slate-300 rounded-xl px-4 py-3 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
