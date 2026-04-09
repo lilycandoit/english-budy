@@ -5,12 +5,14 @@ import { SentenceCheck } from "@/components/tabs/SentenceCheck";
 import { VocabBuilder } from "@/components/tabs/VocabBuilder";
 import { DailyTopic } from "@/components/tabs/DailyTopic";
 import { WordsReview } from "@/components/tabs/WordsReview";
+import { Progress } from "@/components/tabs/Progress";
 
 const TABS = [
   { id: "sentence", label: "Sentence Check", icon: "✏️" },
   { id: "vocab", label: "Vocabulary Builder", icon: "📖" },
   { id: "topic", label: "Daily Topic", icon: "💬" },
   { id: "review", label: "Words Review", icon: "🔁" },
+  { id: "progress", label: "Progress", icon: "📊" },
 ] as const;
 
 type TabId = (typeof TABS)[number]["id"];
@@ -44,6 +46,7 @@ export function TabShell() {
         {active === "vocab" && <VocabBuilder />}
         {active === "topic" && <DailyTopic />}
         {active === "review" && <WordsReview />}
+        {active === "progress" && <Progress />}
       </div>
     </div>
   );
