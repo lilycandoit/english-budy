@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { WordCard, type WordInfo } from "@/components/WordCard";
+import { useSpeech } from "@/lib/useSpeech";
 
 interface TopicWord {
   word: string;
@@ -94,6 +95,8 @@ export function DailyTopic() {
   const [result, setResult] = useState<TopicResult | null>(null);
   const [pastTopics, setPastTopics] = useState<TopicResult[]>([]);
   const [openId, setOpenId] = useState<string | null>(null);
+
+  const { speak, stop, speaking } = useSpeech();
 
   // ── Inline lookup ──────────────────────────────────────────────────────────
   const [popup, setPopup] = useState<{ text: string; x: number; y: number } | null>(null);
@@ -252,10 +255,26 @@ export function DailyTopic() {
       {result && (
         <div className="border border-slate-200 rounded-2xl overflow-hidden">
           <div className="bg-slate-50 px-5 py-3 border-b border-slate-200">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center justify-between gap-2">
               <span className="text-xs font-medium text-slate-400 uppercase tracking-wide">
                 {result.format === "dialog" ? "💬 Dialog" : result.format === "story" ? "📖 Story" : "🦘 Aussie Mode"}
               </span>
+              {result.format === "story" && (
+                <button
+                  onClick={() => {
+                    if (speaking) { stop(); return; }
+                    // Strip **markers** and speaker labels (e.g. "Alex: ") for cleaner reading
+                    const clean = result.content
+                      .replace(/\*\*/g, "")
+                      .replace(/^[A-Za-z]+:\s*/gm, "");
+                    speak(clean);
+                  }}
+                  title={speaking ? "Stop" : "Read aloud"}
+                  className="text-slate-300 hover:text-blue-500 transition-colors text-sm"
+                >
+                  {speaking ? "⏹ Stop" : "🔊 Listen"}
+                </button>
+              )}
             </div>
             <h3 className="font-semibold text-slate-800 mt-0.5">{result.title}</h3>
           </div>

@@ -257,7 +257,7 @@ export function WordsReview() {
     }
   }
 
-  async function handleGenerateStory(e?: React.FormEvent) {
+  async function handleGenerateStory(e?: React.SyntheticEvent) {
     e?.preventDefault();
     const words = customInput.trim()
       ? customInput.split(",").map((w) => w.trim()).filter(Boolean)
@@ -431,7 +431,7 @@ export function WordsReview() {
                   </button>
                   <button
                     type="button"
-                    onClick={(e) => handleGenerateStory(e as unknown as React.FormEvent)}
+                    onClick={() => handleGenerateStory()}
                     disabled={storyLoading}
                     className="flex-1 bg-blue-600 text-white rounded-xl py-2.5 text-sm font-medium hover:bg-blue-700 disabled:opacity-50 transition-colors"
                   >

@@ -1,5 +1,7 @@
 // Shared WordCard component — used by VocabBuilder and DailyTopic lookup
 
+import { useSpeech } from "@/lib/useSpeech";
+
 export interface WordForm {
   pos: string;          // "noun" | "verb" | "adjective" | "adverb" | "phrase" | "idiom" | "slang"
   inflections: string;
@@ -40,6 +42,8 @@ export function WordCard({
   w: WordInfo;
   onDrilldown: (tag: string) => void;
 }) {
+  const { speak, stop, speaking } = useSpeech();
+
   return (
     <div className="border border-slate-200 rounded-2xl p-4 bg-white">
       {/* Header */}
@@ -47,6 +51,13 @@ export function WordCard({
         <h3 className="text-xl font-bold text-slate-800">{w.word}</h3>
         {w.ipa && <span className="text-sm text-slate-400 font-mono">{w.ipa}</span>}
         {w.stress && <span className="text-xs bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full">{w.stress}</span>}
+        <button
+          onClick={() => speaking ? stop() : speak(w.word)}
+          title={speaking ? "Stop" : "Listen"}
+          className="ml-auto text-slate-300 hover:text-blue-500 transition-colors text-base"
+        >
+          {speaking ? "⏹" : "🔊"}
+        </button>
       </div>
 
       {/* Per-POS forms (new format) */}
