@@ -13,30 +13,70 @@ function buildPrompt(words: string[]): string {
     `{\n` +
     `  "words": [\n` +
     `    {\n` +
-    `      "word": "example",\n` +
-    `      "ipa": "/ɪɡˈzɑːmpəl/",\n` +
-    `      "stress": "ex-AM-ple",\n` +
-    `      "meanings": ["primary meaning", "secondary meaning"],\n` +
-    `      "synonyms": ["word1", "word2", "word3"],\n` +
-    `      "antonyms": ["word1", "word2", "word3"],\n` +
-    `      "collocations": ["phrase1", "phrase2", "phrase3", "phrase4", "phrase5"],\n` +
-    `      "examples": ["Australian English example sentence 1.", "Australian English example sentence 2."]\n` +
+    `      "word": "sanction",\n` +
+    `      "ipa": "/ˈsæŋkʃən/",\n` +
+    `      "stress": "SANK-shun",\n` +
+    `      "forms": [\n` +
+    `        {\n` +
+    `          "pos": "noun",\n` +
+    `          "inflections": "plural: sanctions",\n` +
+    `          "meanings": ["a threatened penalty for disobeying a law or rule", "official permission or approval for an action"]\n` +
+    `        },\n` +
+    `        {\n` +
+    `          "pos": "verb",\n` +
+    `          "inflections": "sanctions / sanctioned / sanctioned / sanctioning",\n` +
+    `          "meanings": ["give official permission or approval for", "impose a penalty on"]\n` +
+    `        }\n` +
+    `      ],\n` +
+    `      "synonyms": ["penalty", "punishment", "embargo", "authorization", "approval", "consent", "permit", "restriction"],\n` +
+    `      "antonyms": ["reward", "incentive", "disapproval", "prohibition"],\n` +
+    `      "collocations": ["impose sanctions", "lift sanctions", "economic sanctions", "trade sanctions", "international sanctions", "sanction a deal", "UN sanctions", "face sanctions"],\n` +
+    `      "examples": [\n` +
+    `        "The government decided to impose sanctions on the country for its human rights abuses.",\n` +
+    `        "The school sanctioned the new policy after consulting with parents.",\n` +
+    `        "Trade sanctions were lifted once the country agreed to the terms.",\n` +
+    `        "The committee needs to sanction the budget before we can proceed."\n` +
+    `      ]\n` +
     `    }\n` +
     `  ],\n` +
     `  "quiz": [\n` +
     `    {\n` +
-    `      "question": "What does 'example' mean?",\n` +
+    `      "question": "What does 'sanction' mean as a noun?",\n` +
     `      "options": ["option A", "option B", "option C", "option D"],\n` +
     `      "answer": "option A",\n` +
-    `      "explanation": "Explanation of why this answer is correct and what the word means in context.",\n` +
-    `      "word": "example"\n` +
+    `      "explanation": "Explanation of why this answer is correct.",\n` +
+    `      "word": "sanction"\n` +
     `    }\n` +
     `  ]\n` +
     `}\n\n` +
     `Rules:\n` +
-    `- Include ALL ${words.length} word(s) in the words array\n` +
-    `- Use everyday Australian English in example sentences (reckon, keen, arvo, no worries, etc. where natural)\n` +
-    `- Generate exactly 5 quiz questions across the words\n` +
+    `- Determine if each input is a SINGLE WORD or a PHRASE/SLANG/IDIOM (2+ words or a fixed expression like "fair dinkum", "kick the bucket", "no worries").\n` +
+    `\n` +
+    `If it is a SINGLE WORD:\n` +
+    `- ALWAYS use the base/lemma form for "word" — convert any inflected form to its base (e.g. "sanctions" → "sanction", "sang" → "sing", "running" → "run")\n` +
+    `- For "forms": include every applicable part of speech (noun, verb, adjective, adverb)\n` +
+    `  - noun: inflections = "plural: <form>" (or "uncountable" if applicable)\n` +
+    `  - verb: inflections = "<3rd-person> / <past> / <past-participle> / <present-participle>" (e.g. "sings / sang / sung / singing")\n` +
+    `  - adjective: inflections = "comparative: <form>, superlative: <form>" (or "invariable" if it doesn't inflect)\n` +
+    `  - adverb: inflections = "invariable"\n` +
+    `  - Each form must have 1–3 distinct meanings for that part of speech\n` +
+    `\n` +
+    `If it is a PHRASE, SLANG, or IDIOM:\n` +
+    `- Keep "word" as the exact phrase (normalised but not split), e.g. "fair dinkum", "kick the bucket"\n` +
+    `- Use a single entry in "forms" with pos = "phrase", "idiom", or "slang" (pick the most accurate)\n` +
+    `- Set "inflections" to the register + origin, e.g. "informal · Australian slang" or "idiomatic · origin: 19th century"\n` +
+    `- "meanings" should explain the phrase as a whole (do NOT define individual words)\n` +
+    `- synonyms: equivalent expressions or phrases (4–6)\n` +
+    `- antonyms: opposite-meaning phrases if applicable, otherwise []\n` +
+    `- collocations: common contexts or sentence frames where the phrase is used (6–8)\n` +
+    `\n` +
+    `For ALL inputs:\n` +
+    `- Include ALL ${words.length} word(s)/phrase(s) in the words array\n` +
+    `- synonyms: 6–8 items\n` +
+    `- antonyms: 4–6 items (empty array [] if none apply)\n` +
+    `- collocations: 8–10 natural phrases or collocations\n` +
+    `- examples: 4–5 sentences using everyday Australian English (reckon, keen, arvo, no worries, mate, etc. where natural)\n` +
+    `- Generate exactly 5 quiz questions across the words/phrases\n` +
     `- Each quiz question must have exactly 4 options\n` +
     `- The "answer" field must exactly match one of the options\n` +
     `- The "explanation" field: 1-2 sentences explaining why the correct answer is right`
@@ -96,7 +136,7 @@ export async function POST(req: NextRequest) {
         { role: "system", content: SYSTEM },
         { role: "user", content: buildPrompt(words) },
       ],
-      { max_tokens: 1500, temperature: 0.7 }
+      { max_tokens: Math.min(500 + words.length * 700, 6000), temperature: 0.7 }
     );
     const parsed = extractJson(raw) as { words: unknown[]; quiz: unknown[] };
     wordInfos = parsed.words ?? [];
