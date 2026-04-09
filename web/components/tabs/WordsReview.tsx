@@ -8,10 +8,20 @@ interface WbEntry {
   word: string;
   wordInfo: {
     ipa?: string;
-    meanings?: string[];
+    meanings?: string[];                                    // legacy format
+    forms?: { pos: string; meanings: string[] }[];          // new format
     synonyms?: string[];
     examples?: string[];
   };
+}
+
+/** Extract flat meanings from either old or new word format */
+function getMeanings(wordInfo: WbEntry["wordInfo"]): string[] {
+  if (wordInfo.meanings?.length) return wordInfo.meanings;
+  if (wordInfo.forms?.length) {
+    return wordInfo.forms.flatMap((f) => f.meanings ?? []);
+  }
+  return [];
 }
 
 interface DueCard {
@@ -156,15 +166,11 @@ function FlashcardViewer({
             className="absolute inset-0 border-2 border-teal-200 rounded-2xl bg-gradient-to-br from-teal-50 to-white p-5 overflow-y-auto"
           >
             <p className="text-lg font-bold text-slate-800 mb-3">{card.word}</p>
-            {card.wordInfo?.meanings?.length ? (
-              <ul className="space-y-1 mb-3">
-                {card.wordInfo.meanings.slice(0, 3).map((m, i) => (
-                  <li key={i} className="text-sm text-slate-600">
-                    <span className="text-slate-400 mr-1">{i + 1}.</span>{m}
-                  </li>
-                ))}
-              </ul>
-            ) : null}
+            {getMeanings(card.wordInfo).slice(0, 3).map((m, i) => (
+              <li key={i} className="text-sm text-slate-600 list-none">
+                <span className="text-slate-400 mr-1">{i + 1}.</span>{m}
+              </li>
+            ))}
             {card.wordInfo?.examples?.[0] && (
               <p className="text-xs text-slate-400 italic border-l-2 border-teal-200 pl-3">
                 {card.wordInfo.examples[0]}
@@ -251,8 +257,8 @@ export function WordsReview() {
     }
   }
 
-  async function handleGenerateStory(e: React.FormEvent) {
-    e.preventDefault();
+  async function handleGenerateStory(e?: React.FormEvent) {
+    e?.preventDefault();
     const words = customInput.trim()
       ? customInput.split(",").map((w) => w.trim()).filter(Boolean)
       : selectedWords;
@@ -323,29 +329,27 @@ export function WordsReview() {
             </div>
           )}
 
-          {/* ── Flashcard section (all word bank) ── */}
-          {wbEntries.length > 0 && (
-            <div className="border border-slate-200 rounded-2xl p-5">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="text-sm font-semibold text-slate-700">Flashcards</h3>
-                  <p className="text-xs text-slate-400 mt-0.5">Study all {wbEntries.length} words in your word bank</p>
-                </div>
+          {/* ── Word selection + review actions ── */}
+          <div>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-sm font-semibold text-slate-700">Select Words to Review</h3>
+              {wbEntries.length > 0 && (
                 <button
                   onClick={() => startFlashcards(wbEntries)}
-                  className="bg-blue-600 text-white rounded-xl px-4 py-2 text-sm font-medium hover:bg-blue-700 transition-colors"
+                  className="text-xs text-slate-400 hover:text-blue-600 transition-colors"
                 >
-                  Start
+                  Study all {wbEntries.length} →
                 </button>
-              </div>
+              )}
             </div>
-          )}
 
-          {/* ── Story review ── */}
-          <div>
-            <h3 className="text-sm font-semibold text-slate-700 mb-4">Review Story</h3>
+            {wbEntries.length >= 50 && (
+              <p className="text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 mb-4">
+                💡 You have {wbEntries.length} words — consider reviewing before adding more to keep them manageable.
+              </p>
+            )}
 
-            <form onSubmit={handleGenerateStory} className="space-y-4">
+            <div className="space-y-4">
               {/* Word selection by date */}
               {allDates.length > 0 && (
                 <div className="space-y-2">
@@ -406,14 +410,42 @@ export function WordsReview() {
 
               {storyError && <p className="text-red-500 text-sm">{storyError}</p>}
 
-              <button
-                type="submit"
-                disabled={storyLoading || (!selectedWords.length && !customInput.trim())}
-                className="w-full bg-blue-600 text-white rounded-xl py-2.5 text-sm font-medium hover:bg-blue-700 disabled:opacity-50 transition-colors"
-              >
-                {storyLoading ? "Generating story…" : `Generate story${selectedWords.length ? ` (${selectedWords.length} words)` : ""}`}
-              </button>
-            </form>
+              {/* Action buttons */}
+              {(selectedWords.length > 0 || customInput.trim()) && (
+                <div className="flex gap-3">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const words = customInput.trim()
+                        ? customInput.split(",").map((w) => w.trim()).filter(Boolean)
+                        : selectedWords;
+                      const cards = wbEntries.filter((e) => words.includes(e.word));
+                      if (cards.length) startFlashcards(cards);
+                    }}
+                    className="flex-1 bg-teal-600 text-white rounded-xl py-2.5 text-sm font-medium hover:bg-teal-700 transition-colors"
+                  >
+                    🃏 Flashcards ({(customInput.trim()
+                      ? customInput.split(",").map(w => w.trim()).filter(Boolean)
+                      : selectedWords
+                    ).filter(w => wbEntries.some(e => e.word === w)).length} words)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={(e) => handleGenerateStory(e as unknown as React.FormEvent)}
+                    disabled={storyLoading}
+                    className="flex-1 bg-blue-600 text-white rounded-xl py-2.5 text-sm font-medium hover:bg-blue-700 disabled:opacity-50 transition-colors"
+                  >
+                    {storyLoading ? "Generating…" : `📖 Story (${selectedWords.length || customInput.split(",").filter(Boolean).length} words)`}
+                  </button>
+                </div>
+              )}
+
+              {!selectedWords.length && !customInput.trim() && (
+                <p className="text-xs text-slate-400 text-center py-2">
+                  Select words above to start flashcards or generate a story
+                </p>
+              )}
+            </div>
 
             {/* Story output */}
             {story && (
