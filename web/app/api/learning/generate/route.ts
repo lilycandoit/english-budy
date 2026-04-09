@@ -83,6 +83,19 @@ function buildPrompt(words: string[]): string {
   );
 }
 
+function buildQuickLookupPrompt(word: string): string {
+  return (
+    `Look up this word or phrase for an Australian English learner: "${word}"\n\n` +
+    `Return ONLY valid JSON — no markdown, no extra text:\n` +
+    `{ "words": [ { "word": "...", "ipa": "...", "stress": "...", "forms": [...], "synonyms": [...], "antonyms": [...], "collocations": [...], "examples": [...] } ] }\n\n` +
+    `Rules:\n` +
+    `- Same word/phrase structure as a full vocabulary lesson\n` +
+    `- Always use the base/lemma form; detect if it's a phrase/idiom/slang\n` +
+    `- synonyms: 4–6, antonyms: 2–4, collocations: 4–6, examples: 2–3 Australian English sentences\n` +
+    `- No "quiz" field needed`
+  );
+}
+
 async function upsertWordBank(userId: string, wordInfos: { word: string; [key: string]: unknown }[]) {
   for (const w of wordInfos) {
     await prisma.wordEntry.upsert({
@@ -108,14 +121,14 @@ export async function POST(req: NextRequest) {
   const session = await getServerSession(authOptions);
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const { words: rawWords } = await req.json();
+  const { words: rawWords, quickLookup } = await req.json();
   if (!rawWords?.trim()) return NextResponse.json({ error: "Words are required" }, { status: 400 });
 
   const words = (rawWords as string)
     .split(",")
     .map((w: string) => w.trim())
     .filter(Boolean)
-    .slice(0, 8); // max 8 words per session
+    .slice(0, quickLookup ? 1 : 8);
 
   if (!words.length) return NextResponse.json({ error: "No valid words found" }, { status: 400 });
 
@@ -130,37 +143,38 @@ export async function POST(req: NextRequest) {
   let quiz: unknown[] = [];
 
   try {
+    const prompt = quickLookup ? buildQuickLookupPrompt(words[0]) : buildPrompt(words);
     const raw = await groqChat(
       apiKey,
       [
         { role: "system", content: SYSTEM },
-        { role: "user", content: buildPrompt(words) },
+        { role: "user", content: prompt },
       ],
-      { max_tokens: Math.min(500 + words.length * 700, 6000), temperature: 0.7 }
+      { max_tokens: quickLookup ? 800 : Math.min(500 + words.length * 700, 6000), temperature: 0.7 }
     );
-    const parsed = extractJson(raw) as { words: unknown[]; quiz: unknown[] };
+    const parsed = extractJson(raw) as { words: unknown[]; quiz?: unknown[] };
     wordInfos = parsed.words ?? [];
     quiz = parsed.quiz ?? [];
   } catch (err) {
     return NextResponse.json({ error: "AI request failed. Please try again." }, { status: 502 });
   }
 
-  // Save session
-  const learningSession = await prisma.learningSession.create({
-    data: {
-      userId: session.user.id,
-      words: JSON.stringify(words),
-      wordInfo: JSON.stringify(wordInfos),
-      quiz: JSON.stringify(quiz),
-    },
-  });
+  // Quick lookups skip session save but still upsert word bank
+  let sessionId: string | null = null;
+  if (!quickLookup) {
+    const learningSession = await prisma.learningSession.create({
+      data: {
+        userId: session.user.id,
+        words: JSON.stringify(words),
+        wordInfo: JSON.stringify(wordInfos),
+        quiz: JSON.stringify(quiz),
+      },
+    });
+    sessionId = learningSession.id;
+  }
 
   // Upsert word bank
   await upsertWordBank(session.user.id, wordInfos as { word: string; [key: string]: unknown }[]);
 
-  return NextResponse.json({
-    sessionId: learningSession.id,
-    words: wordInfos,
-    quiz,
-  });
+  return NextResponse.json({ sessionId, words: wordInfos, quiz });
 }

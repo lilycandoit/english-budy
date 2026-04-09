@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { WordCard, type WordInfo } from "@/components/WordCard";
 
 interface TopicWord {
   word: string;
@@ -94,7 +95,47 @@ export function DailyTopic() {
   const [pastTopics, setPastTopics] = useState<TopicResult[]>([]);
   const [openId, setOpenId] = useState<string | null>(null);
 
+  // ── Inline lookup ──────────────────────────────────────────────────────────
+  const [popup, setPopup] = useState<{ text: string; x: number; y: number } | null>(null);
+  const [lookupResult, setLookupResult] = useState<WordInfo | null>(null);
+  const [lookupLoading, setLookupLoading] = useState(false);
+  const popupRef = useRef<HTMLButtonElement>(null);
+
+  function handleMouseUp(e: React.MouseEvent) {
+    // Ignore clicks inside the popup button itself
+    if (popupRef.current?.contains(e.target as Node)) return;
+    const sel = window.getSelection();
+    const text = sel?.toString().trim() ?? "";
+    if (text.length < 2 || text.length > 80) { setPopup(null); return; }
+    const range = sel!.getRangeAt(0);
+    const rect = range.getBoundingClientRect();
+    setPopup({ text, x: rect.left + rect.width / 2, y: rect.bottom + window.scrollY + 8 });
+  }
+
+  async function lookupWord(text: string) {
+    setPopup(null);
+    setLookupResult(null);
+    setLookupLoading(true);
+    const res = await fetch("/api/learning/generate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ words: text, quickLookup: true }),
+    });
+    const data = await res.json();
+    setLookupLoading(false);
+    if (res.ok && data.words?.[0]) setLookupResult(data.words[0]);
+  }
+
   useEffect(() => { loadPastTopics(); }, []);
+
+  // Dismiss popup on click outside
+  useEffect(() => {
+    function onMouseDown(e: MouseEvent) {
+      if (!popupRef.current?.contains(e.target as Node)) setPopup(null);
+    }
+    document.addEventListener("mousedown", onMouseDown);
+    return () => document.removeEventListener("mousedown", onMouseDown);
+  }, []);
 
   async function loadPastTopics() {
     const res = await fetch("/api/topic/sessions");
@@ -195,6 +236,18 @@ export function DailyTopic() {
         {error && <p className="text-red-500 text-sm">{error}</p>}
       </form>
 
+      {/* ── Selection popup (fixed, follows cursor) ── */}
+      {popup && (
+        <button
+          ref={popupRef}
+          onClick={() => lookupWord(popup.text)}
+          style={{ position: "fixed", left: popup.x, top: popup.y - window.scrollY, transform: "translateX(-50%)" }}
+          className="z-50 bg-slate-800 text-white text-xs font-medium px-3 py-1.5 rounded-full shadow-lg hover:bg-slate-700 transition-colors whitespace-nowrap"
+        >
+          🔍 Look up &ldquo;{popup.text.length > 30 ? popup.text.slice(0, 30) + "…" : popup.text}&rdquo;
+        </button>
+      )}
+
       {/* ── Result ── */}
       {result && (
         <div className="border border-slate-200 rounded-2xl overflow-hidden">
@@ -207,9 +260,29 @@ export function DailyTopic() {
             <h3 className="font-semibold text-slate-800 mt-0.5">{result.title}</h3>
           </div>
 
-          <div className="p-5">
+          <div className="p-5 select-text" onMouseUp={handleMouseUp}>
             <HighlightedContent content={result.content} />
           </div>
+
+          {/* ── Lookup result ── */}
+          {(lookupLoading || lookupResult) && (
+            <div className="border-t border-blue-100 bg-blue-50 px-5 py-4">
+              <div className="flex items-center justify-between mb-3">
+                <p className="text-xs font-semibold text-blue-600 uppercase tracking-wide">🔍 Lookup</p>
+                <button
+                  onClick={() => { setLookupResult(null); setLookupLoading(false); }}
+                  className="text-slate-400 hover:text-slate-600 text-sm"
+                >
+                  ✕
+                </button>
+              </div>
+              {lookupLoading ? (
+                <p className="text-sm text-slate-500">Looking up…</p>
+              ) : lookupResult ? (
+                <WordCard w={lookupResult} onDrilldown={(tag) => lookupWord(tag)} />
+              ) : null}
+            </div>
+          )}
 
           {result.words.length > 0 && (
             <div className="border-t border-slate-200 px-5 py-4">
