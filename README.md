@@ -1,185 +1,163 @@
 # Daily English Buddy
 
-A personal English learning web app — correct your writing, build vocabulary with AI, review words through stories and flashcards, and learn from topic-based conversations every day.
+A personal AI English learning web app — correct your writing, build vocabulary, review words with flashcards, and learn from topic-based stories and dialogs every day.
+
+Built with Next.js, PostgreSQL, and Groq AI. Designed for Australian English learners.
 
 ---
 
-## What it does
+## Features
 
-| Tab | Feature |
-|-----|---------|
-| **Sentence Check** | Write a sentence → AI corrects grammar/spelling → shows a "native speaker" rewrite with a naturalness tip → history + stats saved |
-| **Vocabulary Builder** | Enter words → AI generates detailed word breakdowns (IPA, stress, meanings, synonyms, antonyms, collocations, examples) + 5-question quiz → click any synonym/antonym/collocation to drill down into that word |
-| **Daily Topic** | Pick a topic or type your own → AI writes a dialog or story using 12 everyday Australian English words → vocabulary summary with definitions and context sentences → past topics expandable accordion |
-| **Words Review** | Pick words from history → AI writes a review story OR generate flashcards with flip animation and Known/Review Again ratings |
-| **Word Bank** | Auto-tracks every word studied (up to 200) — searchable chip grid with expandable detail, visible on the Vocabulary Builder tab |
+| Tab | What it does |
+|-----|-------------|
+| **Sentence Check** | Write a sentence → AI corrects grammar/spelling/punctuation → shows a native-speaker rewrite with a naturalness tip → history and stats saved |
+| **Vocabulary Builder** | Enter words or phrases (including slang and idioms) → AI returns full breakdown: IPA, stress, all parts of speech with inflections, meanings per POS, 6–8 synonyms, antonyms, collocations, 4–5 Australian English examples + 5-question quiz → click any tag to drill down into that word |
+| **Daily Topic** | Pick a topic → AI writes a dialog, story, or Aussie-mode conversation → 12 vocabulary words highlighted → **select any text to look it up instantly** (saves to Word Bank automatically) → 🔊 listen to the story read aloud |
+| **Words Review** | Select words by date → **🃏 start flashcards** for chosen words only OR **📖 generate a review story** → SM-2 spaced repetition schedules "Due Today" reviews automatically |
+| **Progress** | Day streak 🔥, words learned, mastery breakdown (new/learning/mastered), sentence check stats, quiz average, 4-week GitHub-style activity heatmap |
+| **Word Bank** | Auto-tracks every studied word (max 200) — searchable chips with full expandable detail card including all POS forms, visible on the Vocabulary Builder tab |
 
 ---
 
 ## Tech Stack
 
-| Layer    | Technology                               |
-|----------|------------------------------------------|
-| Backend  | Python 3.9 · FastAPI · Uvicorn           |
-| Database | SQLite · SQLAlchemy ORM                  |
-| AI       | Groq (llama-3.3-70b-versatile) or Gemini (gemini-2.0-flash) — switchable via env var |
-| Frontend | Vanilla HTML · CSS · JavaScript (no framework, no build step) |
+| Layer | Technology |
+|-------|-----------|
+| Framework | Next.js 15 (App Router) |
+| Language | TypeScript |
+| Auth | NextAuth.js (credentials + OAuth) |
+| Database | PostgreSQL (Neon) · Prisma ORM |
+| AI | Groq API — `llama-3.3-70b-versatile` (user supplies own API key) |
+| Styling | Tailwind CSS |
+| Deployment | Vercel |
 
 ---
 
 ## Project Structure
 
 ```
-english-buddy/
-├── backend/
-│   ├── main.py               FastAPI app entry point
-│   ├── database.py           SQLAlchemy engine + session
-│   ├── models.py             All DB table definitions
-│   ├── schemas.py            Pydantic request/response models
-│   ├── routes/
-│   │   ├── mistakes.py       /api/mistakes endpoints
-│   │   ├── learning.py       /api/learning endpoints
-│   │   └── topic.py          /api/topic endpoints
-│   ├── services/
-│   │   └── ai_service.py     AI provider logic (Groq / Gemini / mock)
-│   ├── .env                  API keys (not committed)
-│   └── requirements.txt
-└── frontend/
-    ├── index.html
-    ├── style.css
-    └── app.js
+web/
+├── app/
+│   ├── (auth)/              Login & signup pages
+│   ├── api/
+│   │   ├── learning/        Vocab Builder: generate, word-bank, sessions, submit
+│   │   ├── mistakes/        Sentence Check: CRUD + stats
+│   │   ├── topic/           Daily Topic: generate + sessions
+│   │   ├── review/          Review Story + words-by-date
+│   │   ├── flashcards/      SM-2 due queue + review submission
+│   │   ├── stats/           Progress dashboard aggregation
+│   │   └── user/            Groq API key management
+│   └── dashboard/           Main app page
+├── components/
+│   ├── tabs/
+│   │   ├── SentenceCheck.tsx
+│   │   ├── VocabBuilder.tsx
+│   │   ├── DailyTopic.tsx
+│   │   ├── WordsReview.tsx
+│   │   └── Progress.tsx
+│   ├── WordCard.tsx          Shared word detail card (used in Vocab + Topic lookup)
+│   ├── TabShell.tsx
+│   └── Navbar.tsx
+├── lib/
+│   ├── auth.ts              NextAuth config
+│   ├── db.ts                Prisma client singleton
+│   ├── groq.ts              Groq API wrapper
+│   ├── encrypt.ts           AES-256-GCM for stored API keys
+│   └── useSpeech.ts         Browser TTS hook (en-AU)
+└── prisma/
+    └── schema.prisma
 ```
 
 ---
 
-## Getting Started
+## Getting Started (local)
 
 ### 1. Install dependencies
 
 ```bash
-cd backend
-pip install -r requirements.txt
+cd web
+pnpm install
 ```
 
-### 2. Configure AI provider
+### 2. Set up environment variables
 
-Create `backend/.env`:
+Create `web/.env`:
 
 ```env
-AI_PROVIDER=groq          # or: gemini | mock
-GROQ_API_KEY=gsk_...      # get from console.groq.com
-# GEMINI_API_KEY=...      # alternative
+DATABASE_URL=postgresql://...          # Neon pooled connection URL
+DIRECT_URL=postgresql://...            # Neon direct connection URL (for migrations)
+NEXTAUTH_SECRET=your-secret-here
+NEXTAUTH_URL=http://localhost:3000
 ```
 
-### 3. Run the server
+### 3. Push the database schema
 
 ```bash
-cd backend
-uvicorn main:app --reload
+cd web
+pnpm dlx prisma db push
 ```
 
-### 4. Open the app
+### 4. Run the dev server
 
-- App: [http://localhost:8000](http://localhost:8000)
-- API docs: [http://localhost:8000/docs](http://localhost:8000/docs)
+```bash
+cd web
+pnpm dev
+```
+
+Open [http://localhost:3000](http://localhost:3000). Sign up, add your Groq API key in the modal, and start learning.
 
 ---
 
-## API Endpoints
+## How to get a Groq API key
 
-### Sentence Correction
+1. Go to [console.groq.com](https://console.groq.com)
+2. Sign up (free) → API Keys → Create key
+3. Paste it into the app when prompted on first login
 
-| Method | Path                  | Description                                    |
-|--------|-----------------------|------------------------------------------------|
-| POST   | `/api/mistakes`       | Submit sentence → correction + native rewrite  |
-| GET    | `/api/mistakes`       | List history (filter: `?mistake_type=grammar`) |
-| GET    | `/api/mistakes/stats` | Mistake counts by type                         |
-| DELETE | `/api/mistakes/{id}`  | Remove a mistake entry                         |
-
-### Vocabulary Builder
-
-| Method | Path                          | Description                                        |
-|--------|-------------------------------|----------------------------------------------------|
-| POST   | `/api/learning/generate`      | AI word breakdown + 5-question quiz (auto-saves to Word Bank) |
-| POST   | `/api/learning/submit`        | Submit quiz answers → score + feedback             |
-| GET    | `/api/learning/sessions`      | Past Vocab Builder sessions                        |
-| GET    | `/api/learning/word-bank`     | Word bank with stats (total / this week / today)   |
-
-### Words Review & Flashcards
-
-| Method | Path                               | Description                              |
-|--------|------------------------------------|------------------------------------------|
-| POST   | `/api/learning/review`             | AI review story from selected words      |
-| GET    | `/api/learning/reviews`            | Past review stories                      |
-| GET    | `/api/learning/words-by-date`      | Studied words grouped by date            |
-| GET    | `/api/learning/all-words`          | All unique studied words                 |
-| POST   | `/api/learning/flashcards/review`  | Save flashcard ratings + run SM-2        |
-| GET    | `/api/learning/flashcards/due`     | Get words due for review today           |
-
-### Daily Topic
-
-| Method | Path                    | Description                                           |
-|--------|-------------------------|-------------------------------------------------------|
-| POST   | `/api/topic/generate`   | AI dialog or story with 12 everyday Australian words  |
-| GET    | `/api/topic/sessions`   | Past topic sessions (full content included)           |
+Each user stores their own encrypted Groq key — the app never uses a shared key.
 
 ---
 
-## Database Schema
+## Database Schema (key models)
 
 ```
-mistakes
-  id, user_id, original_text, corrected_text, natural_text,
-  mistake_type, explanation, naturalness_tip, created_at
-
-learning_sessions
-  id, user_id, words (JSON), word_info (JSON), quiz (JSON), created_at
-
-quiz_results
-  id, session_id (FK), score, total, answers (JSON), created_at
-
-review_sessions
-  id, user_id, words (JSON), story, created_at
-
-topic_sessions
-  id, user_id, topic, format ("dialog"|"story"), title, content, words (JSON), created_at
-
-word_entries                     ← Word Bank (max 200 per user)
-  id, user_id, word, word_info (JSON), created_at, updated_at
-
-flashcard_reviews                ← Raw flashcard ratings log
-  id, user_id, word, result ("known"|"review"), created_at
-
-word_schedules                   ← SM-2 spaced repetition schedule
-  id, user_id, word, ease_factor, interval_days, repetitions,
-  next_review_at, last_reviewed_at
+User              — auth, encrypted Groq key
+Mistake           — sentence check history (grammar/spelling/punctuation/none)
+LearningSession   — vocab builder sessions (words + quiz)
+QuizResult        — quiz scores per session
+WordEntry         — word bank (max 200/user, JSON word info)
+TopicSession      — daily topic sessions (content + vocab)
+ReviewSession     — AI review stories
+FlashcardReview   — raw "known"/"review" ratings log
+WordSchedule      — SM-2 schedule (easeFactor, intervalDays, repetitions, nextReviewAt)
 ```
 
 ---
 
-## AI Provider Notes
+## AI Token Budget
 
-- **Default (no key):** mock rules for sentence correction only. Vocab Builder, Topic, and review features return 503.
-- **Groq** (recommended): fast, generous free tier. Model: `llama-3.3-70b-versatile`.
-- **Gemini**: reliable JSON output. Model: `gemini-2.0-flash`.
-- All HTTP calls use stdlib `urllib` — no SDK dependency.
-
-| Feature | max_tokens | temp |
-|---------|-----------|------|
-| Sentence correction | 300 | 0.2 |
-| Vocab lesson + quiz | 1500 | 0.7 |
-| Review story | 500 | 0.8 |
-| Topic dialog/story | 1500 | 0.8 |
+| Feature | max_tokens | Notes |
+|---------|-----------|-------|
+| Sentence correction | 400 | Low temp (0.2) for accuracy |
+| Vocab lesson (1 word) | ~1200 | Scales: 500 + (words × 700), max 6000 |
+| Quick lookup (topic) | 800 | No quiz, no session saved |
+| Review story | 600 | |
+| Daily topic | 1500 | |
 
 ---
 
 ## Roadmap
 
-| Phase | Feature                                        | Status       |
-|-------|------------------------------------------------|--------------|
-| 1     | Sentence correction + mistake history          | ✅ Done       |
-| 2     | Vocab Builder (AI word breakdown + quiz)       | ✅ Done       |
-| 3     | Words Review + Word Bank + Flashcards          | ✅ Done       |
-| 3b    | Daily Topic (dialog/story + vocab summary)     | ✅ Done       |
-| 4     | Spaced repetition (SM-2, Due Today queue)      | ✅ Done       |
-| 5     | Auth / multi-user                              | Later        |
+| Feature | Status |
+|---------|--------|
+| Sentence Check + history | ✅ |
+| Vocabulary Builder with full word breakdown | ✅ |
+| Daily Topic (dialog / story / Aussie mode) | ✅ |
+| Inline text-selection lookup in Topic | ✅ |
+| SM-2 spaced repetition (Due Today queue) | ✅ |
+| Selectable flashcard sessions | ✅ |
+| Progress dashboard + activity heatmap | ✅ |
+| Text-to-speech (en-AU) for words and stories | ✅ |
+| Multi-user auth | ✅ |
+| Writing practice tab | Planned |
+| Export word bank (CSV / Anki) | Planned |
