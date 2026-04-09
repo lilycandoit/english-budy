@@ -124,29 +124,29 @@ export function SentenceCheck() {
       {result && (
         <div className="space-y-2">
           <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
-            <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-1">You wrote</p>
-            <p className="text-sm text-slate-700">{result.originalText}</p>
+            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1">You wrote</p>
+            <p className="text-sm text-slate-800">{result.originalText}</p>
           </div>
 
           <div className="rounded-xl border border-green-200 bg-green-50 p-4">
             <div className="flex items-center gap-2 mb-1">
-              <p className="text-xs font-semibold text-green-600 uppercase tracking-wide">Corrected</p>
+              <p className="text-xs font-semibold text-green-700 uppercase tracking-wide">Corrected</p>
               <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${TYPE_LABELS[result.mistakeType]?.color}`}>
                 {TYPE_LABELS[result.mistakeType]?.label}
               </span>
             </div>
-            <p className="text-sm text-slate-700">{result.correctedText}</p>
+            <p className="text-sm text-slate-800">{result.correctedText}</p>
             {result.explanation && result.explanation !== "Looks good!" && (
-              <p className="text-xs text-slate-500 mt-1.5">💡 {result.explanation}</p>
+              <p className="text-xs text-slate-600 mt-1.5">💡 {result.explanation}</p>
             )}
           </div>
 
           {result.naturalText && result.naturalText !== result.correctedText && (
             <div className="rounded-xl border border-teal-200 bg-teal-50 p-4">
-              <p className="text-xs font-semibold text-teal-600 uppercase tracking-wide mb-1">Native speaker</p>
-              <p className="text-sm text-slate-700">{result.naturalText}</p>
+              <p className="text-xs font-semibold text-teal-700 uppercase tracking-wide mb-1">Native speaker</p>
+              <p className="text-sm text-slate-800">{result.naturalText}</p>
               {result.naturalnessTip && (
-                <p className="text-xs text-slate-500 mt-1.5">✨ {result.naturalnessTip}</p>
+                <p className="text-xs text-slate-600 mt-1.5">✨ {result.naturalnessTip}</p>
               )}
             </div>
           )}
@@ -213,13 +213,13 @@ export function SentenceCheck() {
                   </button>
                 </div>
 
-                <p className="text-slate-500 line-through text-xs mb-1">{m.originalText}</p>
-                <p className="text-slate-700">{m.correctedText}</p>
+                <p className="text-slate-400 line-through text-xs mb-1">{m.originalText}</p>
+                <p className="text-slate-800 text-sm">{m.correctedText}</p>
                 {m.naturalText && m.naturalText !== m.correctedText && (
                   <p className="text-teal-700 mt-1 text-xs">💬 {m.naturalText}</p>
                 )}
                 {m.explanation && m.explanation !== "Looks good!" && (
-                  <p className="text-slate-400 text-xs mt-1">💡 {m.explanation}</p>
+                  <p className="text-slate-500 text-xs mt-1">💡 {m.explanation}</p>
                 )}
               </div>
             ))}
