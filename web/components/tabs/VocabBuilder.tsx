@@ -83,7 +83,7 @@ export function VocabBuilder() {
     if (res.ok) setPastSessions(await res.json());
   }
 
-  async function handleGenerate(e: React.FormEvent) {
+  async function handleGenerate(e: React.SyntheticEvent) {
     e.preventDefault();
     if (!input.trim()) return;
     setLoading(true);
@@ -110,7 +110,7 @@ export function VocabBuilder() {
     loadSessions();
   }
 
-  async function handleSubmitQuiz(e: React.FormEvent) {
+  async function handleSubmitQuiz(e: React.SyntheticEvent) {
     e.preventDefault();
     if (!result) return;
     setQuizSubmitting(true);

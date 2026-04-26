@@ -202,7 +202,7 @@ export function DailyTopic() {
               key={f.id}
               type="button"
               onClick={() => setFormat(f.id)}
-              className={`px-4 py-2 rounded-xl text-sm font-medium border transition-colors ${
+              className={`px-3 py-2 rounded-xl text-xs sm:text-sm font-medium border transition-colors ${
                 format === f.id
                   ? f.id === "aussie"
                     ? "bg-amber-500 text-white border-amber-500"
