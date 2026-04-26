@@ -28,7 +28,7 @@ export function TabShell() {
           <button
             key={tab.id}
             onClick={() => setActive(tab.id)}
-            className={`flex items-center gap-1.5 px-4 py-3 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${
+            className={`flex-1 flex items-center justify-center gap-1.5 px-2 py-3 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${
               active === tab.id
                 ? "border-blue-600 text-blue-600"
                 : "border-transparent text-slate-500 hover:text-slate-800 hover:border-slate-300"

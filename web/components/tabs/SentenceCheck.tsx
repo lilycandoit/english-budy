@@ -114,7 +114,7 @@ export function SentenceCheck() {
         <button
           type="submit"
           disabled={loading || !input.trim()}
-          className="bg-blue-600 text-white rounded-xl px-5 py-2.5 text-sm font-medium hover:bg-blue-700 disabled:opacity-50 transition-colors"
+          className="w-full sm:w-auto sm:mx-auto sm:block bg-blue-600 text-white rounded-xl px-5 py-2.5 text-sm font-medium hover:bg-blue-700 disabled:opacity-50 transition-colors"
         >
           {loading ? "Checking…" : "Check sentence"}
         </button>
@@ -170,11 +170,11 @@ export function SentenceCheck() {
       )}
 
       {/* History */}
-      {history.length > 0 && (
+      {stats && stats.total > 0 && (
         <div>
-          <div className="flex items-center justify-between mb-3">
+          <div className="mb-3 space-y-2">
             <h3 className="text-sm font-semibold text-slate-700">History</h3>
-            <div className="flex gap-1">
+            <div className="flex flex-wrap gap-1">
               {["all", "grammar", "spelling", "punctuation", "none"].map((type) => (
                 <button
                   key={type}
@@ -191,10 +191,13 @@ export function SentenceCheck() {
             </div>
           </div>
 
-          <div className="space-y-2">
+          <div className="space-y-2 max-h-[32rem] overflow-y-auto pr-0.5">
+            {history.length === 0 && (
+              <p className="text-sm text-slate-400 py-4 text-center">No entries for this filter.</p>
+            )}
             {history.map((m) => (
               <div key={m.id} className="border border-slate-200 rounded-xl p-4 text-sm">
-                <div className="flex items-start justify-between gap-2 mb-2">
+                <div className="flex items-start justify-between gap-2 mb-3">
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${TYPE_LABELS[m.mistakeType]?.color}`}>
                       {TYPE_LABELS[m.mistakeType]?.label}
@@ -213,13 +216,13 @@ export function SentenceCheck() {
                   </button>
                 </div>
 
-                <p className="text-slate-400 line-through text-xs mb-1">{m.originalText}</p>
-                <p className="text-slate-800 text-sm">{m.correctedText}</p>
+                <p className="text-slate-500 line-through text-xs leading-relaxed">{m.originalText}</p>
+                <p className="text-slate-800 text-sm mt-2 leading-relaxed">{m.correctedText}</p>
                 {m.naturalText && m.naturalText !== m.correctedText && (
-                  <p className="text-teal-700 mt-1 text-xs">💬 {m.naturalText}</p>
+                  <p className="text-teal-700 mt-2 text-xs leading-relaxed">💬 {m.naturalText}</p>
                 )}
                 {m.explanation && m.explanation !== "Looks good!" && (
-                  <p className="text-slate-500 text-xs mt-1">💡 {m.explanation}</p>
+                  <p className="text-slate-600 text-xs mt-2 leading-relaxed">💡 {m.explanation}</p>
                 )}
               </div>
             ))}
