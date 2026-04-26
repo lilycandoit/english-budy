@@ -47,14 +47,16 @@ export function WordCard({
   return (
     <div className="border border-slate-200 rounded-2xl p-4 bg-white">
       {/* Header */}
-      <div className="flex items-baseline gap-3 mb-4">
-        <h3 className="text-xl font-bold text-slate-800">{w.word}</h3>
-        {w.ipa && <span className="text-sm text-slate-400 font-mono">{w.ipa}</span>}
-        {w.stress && <span className="text-xs bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full">{w.stress}</span>}
+      <div className="flex items-start justify-between gap-2 mb-4">
+        <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
+          <h3 className="text-lg sm:text-xl font-bold text-slate-800">{w.word}</h3>
+          {w.ipa && <span className="text-sm text-slate-400 font-mono">{w.ipa}</span>}
+          {w.stress && <span className="text-xs bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full whitespace-nowrap">{w.stress}</span>}
+        </div>
         <button
           onClick={() => speaking ? stop() : speak(w.word)}
           title={speaking ? "Stop" : "Listen"}
-          className="ml-auto text-slate-300 hover:text-blue-500 transition-colors text-base"
+          className="flex-shrink-0 text-slate-300 hover:text-blue-500 transition-colors text-base mt-0.5"
         >
           {speaking ? "⏹" : "🔊"}
         </button>

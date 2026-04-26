@@ -304,10 +304,10 @@ export function VocabBuilder() {
       {/* ── Word Bank ── */}
       {wordBank.length > 0 && (
         <div>
-          <div className="flex items-center justify-between mb-3">
-            <div>
-              <h3 className="text-sm font-semibold text-slate-700">Word Bank</h3>
-              <p className="text-xs text-slate-400 mt-0.5">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-3">
+            <div className="flex items-center gap-2 flex-wrap min-w-0">
+              <h3 className="text-sm font-semibold text-slate-700 whitespace-nowrap">Word Bank</h3>
+              <p className="text-xs text-slate-400 whitespace-nowrap">
                 {wbStats.total} words · {wbStats.thisWeek} this week · {wbStats.today} today
               </p>
             </div>
@@ -316,7 +316,7 @@ export function VocabBuilder() {
               value={wbSearch}
               onChange={(e) => setWbSearch(e.target.value)}
               placeholder="Search…"
-              className="border border-slate-200 rounded-lg px-3 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500 w-32"
+              className="w-full sm:w-32 border border-slate-200 rounded-lg px-3 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
 
