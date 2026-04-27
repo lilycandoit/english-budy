@@ -12,7 +12,7 @@ Built with Next.js, PostgreSQL, and Groq AI. Designed for Australian English lea
 |-----|-------------|
 | **Sentence Check** | Write a sentence → AI corrects grammar/spelling/punctuation → shows a native-speaker rewrite with a naturalness tip → history and stats saved |
 | **Vocabulary Builder** | Enter words or phrases (including slang and idioms) → AI returns full breakdown: IPA, stress, all parts of speech with inflections, meanings per POS, 6–8 synonyms, antonyms, collocations, 4–5 Australian English examples + 5-question quiz → click any tag to drill down into that word |
-| **Daily Topic** | Pick a topic → AI writes a dialog, story, or Aussie-mode conversation → 12 vocabulary words highlighted → **select any text to look it up instantly** (saves to Word Bank automatically) → 🔊 listen to the story read aloud |
+| **Daily Topic** | Pick a topic + format (Dialog / Story) + level (Everyday / Natural / Advanced) → optional Aussie flavour → AI generates content with 12 vocabulary words highlighted → **🔄 Fresh version** regenerates with different phrases (excludes all previously seen vocab for that topic) → **select any text to look it up instantly** → 🔊 listen aloud |
 | **Words Review** | Select words by date → **🃏 start flashcards** for chosen words only OR **📖 generate a review story** → SM-2 spaced repetition schedules "Due Today" reviews automatically |
 | **Progress** | Day streak 🔥, words learned, mastery breakdown (new/learning/mastered), sentence check stats, quiz average, 4-week GitHub-style activity heatmap |
 | **Word Bank** | Auto-tracks every studied word (max 200) — searchable chips with full expandable detail card including all POS forms, visible on the Vocabulary Builder tab |
@@ -28,6 +28,7 @@ Built with Next.js, PostgreSQL, and Groq AI. Designed for Australian English lea
 | Auth | NextAuth.js (credentials + OAuth) |
 | Database | PostgreSQL (Neon) · Prisma ORM |
 | AI | Groq API — `llama-3.3-70b-versatile` (user supplies own API key) |
+| Text-to-Speech | Microsoft Edge TTS — `en-AU-NatashaNeural` (free, no API key) · browser `speechSynthesis` fallback |
 | Styling | Tailwind CSS |
 | Deployment | Vercel |
 
@@ -46,6 +47,7 @@ web/
 │   │   ├── review/          Review Story + words-by-date
 │   │   ├── flashcards/      SM-2 due queue + review submission
 │   │   ├── stats/           Progress dashboard aggregation
+│   │   ├── tts/             Edge TTS proxy (en-AU-NatashaNeural)
 │   │   └── user/            Groq API key management
 │   └── dashboard/           Main app page
 ├── components/
@@ -63,7 +65,7 @@ web/
 │   ├── db.ts                Prisma client singleton
 │   ├── groq.ts              Groq API wrapper
 │   ├── encrypt.ts           AES-256-GCM for stored API keys
-│   └── useSpeech.ts         Browser TTS hook (en-AU)
+│   └── useSpeech.ts         TTS hook — Edge TTS with browser speechSynthesis fallback
 └── prisma/
     └── schema.prisma
 ```
@@ -142,7 +144,7 @@ WordSchedule      — SM-2 schedule (easeFactor, intervalDays, repetitions, next
 | Vocab lesson (1 word) | ~1200 | Scales: 500 + (words × 700), max 6000 |
 | Quick lookup (topic) | 800 | No quiz, no session saved |
 | Review story | 600 | |
-| Daily topic | 1500 | |
+| Daily topic | 2000 | Higher temp (0.85) for variety; exclusion list in prompt for Fresh version |
 
 ---
 
@@ -152,7 +154,10 @@ WordSchedule      — SM-2 schedule (easeFactor, intervalDays, repetitions, next
 |---------|--------|
 | Sentence Check + history | ✅ |
 | Vocabulary Builder with full word breakdown | ✅ |
-| Daily Topic (dialog / story / Aussie mode) | ✅ |
+| Daily Topic — Dialog / Story formats | ✅ |
+| Daily Topic — Level selector (Everyday / Natural / Advanced) | ✅ |
+| Daily Topic — 🔄 Fresh version with phrase exclusion | ✅ |
+| Daily Topic — optional Aussie flavour add-on | ✅ |
 | Inline text-selection lookup in Topic | ✅ |
 | SM-2 spaced repetition (Due Today queue) | ✅ |
 | Selectable flashcard sessions | ✅ |
