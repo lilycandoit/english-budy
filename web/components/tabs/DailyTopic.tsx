@@ -12,10 +12,12 @@ interface TopicWord {
 
 interface TopicResult {
   id: string;
+  topic: string;
   title: string;
   content: string;
   words: TopicWord[];
   format: string;
+  level?: string;
 }
 
 function cleanWord(w: TopicWord): TopicWord {
@@ -32,12 +34,31 @@ const SUGGESTIONS = [
 ];
 
 const FORMAT_OPTIONS = [
-  { id: "dialog", label: "💬 Dialog",      desc: "Natural conversation" },
-  { id: "story",  label: "📖 Story",       desc: "Natural narrative" },
-  { id: "aussie", label: "🦘 Aussie Mode", desc: "Australian slang & expressions" },
+  { id: "dialog", label: "💬 Dialog" },
+  { id: "story",  label: "📖 Story" },
 ] as const;
 
-type Format = "dialog" | "story" | "aussie";
+const LEVEL_OPTIONS = [
+  { id: "everyday", label: "🌱 Everyday", desc: "Common everyday expressions" },
+  { id: "natural",  label: "📈 Natural",  desc: "Richer, more varied language" },
+  { id: "advanced", label: "🎓 Advanced", desc: "Sophisticated expressions" },
+] as const;
+
+type Format = "dialog" | "story";
+type Level = "everyday" | "natural" | "advanced";
+
+function formatLabel(format: string): string {
+  const isAussie = format.includes("aussie");
+  const base = format.replace("-aussie", "");
+  const baseLabel = base === "dialog" ? "💬 Dialog" : "📖 Story";
+  return isAussie ? `${baseLabel} · 🦘 Aussie` : baseLabel;
+}
+
+function levelLabel(level?: string): string {
+  if (level === "natural") return "📈 Natural";
+  if (level === "advanced") return "🎓 Advanced";
+  return "🌱 Everyday";
+}
 
 /** Render a single line with **word** markers highlighted */
 function HighlightLine({ text }: { text: string }) {
@@ -90,6 +111,8 @@ function HighlightedContent({ content }: { content: string }) {
 export function DailyTopic() {
   const [topic, setTopic] = useState("");
   const [format, setFormat] = useState<Format>("dialog");
+  const [level, setLevel] = useState<Level>("everyday");
+  const [aussieMode, setAussieMode] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [result, setResult] = useState<TopicResult | null>(null);
@@ -106,7 +129,6 @@ export function DailyTopic() {
   const popupRef = useRef<HTMLButtonElement>(null);
 
   function handleMouseUp(e: React.MouseEvent) {
-    // Ignore clicks inside the popup button itself
     if (popupRef.current?.contains(e.target as Node)) return;
     const sel = window.getSelection();
     const text = sel?.toString().trim() ?? "";
@@ -132,7 +154,6 @@ export function DailyTopic() {
 
   useEffect(() => { loadPastTopics(); }, []);
 
-  // Dismiss popup on click outside
   useEffect(() => {
     function onMouseDown(e: MouseEvent) {
       if (!popupRef.current?.contains(e.target as Node)) setPopup(null);
@@ -146,17 +167,14 @@ export function DailyTopic() {
     if (res.ok) setPastTopics(await res.json());
   }
 
-  async function handleGenerate(e: React.FormEvent) {
-    e.preventDefault();
-    if (!topic.trim()) return;
+  async function generate(excludedPhrases: string[] = []) {
     setLoading(true);
     setError("");
-    setResult(null);
 
     const res = await fetch("/api/topic/generate", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ topic, format }),
+      body: JSON.stringify({ topic: topic.trim(), format, level, aussieMode, excludedPhrases }),
     });
 
     const data = await res.json();
@@ -164,8 +182,26 @@ export function DailyTopic() {
 
     if (!res.ok) { setError(data.error || "Something went wrong"); return; }
 
-    setResult(data);
+    setResult({ ...data, topic: topic.trim() });
     loadPastTopics();
+  }
+
+  function handleGenerate(e: React.SyntheticEvent) {
+    e.preventDefault();
+    if (!topic.trim()) return;
+    setResult(null);
+    generate();
+  }
+
+  function handleFreshVersion() {
+    if (!result || !topic.trim()) return;
+    // Collect all phrases seen for this topic across all past sessions + current result
+    const pastWords = pastTopics
+      .filter(s => s.topic?.toLowerCase() === topic.trim().toLowerCase())
+      .flatMap(s => s.words.map(w => cleanWord(w).word));
+    const currentWords = result.words.map(w => cleanWord(w).word);
+    const excluded = [...new Set([...currentWords, ...pastWords])];
+    generate(excluded);
   }
 
   function toggleAccordion(id: string) {
@@ -195,32 +231,64 @@ export function DailyTopic() {
         </div>
       </div>
 
-      {/* ── Format toggle + input ── */}
+      {/* ── Controls + input ── */}
       <form onSubmit={handleGenerate} className="space-y-3">
-        <div className="flex flex-wrap gap-2">
-          {FORMAT_OPTIONS.map((f) => (
-            <button
-              key={f.id}
-              type="button"
-              onClick={() => setFormat(f.id)}
-              className={`px-3 py-2 rounded-xl text-xs sm:text-sm font-medium border transition-colors ${
-                format === f.id
-                  ? f.id === "aussie"
-                    ? "bg-amber-500 text-white border-amber-500"
-                    : "bg-blue-600 text-white border-blue-600"
-                  : "border-slate-200 text-slate-600 hover:border-slate-300"
-              }`}
-            >
-              {f.label}
-            </button>
-          ))}
-        </div>
-        {format === "aussie" && (
-          <p className="text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
-            🦘 Aussie Mode uses Australian slang and expressions — great once you feel confident with standard English first!
-          </p>
-        )}
 
+        {/* Format row */}
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-slate-400 w-12 flex-shrink-0">Format</span>
+          <div className="flex gap-2">
+            {FORMAT_OPTIONS.map((f) => (
+              <button
+                key={f.id}
+                type="button"
+                onClick={() => setFormat(f.id)}
+                className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ${
+                  format === f.id
+                    ? "bg-blue-600 text-white border-blue-600"
+                    : "border-slate-200 text-slate-600 hover:border-slate-300"
+                }`}
+              >
+                {f.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Level row */}
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-slate-400 w-12 flex-shrink-0">Level</span>
+          <div className="flex gap-2 flex-wrap">
+            {LEVEL_OPTIONS.map((l) => (
+              <button
+                key={l.id}
+                type="button"
+                onClick={() => setLevel(l.id)}
+                title={l.desc}
+                className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ${
+                  level === l.id
+                    ? "bg-blue-600 text-white border-blue-600"
+                    : "border-slate-200 text-slate-600 hover:border-slate-300"
+                }`}
+              >
+                {l.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Aussie checkbox */}
+        <label className="flex items-center gap-2 cursor-pointer w-fit pl-14">
+          <input
+            type="checkbox"
+            checked={aussieMode}
+            onChange={(e) => setAussieMode(e.target.checked)}
+            className="accent-amber-500 w-3.5 h-3.5"
+          />
+          <span className="text-xs text-slate-500">+ 🦘 Aussie flavour</span>
+        </label>
+
+        {/* Topic input + generate */}
         <div className="flex gap-2">
           <input
             type="text"
@@ -258,13 +326,22 @@ export function DailyTopic() {
           <div className="bg-slate-50 px-5 py-3 border-b border-slate-200">
             <div className="flex items-center justify-between gap-2">
               <span className="text-xs font-medium text-slate-400 uppercase tracking-wide">
-                {result.format === "dialog" ? "💬 Dialog" : result.format === "story" ? "📖 Story" : "🦘 Aussie Mode"}
+                {formatLabel(result.format)} · {levelLabel(result.level)}
               </span>
-              {result.format === "story" && (
+              <div className="flex items-center gap-3">
+                {/* Fresh version button */}
+                <button
+                  onClick={handleFreshVersion}
+                  disabled={loading}
+                  title="Generate a new version using different phrases"
+                  className="text-slate-400 hover:text-blue-500 transition-colors text-xs font-medium disabled:opacity-40"
+                >
+                  🔄 Fresh version
+                </button>
+                {/* Listen button (story + dialog) */}
                 <button
                   onClick={() => {
                     if (speaking) { stop(); return; }
-                    // Strip **markers** and speaker labels (e.g. "Alex: ") for cleaner reading
                     const clean = result.content
                       .replace(/\*\*/g, "")
                       .replace(/^[A-Za-z]+:\s*/gm, "");
@@ -275,7 +352,7 @@ export function DailyTopic() {
                 >
                   {speaking ? "⏹ Stop" : "🔊 Listen"}
                 </button>
-              )}
+              </div>
             </div>
             <h3 className="font-semibold text-slate-800 mt-0.5">{result.title}</h3>
           </div>
@@ -318,7 +395,7 @@ export function DailyTopic() {
                       <span className="text-slate-400 mx-2">—</span>
                       <span className="text-slate-600">{w.meaning}</span>
                       {w.example && (
-                        <p className="text-slate-400 italic text-xs mt-0.5 ml-0">
+                        <p className="text-slate-400 italic text-xs mt-0.5">
                           e.g. {w.example}
                         </p>
                       )}
@@ -353,7 +430,9 @@ export function DailyTopic() {
                   className="w-full text-left px-4 py-3 hover:bg-slate-50 transition-colors"
                 >
                   <div className="flex items-center gap-2 text-xs text-slate-400 mb-1">
-                    <span>{s.format === "dialog" ? "💬 Dialog" : s.format === "story" ? "📖 Story" : "🦘 Aussie Mode"}</span>
+                    <span>{formatLabel(s.format)}</span>
+                    <span>·</span>
+                    <span>{levelLabel(s.level)}</span>
                   </div>
                   <div className="flex items-start justify-between gap-2">
                     <span className="font-medium text-sm text-slate-700">{s.title}</span>

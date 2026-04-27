@@ -18,6 +18,7 @@ export async function GET() {
       id: s.id,
       topic: s.topic,
       format: s.format,
+      level: s.level ?? "everyday",
       title: s.title,
       content: s.content,
       words: JSON.parse(s.words),

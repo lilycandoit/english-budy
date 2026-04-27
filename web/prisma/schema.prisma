@@ -117,7 +117,8 @@ model TopicSession {
   id        String   @id @default(cuid())
   userId    String
   topic     String
-  format    String   // "dialog" | "story"
+  format    String   // "dialog" | "story" | "dialog-aussie" | "story-aussie"
+  level     String?  // "everyday" | "natural" | "advanced" — null = everyday (legacy)
   title     String
   content   String   @db.Text
   words     String   @db.Text // JSON: TopicWord[]
