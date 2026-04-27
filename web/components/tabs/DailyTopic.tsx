@@ -95,6 +95,7 @@ export function DailyTopic() {
   const [result, setResult] = useState<TopicResult | null>(null);
   const [pastTopics, setPastTopics] = useState<TopicResult[]>([]);
   const [openId, setOpenId] = useState<string | null>(null);
+  const [showAll, setShowAll] = useState(false);
 
   const { speak, stop, speaking } = useSpeech();
 
@@ -333,9 +334,19 @@ export function DailyTopic() {
       {/* ── Past Topics accordion ── */}
       {pastTopics.length > 0 && (
         <div>
-          <h3 className="text-sm font-semibold text-slate-700 mb-3">Past Topics</h3>
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-sm font-semibold text-slate-700">Past Topics</h3>
+            {pastTopics.length > 6 && (
+              <button
+                onClick={() => setShowAll((v) => !v)}
+                className="text-xs text-blue-600 hover:underline"
+              >
+                {showAll ? "Show less" : `Show all (${pastTopics.length})`}
+              </button>
+            )}
+          </div>
           <div className="space-y-2">
-            {pastTopics.map((s) => (
+            {(showAll ? pastTopics : pastTopics.slice(0, 6)).map((s) => (
               <div key={s.id} className="border border-slate-200 rounded-xl overflow-hidden">
                 <button
                   onClick={() => toggleAccordion(s.id)}
