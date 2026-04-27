@@ -42,9 +42,10 @@ export const authOptions: NextAuthOptions = {
     async jwt({ token, user, trigger }) {
       if (user) {
         token.id = user.id;
-        token.hasGroqKey = (user as unknown as { hasGroqKey: boolean }).hasGroqKey;
+        const u = user as unknown as { hasGroqKey: boolean };
+        token.hasGroqKey = u.hasGroqKey;
       }
-      // Refresh hasGroqKey on session update (after user saves their key)
+      // Refresh key flags on session update (after user saves/removes a key)
       if (trigger === "update") {
         const dbUser = await prisma.user.findUnique({ where: { id: token.id as string } });
         token.hasGroqKey = !!dbUser?.groqApiKey;
