@@ -38,8 +38,7 @@ export function SentenceCheck() {
   const [error, setError] = useState("");
 
   useEffect(() => {
-    loadHistory();
-    loadStats();
+    Promise.all([loadHistory(), loadStats()]);
   }, []);
 
   async function loadHistory(type = filter) {

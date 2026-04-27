@@ -29,11 +29,26 @@ export async function GET() {
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const userId = session.user.id;
 
-  const [words, mistakes, topics, flashcardReviews, schedules, quizResults] = await Promise.all([
-    prisma.wordEntry.findMany({ where: { userId }, select: { createdAt: true } }),
-    prisma.mistake.findMany({ where: { userId }, select: { mistakeType: true, createdAt: true } }),
-    prisma.topicSession.findMany({ where: { userId }, select: { createdAt: true } }),
-    prisma.flashcardReview.findMany({ where: { userId }, select: { result: true, createdAt: true } }),
+  const now = new Date();
+  const weekAgo  = new Date(now); weekAgo.setDate(weekAgo.getDate() - 7);
+  const dayAgo   = new Date(now); dayAgo.setDate(dayAgo.getDate() - 1);
+  const monthAgo = new Date(now); monthAgo.setDate(monthAgo.getDate() - 28);
+
+  const [
+    wordTotal, wordThisWeek, wordToday, wordsRecent,
+    mistakeStats, mistakesRecent,
+    topicTotal, topicsRecent,
+    flashcardReviews, schedules, quizResults,
+  ] = await Promise.all([
+    prisma.wordEntry.count({ where: { userId } }),
+    prisma.wordEntry.count({ where: { userId, createdAt: { gte: weekAgo } } }),
+    prisma.wordEntry.count({ where: { userId, createdAt: { gte: dayAgo } } }),
+    prisma.wordEntry.findMany({ where: { userId, createdAt: { gte: monthAgo } }, select: { createdAt: true } }),
+    prisma.mistake.groupBy({ by: ["mistakeType"], where: { userId }, _count: true }),
+    prisma.mistake.findMany({ where: { userId, createdAt: { gte: monthAgo } }, select: { mistakeType: true, createdAt: true } }),
+    prisma.topicSession.count({ where: { userId } }),
+    prisma.topicSession.findMany({ where: { userId, createdAt: { gte: monthAgo } }, select: { createdAt: true } }),
+    prisma.flashcardReview.findMany({ where: { userId, createdAt: { gte: monthAgo } }, select: { result: true, createdAt: true } }),
     prisma.wordSchedule.findMany({ where: { userId }, select: { repetitions: true } }),
     prisma.quizResult.findMany({
       where: { session: { userId } },
@@ -43,20 +58,13 @@ export async function GET() {
 
   // ── Streak ────────────────────────────────────────────────────────────────
   const activityDates = new Set<string>();
-  for (const r of [...words, ...mistakes, ...topics, ...flashcardReviews]) {
+  for (const r of [...wordsRecent, ...mistakesRecent, ...topicsRecent, ...flashcardReviews]) {
     activityDates.add(toDateStr(r.createdAt));
   }
   const streak = calcStreak(activityDates);
 
   // ── Word stats ────────────────────────────────────────────────────────────
-  const now = new Date();
-  const weekAgo = new Date(now); weekAgo.setDate(weekAgo.getDate() - 7);
-  const dayAgo  = new Date(now); dayAgo.setDate(dayAgo.getDate() - 1);
-  const wordStats = {
-    total:    words.length,
-    thisWeek: words.filter(w => w.createdAt >= weekAgo).length,
-    today:    words.filter(w => w.createdAt >= dayAgo).length,
-  };
+  const wordStats = { total: wordTotal, thisWeek: wordThisWeek, today: wordToday };
 
   // ── Mastery (SM-2 repetitions) ────────────────────────────────────────────
   const mastery = { new: 0, learning: 0, mastered: 0 };
@@ -65,14 +73,14 @@ export async function GET() {
     else if (s.repetitions <= 2)  mastery.learning++;
     else                          mastery.mastered++;
   }
-  // Words in word bank but not yet reviewed are "new"
-  mastery.new += Math.max(0, words.length - schedules.length);
+  mastery.new += Math.max(0, wordTotal - schedules.length);
 
   // ── Sentence stats ────────────────────────────────────────────────────────
-  const sentenceStats = { total: mistakes.length, grammar: 0, spelling: 0, punctuation: 0, none: 0 };
-  for (const m of mistakes) {
-    const t = m.mistakeType as keyof typeof sentenceStats;
-    if (t in sentenceStats) (sentenceStats[t] as number)++;
+  const mistakeTotal = mistakeStats.reduce((sum, g) => sum + g._count, 0);
+  const sentenceStats = { total: mistakeTotal, grammar: 0, spelling: 0, punctuation: 0, none: 0 };
+  for (const g of mistakeStats) {
+    const t = g.mistakeType as keyof typeof sentenceStats;
+    if (t in sentenceStats) (sentenceStats[t] as number) += g._count;
   }
 
   // ── Quiz average ──────────────────────────────────────────────────────────
@@ -89,9 +97,9 @@ export async function GET() {
     const next = new Date(d); next.setDate(next.getDate() + 1);
     activity.push({
       date:      toDateStr(d),
-      words:     words.filter(w => w.createdAt >= d && w.createdAt < next).length,
-      sentences: mistakes.filter(m => m.createdAt >= d && m.createdAt < next).length,
-      topics:    topics.filter(t => t.createdAt >= d && t.createdAt < next).length,
+      words:     wordsRecent.filter(w => w.createdAt >= d && w.createdAt < next).length,
+      sentences: mistakesRecent.filter(m => m.createdAt >= d && m.createdAt < next).length,
+      topics:    topicsRecent.filter(t => t.createdAt >= d && t.createdAt < next).length,
     });
   }
 
@@ -100,7 +108,7 @@ export async function GET() {
     words: wordStats,
     mastery,
     sentences: sentenceStats,
-    topics: topics.length,
+    topics: topicTotal,
     quizAverage,
     activity,
   });
