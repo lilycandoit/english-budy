@@ -51,7 +51,7 @@ export function SentenceCheck() {
     if (res.ok) setStats(await res.json());
   }
 
-  async function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.SyntheticEvent) {
     e.preventDefault();
     if (!input.trim()) return;
     setLoading(true);
@@ -102,7 +102,7 @@ export function SentenceCheck() {
           onKeyDown={(e) => {
             if (e.key === "Enter" && !e.shiftKey) {
               e.preventDefault();
-              if (input.trim() && !loading) handleSubmit(e as unknown as React.FormEvent);
+              if (input.trim() && !loading) handleSubmit(e as unknown as React.SyntheticEvent);
             }
           }}
           rows={3}
