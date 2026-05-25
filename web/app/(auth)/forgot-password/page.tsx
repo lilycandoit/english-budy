@@ -1,39 +1,42 @@
 "use client";
 
 import { useState } from "react";
-import { signIn } from "next-auth/react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
 
-export default function LoginPage() {
+export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const router = useRouter();
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
+    setMessage("");
     setError("");
 
-    const res = await signIn("credentials", { email, password, redirect: false });
+    const res = await fetch("/api/auth/forgot-password", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email }),
+    });
+    const data = await res.json();
 
     setLoading(false);
-    if (res?.error) {
-      setError("Invalid email or password");
-    } else {
-      router.push("/dashboard");
-      router.refresh();
+    if (!res.ok) {
+      setError(data.error || "Could not send reset email");
+      return;
     }
+
+    setMessage(data.message || "If an account exists for that email, a reset link has been sent.");
   }
 
   return (
     <div className="min-h-screen flex items-center justify-center px-4">
       <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-8 w-full max-w-sm">
         <div className="mb-6">
-          <h1 className="text-2xl font-bold text-slate-800">Welcome back</h1>
-          <p className="text-slate-500 text-sm mt-1">Sign in to Daily English Buddy</p>
+          <h1 className="text-2xl font-bold text-slate-800">Reset password</h1>
+          <p className="text-slate-500 text-sm mt-1">Enter your account email to receive a reset link.</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -49,23 +52,7 @@ export default function LoginPage() {
             />
           </div>
 
-          <div>
-            <div className="flex items-center justify-between mb-1">
-              <label className="block text-sm font-medium text-slate-700">Password</label>
-              <Link href="/forgot-password" className="text-xs text-blue-600 hover:underline font-medium">
-                Forgot?
-              </Link>
-            </div>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder="••••••••"
-            />
-          </div>
-
+          {message && <p className="text-green-600 text-sm">{message}</p>}
           {error && <p className="text-red-500 text-sm">{error}</p>}
 
           <button
@@ -73,14 +60,14 @@ export default function LoginPage() {
             disabled={loading}
             className="w-full bg-blue-600 text-white rounded-lg py-2.5 text-sm font-medium hover:bg-blue-700 disabled:opacity-50 transition-colors"
           >
-            {loading ? "Signing in…" : "Sign in"}
+            {loading ? "Sending…" : "Send reset link"}
           </button>
         </form>
 
         <p className="text-center text-sm text-slate-500 mt-5">
-          Don&apos;t have an account?{" "}
-          <Link href="/signup" className="text-blue-600 hover:underline font-medium">
-            Sign up
+          Remembered it?{" "}
+          <Link href="/login" className="text-blue-600 hover:underline font-medium">
+            Sign in
           </Link>
         </p>
       </div>

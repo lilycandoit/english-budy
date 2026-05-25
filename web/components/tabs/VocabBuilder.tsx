@@ -49,6 +49,8 @@ export function VocabBuilder() {
 
   const [quizAnswers, setQuizAnswers] = useState<Record<number, string>>({});
   const [quizSubmitting, setQuizSubmitting] = useState(false);
+  const [quizLoading, setQuizLoading] = useState(false);
+  const [quizError, setQuizError] = useState("");
   const [quizResult, setQuizResult] = useState<QuizFeedback | null>(null);
 
   const [wordBank, setWordBank] = useState<WbEntry[]>([]);
@@ -91,6 +93,7 @@ export function VocabBuilder() {
     setResult(null);
     setQuizAnswers({});
     setQuizResult(null);
+    setQuizError("");
     setDrillWord(null);
     setDrillData(null);
 
@@ -106,8 +109,33 @@ export function VocabBuilder() {
     if (!res.ok) { setError(data.error || "Something went wrong"); return; }
 
     setResult(data);
+    setInput("");
     loadWordBank();
     loadSessions();
+  }
+
+  async function handleGenerateQuiz() {
+    if (!result?.sessionId) return;
+    setQuizLoading(true);
+    setQuizError("");
+    setQuizAnswers({});
+    setQuizResult(null);
+
+    const res = await fetch("/api/learning/quiz", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ sessionId: result.sessionId }),
+    });
+
+    const data = await res.json();
+    setQuizLoading(false);
+
+    if (!res.ok) {
+      setQuizError(data.error || "Quiz generation failed");
+      return;
+    }
+
+    setResult((current) => current ? { ...current, quiz: data.quiz ?? [] } : current);
   }
 
   async function handleSubmitQuiz(e: React.SyntheticEvent) {
@@ -139,7 +167,7 @@ export function VocabBuilder() {
     const res = await fetch("/api/learning/generate", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ words: word }),
+      body: JSON.stringify({ words: word, quickLookup: true }),
     });
 
     setDrillLoading(false);
@@ -216,6 +244,28 @@ export function VocabBuilder() {
       )}
 
       {/* ── Quiz ── */}
+      {result && result.quiz.length === 0 && (
+        <div className="border border-slate-200 rounded-2xl p-5">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div>
+              <h3 className="text-sm font-semibold text-slate-700">Quiz</h3>
+              <p className="text-xs text-slate-400 mt-1">
+                Generate this only when you want to practise the word.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={handleGenerateQuiz}
+              disabled={quizLoading}
+              className="w-full sm:w-auto bg-blue-600 text-white rounded-xl px-5 py-2.5 text-sm font-medium hover:bg-blue-700 disabled:opacity-50 transition-colors"
+            >
+              {quizLoading ? "Generating quiz…" : "Generate quiz"}
+            </button>
+          </div>
+          {quizError && <p className="text-red-500 text-sm mt-3">{quizError}</p>}
+        </div>
+      )}
+
       {result && result.quiz.length > 0 && (
         <div className="border border-slate-200 rounded-2xl p-5">
           <h3 className="text-sm font-semibold text-slate-700 mb-4">
@@ -410,4 +460,3 @@ export function VocabBuilder() {
     </div>
   );
 }
-

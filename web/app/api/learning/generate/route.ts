@@ -38,15 +38,6 @@ function buildPrompt(words: string[]): string {
     `        "The committee needs to sanction the budget before we can proceed."\n` +
     `      ]\n` +
     `    }\n` +
-    `  ],\n` +
-    `  "quiz": [\n` +
-    `    {\n` +
-    `      "question": "What does 'sanction' mean as a noun?",\n` +
-    `      "options": ["option A", "option B", "option C", "option D"],\n` +
-    `      "answer": "option A",\n` +
-    `      "explanation": "Explanation of why this answer is correct.",\n` +
-    `      "word": "sanction"\n` +
-    `    }\n` +
     `  ]\n` +
     `}\n\n` +
     `Rules:\n` +
@@ -76,10 +67,7 @@ function buildPrompt(words: string[]): string {
     `- antonyms: 4–6 items (empty array [] if none apply)\n` +
     `- collocations: 8–10 natural phrases or collocations\n` +
     `- examples: 4–5 sentences using everyday Australian English (reckon, keen, arvo, no worries, mate, etc. where natural)\n` +
-    `- Generate exactly 5 quiz questions across the words/phrases\n` +
-    `- Each quiz question must have exactly 4 options\n` +
-    `- The "answer" field must exactly match one of the options\n` +
-    `- The "explanation" field: 1-2 sentences explaining why the correct answer is right`
+    `- Do not generate quiz questions in this response`
   );
 }
 
@@ -97,13 +85,14 @@ function buildQuickLookupPrompt(word: string): string {
 }
 
 async function upsertWordBank(userId: string, wordInfos: { word: string; [key: string]: unknown }[]) {
-  for (const w of wordInfos) {
-    await prisma.wordEntry.upsert({
+  await Promise.all(wordInfos.map((w) =>
+    prisma.wordEntry.upsert({
       where: { userId_word: { userId, word: w.word.toLowerCase() } },
       update: { wordInfo: JSON.stringify(w) },
       create: { userId, word: w.word.toLowerCase(), wordInfo: JSON.stringify(w) },
-    });
-  }
+    })
+  ));
+
   // Enforce 200-word cap — delete oldest if over
   const count = await prisma.wordEntry.count({ where: { userId } });
   if (count > 200) {
@@ -132,6 +121,31 @@ export async function POST(req: NextRequest) {
 
   if (!words.length) return NextResponse.json({ error: "No valid words found" }, { status: 400 });
 
+  if (!quickLookup) {
+    const cachedEntries = await prisma.wordEntry.findMany({
+      where: {
+        userId: session.user.id,
+        word: { in: words.map((w) => w.toLowerCase()) },
+      },
+    });
+    const cachedByWord = new Map(cachedEntries.map((entry) => [entry.word, entry]));
+    const allCached = words.every((word) => cachedByWord.has(word.toLowerCase()));
+
+    if (allCached) {
+      const wordInfos = words.map((word) => JSON.parse(cachedByWord.get(word.toLowerCase())!.wordInfo));
+      const learningSession = await prisma.learningSession.create({
+        data: {
+          userId: session.user.id,
+          words: JSON.stringify(words),
+          wordInfo: JSON.stringify(wordInfos),
+          quiz: null,
+        },
+      });
+
+      return NextResponse.json({ sessionId: learningSession.id, words: wordInfos, quiz: [], cached: true });
+    }
+  }
+
   let apiKey: string;
   try {
     apiKey = await getUserGroqKey(session.user.id);
@@ -150,11 +164,11 @@ export async function POST(req: NextRequest) {
         { role: "system", content: SYSTEM },
         { role: "user", content: prompt },
       ],
-      { max_tokens: quickLookup ? 800 : Math.min(500 + words.length * 700, 6000), temperature: 0.7 }
+      { max_tokens: quickLookup ? 800 : Math.min(450 + words.length * 550, 4800), temperature: 0.7 }
     );
     const parsed = extractJson(raw) as { words: unknown[]; quiz?: unknown[] };
     wordInfos = parsed.words ?? [];
-    quiz = parsed.quiz ?? [];
+    quiz = [];
   } catch (err) {
     return NextResponse.json({ error: "AI request failed. Please try again." }, { status: 502 });
   }
