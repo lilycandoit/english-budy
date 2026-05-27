@@ -2,7 +2,7 @@
 
 A personal AI English learning web app — correct your writing, build vocabulary, review words with flashcards, and learn from topic-based stories and dialogs every day.
 
-Built with Next.js, PostgreSQL, and Groq AI. Designed for Australian English learners.
+Built with Next.js, PostgreSQL, and Groq AI. Designed for Australian English practice, currently optimized for Vietnamese learners with a scalable native-language config.
 
 ---
 
@@ -11,9 +11,9 @@ Built with Next.js, PostgreSQL, and Groq AI. Designed for Australian English lea
 | Tab | What it does |
 |-----|-------------|
 | **Sentence Check** | Write a sentence → AI corrects grammar/spelling/punctuation → shows a native-speaker rewrite with a naturalness tip → history and stats saved |
-| **Vocabulary Builder** | Enter words or phrases (including slang and idioms) → AI returns full breakdown: IPA, stress, all parts of speech with inflections, meanings per POS, 6–8 synonyms, antonyms, collocations, 4–5 Australian English examples + 5-question quiz → click any tag to drill down into that word |
+| **Vocabulary Builder** | Enter words or phrases (including slang and idioms) → AI returns full breakdown: IPA, stress, compact Vietnamese translation, all parts of speech with inflections, meanings per POS, synonyms, antonyms, collocations, and Australian English examples → generate the quiz only when needed → click any tag to drill down into that word |
 | **Daily Topic** | Pick a topic + format (Dialog / Story) + level (Everyday / Natural / Advanced) → optional Aussie flavour → AI generates content with 12 vocabulary words highlighted → **🔄 Fresh version** regenerates with different phrases (excludes all previously seen vocab for that topic) → **select any text to look it up instantly** → 🔊 listen aloud |
-| **Words Review** | Select words by date → **🃏 start flashcards** for chosen words only OR **📖 generate a review story** → SM-2 spaced repetition schedules "Due Today" reviews automatically |
+| **Words Review** | Select words by date → **🃏 start flashcards** for chosen words only OR generate an English review story, a fresh version, or a bilingual English/Vietnamese story → SM-2 spaced repetition schedules "Due Today" reviews automatically |
 | **Progress** | Day streak 🔥, words learned, mastery breakdown (new/learning/mastered), sentence check stats, quiz average, 4-week GitHub-style activity heatmap |
 | **Word Bank** | Auto-tracks every studied word (max 200) — searchable chips with full expandable detail card including all POS forms, visible on the Vocabulary Builder tab |
 
@@ -41,10 +41,10 @@ web/
 ├── app/
 │   ├── (auth)/              Login & signup pages
 │   ├── api/
-│   │   ├── learning/        Vocab Builder: generate, word-bank, sessions, submit
+│   │   ├── learning/        Vocab Builder: generate, quiz, word-bank, sessions, submit
 │   │   ├── mistakes/        Sentence Check: CRUD + stats
 │   │   ├── topic/           Daily Topic: generate + sessions
-│   │   ├── review/          Review Story + words-by-date
+│   │   ├── review/          Review stories, bilingual stories + words-by-date
 │   │   ├── flashcards/      SM-2 due queue + review submission
 │   │   ├── stats/           Progress dashboard aggregation
 │   │   ├── tts/             Edge TTS proxy (en-AU-NatashaNeural)
@@ -65,6 +65,7 @@ web/
 │   ├── db.ts                Prisma client singleton
 │   ├── groq.ts              Groq API wrapper
 │   ├── encrypt.ts           AES-256-GCM for stored API keys
+│   ├── languages.ts         Native-language config (Vietnamese default)
 │   └── useSpeech.ts         TTS hook — Edge TTS with browser speechSynthesis fallback
 └── prisma/
     └── schema.prisma
@@ -90,6 +91,7 @@ DATABASE_URL=postgresql://...          # Neon pooled connection URL
 DIRECT_URL=postgresql://...            # Neon direct connection URL (for migrations)
 NEXTAUTH_SECRET=your-secret-here
 NEXTAUTH_URL=http://localhost:3000
+ENCRYPTION_KEY=64-character-hex-string
 ```
 
 ### 3. Push the database schema
@@ -129,9 +131,10 @@ LearningSession   — vocab builder sessions (words + quiz)
 QuizResult        — quiz scores per session
 WordEntry         — word bank (max 200/user, JSON word info)
 TopicSession      — daily topic sessions (content + vocab)
-ReviewSession     — AI review stories
+ReviewSession     — AI review stories, including structured bilingual story payloads
 FlashcardReview   — raw "known"/"review" ratings log
 WordSchedule      — SM-2 schedule (easeFactor, intervalDays, repetitions, nextReviewAt)
+PasswordResetToken — reset-token infrastructure; email delivery is intentionally deferred
 ```
 
 ---
@@ -141,9 +144,11 @@ WordSchedule      — SM-2 schedule (easeFactor, intervalDays, repetitions, next
 | Feature | max_tokens | Notes |
 |---------|-----------|-------|
 | Sentence correction | 400 | Low temp (0.2) for accuracy |
-| Vocab lesson (1 word) | ~1200 | Scales: 500 + (words × 700), max 6000 |
-| Quick lookup (topic) | 800 | No quiz, no session saved |
-| Review story | 600 | |
+| Vocab lesson | 450 + (words × 550), max 4800 | No quiz in the initial request; includes compact native-language translation |
+| Vocab quick lookup | 800 | Lightweight drill-down lookup; no session saved |
+| Vocab quiz | 900 | Generated on demand after the word lesson |
+| Review story | 600 | English story mode |
+| Bilingual review story | 1200 | Structured English/native-language rows |
 | Daily topic | 2000 | Higher temp (0.85) for variety; exclusion list in prompt for Fresh version |
 
 ---
@@ -153,7 +158,10 @@ WordSchedule      — SM-2 schedule (easeFactor, intervalDays, repetitions, next
 | Feature | Status |
 |---------|--------|
 | Sentence Check + history | ✅ |
+| Sentence Check result-card UI + copy buttons | ✅ |
 | Vocabulary Builder with full word breakdown | ✅ |
+| Vocabulary Builder performance split: cached words, quick lookup, on-demand quiz | ✅ |
+| Vocabulary Builder compact Vietnamese translations | ✅ |
 | Daily Topic — Dialog / Story formats | ✅ |
 | Daily Topic — Level selector (Everyday / Natural / Advanced) | ✅ |
 | Daily Topic — 🔄 Fresh version with phrase exclusion | ✅ |
@@ -161,8 +169,13 @@ WordSchedule      — SM-2 schedule (easeFactor, intervalDays, repetitions, next
 | Inline text-selection lookup in Topic | ✅ |
 | SM-2 spaced repetition (Due Today queue) | ✅ |
 | Selectable flashcard sessions | ✅ |
+| Words Review — English story fresh versions | ✅ |
+| Words Review — bilingual English/Vietnamese stories | ✅ |
 | Progress dashboard + activity heatmap | ✅ |
 | Text-to-speech (en-AU) for words and stories | ✅ |
 | Multi-user auth | ✅ |
-| Writing practice tab | Planned |
-| Export word bank (CSV / Anki) | Planned |
+| Password reset email delivery | Deferred until the app needs broader user support |
+| Say It Differently / Phrase Expansion | Planned |
+| Mistake Pattern Coach | Planned |
+| Writing Practice | Deferred |
+| Word Bank export | Deferred |
