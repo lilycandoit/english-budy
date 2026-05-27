@@ -36,6 +36,7 @@ export function SentenceCheck() {
   const [stats, setStats] = useState<Stats | null>(null);
   const [filter, setFilter] = useState("all");
   const [error, setError] = useState("");
+  const [copiedKey, setCopiedKey] = useState<string | null>(null);
 
   useEffect(() => {
     Promise.all([loadHistory(), loadStats()]);
@@ -89,6 +90,12 @@ export function SentenceCheck() {
     loadHistory(type);
   }
 
+  async function copyText(key: string, text: string) {
+    await navigator.clipboard.writeText(text);
+    setCopiedKey(key);
+    window.setTimeout(() => setCopiedKey((current) => current === key ? null : current), 1600);
+  }
+
   return (
     <div className="space-y-6">
       {/* Input */}
@@ -121,32 +128,53 @@ export function SentenceCheck() {
 
       {/* Result boxes */}
       {result && (
-        <div className="space-y-2">
-          <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
-            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1">You wrote</p>
-            <p className="text-sm text-slate-800">{result.originalText}</p>
+        <div className="space-y-3">
+          <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">You wrote</p>
+            <p className="text-sm text-slate-800 leading-relaxed">{result.originalText}</p>
+            <button
+              type="button"
+              onClick={() => copyText("original", result.originalText)}
+              className="mt-3 inline-flex items-center rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50 transition-colors"
+            >
+              {copiedKey === "original" ? "Copied" : "Copy text"}
+            </button>
           </div>
 
-          <div className="rounded-xl border border-green-200 bg-green-50 p-4">
-            <div className="flex items-center gap-2 mb-1">
-              <p className="text-xs font-semibold text-green-700 uppercase tracking-wide">Corrected</p>
+          <div className="rounded-xl border border-blue-200 bg-blue-50 p-4 shadow-sm">
+            <div className="flex items-center gap-2 mb-2">
+              <p className="text-xs font-semibold text-blue-700 uppercase tracking-wide">Corrected</p>
               <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${TYPE_LABELS[result.mistakeType]?.color}`}>
                 {TYPE_LABELS[result.mistakeType]?.label}
               </span>
             </div>
-            <p className="text-sm text-slate-800">{result.correctedText}</p>
+            <p className="text-sm text-slate-800 leading-relaxed">{result.correctedText}</p>
             {result.explanation && result.explanation !== "Looks good!" && (
-              <p className="text-xs text-slate-600 mt-1.5">💡 {result.explanation}</p>
+              <p className="text-xs text-blue-900/70 mt-2 border-l-2 border-blue-300 pl-2">{result.explanation}</p>
             )}
+            <button
+              type="button"
+              onClick={() => copyText("corrected", result.correctedText)}
+              className="mt-3 inline-flex items-center rounded-lg border border-blue-200 bg-white/70 px-3 py-1.5 text-xs font-medium text-blue-700 hover:bg-white transition-colors"
+            >
+              {copiedKey === "corrected" ? "Copied" : "Copy text"}
+            </button>
           </div>
 
           {result.naturalText && result.naturalText !== result.correctedText && (
-            <div className="rounded-xl border border-teal-200 bg-teal-50 p-4">
-              <p className="text-xs font-semibold text-teal-700 uppercase tracking-wide mb-1">Native speaker</p>
-              <p className="text-sm text-slate-800">{result.naturalText}</p>
+            <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 shadow-sm">
+              <p className="text-xs font-semibold text-amber-800 uppercase tracking-wide mb-2">Native speaker</p>
+              <p className="text-sm text-slate-800 leading-relaxed">{result.naturalText}</p>
               {result.naturalnessTip && (
-                <p className="text-xs text-slate-600 mt-1.5">✨ {result.naturalnessTip}</p>
+                <p className="text-xs text-amber-900/75 mt-2 border-l-2 border-amber-300 pl-2">{result.naturalnessTip}</p>
               )}
+              <button
+                type="button"
+                onClick={() => copyText("natural", result.naturalText!)}
+                className="mt-3 inline-flex items-center rounded-lg border border-amber-200 bg-white/70 px-3 py-1.5 text-xs font-medium text-amber-800 hover:bg-white transition-colors"
+              >
+                {copiedKey === "natural" ? "Copied" : "Copy text"}
+              </button>
             </div>
           )}
         </div>
