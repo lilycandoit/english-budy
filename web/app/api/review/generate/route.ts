@@ -2,25 +2,89 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
-import { getUserGroqKey, groqChat } from "@/lib/groq";
+import { getUserGroqKey, groqChat, extractJson } from "@/lib/groq";
+import { DEFAULT_NATIVE_LANGUAGE, formatNativeLanguageForPrompt } from "@/lib/languages";
 
 const SYSTEM = "You are an Australian English creative writing teacher.";
 
-function buildPrompt(words: string[]): string {
+type StoryMode = "english" | "bilingual";
+type StoryVariant = "fresh" | "paraphrase";
+
+interface BilingualStoryRow {
+  english: string;
+  native: string;
+}
+
+function buildEnglishPrompt(words: string[], variant?: StoryVariant): string {
+  const variantInstruction = variant
+    ? `Make this a noticeably different version from any previous story, with a fresh situation and wording.\n`
+    : "";
+
   return (
     `Write a natural, engaging story of about 250 words set in Australia that uses all of these words: ${words.join(", ")}\n\n` +
+    variantInstruction +
     `Wrap each target word in the story with **word** markers (e.g. **reckon**).\n` +
     `The story should read naturally — don't force words awkwardly.\n` +
     `Return ONLY the story text, no JSON, no extra explanation.`
   );
 }
 
+function buildBilingualPrompt(words: string[], variant?: StoryVariant): string {
+  const nativeLanguage = DEFAULT_NATIVE_LANGUAGE;
+  const nativeLanguageLabel = formatNativeLanguageForPrompt(nativeLanguage);
+  const variantInstruction = variant
+    ? `Make this a noticeably different version from any previous story, with a fresh situation and wording.\n`
+    : "";
+
+  return (
+    `Write a natural, engaging story set in Australia that uses all of these words: ${words.join(", ")}\n\n` +
+    variantInstruction +
+    `Return ONLY valid JSON, no markdown and no extra explanation:\n` +
+    `{\n` +
+    `  "mode": "bilingual",\n` +
+    `  "rows": [\n` +
+    `    { "english": "English story segment with **target** words marked.", "native": "Natural ${nativeLanguageLabel} translation of the same segment." }\n` +
+    `  ]\n` +
+    `}\n\n` +
+    `Rules:\n` +
+    `- Split the story into 4-7 rows.\n` +
+    `- English rows together should be about 220-280 words.\n` +
+    `- Wrap each target word in English with **word** markers.\n` +
+    `- Translate each English row naturally into ${nativeLanguageLabel} in the native field.\n` +
+    `- Do not wrap target words in the native translation.\n` +
+    `- The story should read naturally — don't force words awkwardly.`
+  );
+}
+
+function normalizeMode(mode: unknown): StoryMode {
+  return mode === "bilingual" ? "bilingual" : "english";
+}
+
+function normalizeVariant(variant: unknown): StoryVariant | undefined {
+  return variant === "fresh" || variant === "paraphrase" ? variant : undefined;
+}
+
+function parseBilingualRows(raw: string): BilingualStoryRow[] {
+  const parsed = extractJson(raw) as { rows?: BilingualStoryRow[] };
+  const rows = parsed.rows ?? [];
+
+  return rows
+    .filter((row) => typeof row?.english === "string" && typeof row?.native === "string")
+    .map((row) => ({
+      english: row.english.trim(),
+      native: row.native.trim(),
+    }))
+    .filter((row) => row.english && row.native);
+}
+
 export async function POST(req: NextRequest) {
   const session = await getServerSession(authOptions);
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const { words } = await req.json();
+  const { words, mode: rawMode, variant: rawVariant } = await req.json();
   if (!words?.length) return NextResponse.json({ error: "Words are required" }, { status: 400 });
+  const mode = normalizeMode(rawMode);
+  const variant = normalizeVariant(rawVariant);
 
   let apiKey: string;
   try {
@@ -30,26 +94,38 @@ export async function POST(req: NextRequest) {
   }
 
   let story = "";
+  let rows: BilingualStoryRow[] = [];
   try {
-    story = await groqChat(
+    const raw = await groqChat(
       apiKey,
       [
         { role: "system", content: SYSTEM },
-        { role: "user", content: buildPrompt(words) },
+        { role: "user", content: mode === "bilingual" ? buildBilingualPrompt(words, variant) : buildEnglishPrompt(words, variant) },
       ],
-      { max_tokens: 600, temperature: 0.8 }
+      { max_tokens: mode === "bilingual" ? 1200 : 600, temperature: variant ? 0.9 : 0.8 }
     );
+    if (mode === "bilingual") {
+      rows = parseBilingualRows(raw);
+      if (!rows.length) throw new Error("No bilingual rows returned");
+    } else {
+      story = raw;
+    }
   } catch {
     return NextResponse.json({ error: "AI request failed. Please try again." }, { status: 502 });
   }
 
+  const storedStory = mode === "bilingual" ? JSON.stringify({ mode, rows }) : story;
   const reviewSession = await prisma.reviewSession.create({
     data: {
       userId: session.user.id,
       words: JSON.stringify(words),
-      story,
+      story: storedStory,
     },
   });
 
-  return NextResponse.json({ id: reviewSession.id, story, words });
+  if (mode === "bilingual") {
+    return NextResponse.json({ id: reviewSession.id, mode, rows, words });
+  }
+
+  return NextResponse.json({ id: reviewSession.id, mode, story, words });
 }

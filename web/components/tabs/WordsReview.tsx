@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { DEFAULT_NATIVE_LANGUAGE } from "@/lib/languages";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -31,6 +32,17 @@ interface DueCard {
 }
 
 type FcRating = "known" | "review";
+type StoryMode = "english" | "bilingual";
+type StoryVariant = "fresh" | "paraphrase";
+
+interface BilingualStoryRow {
+  english: string;
+  native: string;
+}
+
+type StoryResult =
+  | { mode: "english"; story: string; words: string[] }
+  | { mode: "bilingual"; rows: BilingualStoryRow[]; words: string[] };
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -50,6 +62,37 @@ function HighlightedStory({ text }: { text: string }) {
         return <span key={i}>{part}</span>;
       })}
     </p>
+  );
+}
+
+function BilingualStory({ rows }: { rows: BilingualStoryRow[] }) {
+  return (
+    <div className="overflow-hidden rounded-xl border border-slate-200">
+      <div className="hidden sm:grid sm:grid-cols-2 bg-slate-50 text-xs font-semibold uppercase tracking-wide text-slate-400">
+        <div className="border-r border-slate-200 px-4 py-2">English</div>
+        <div className="px-4 py-2">{DEFAULT_NATIVE_LANGUAGE.nativeName}</div>
+      </div>
+      <div className="divide-y divide-slate-200">
+        {rows.map((row, index) => (
+          <div key={index} className="grid gap-0 sm:grid-cols-2">
+            <div className="border-slate-200 px-4 py-3 sm:border-r">
+              <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-slate-400 sm:hidden">
+                English
+              </p>
+              <HighlightedStory text={row.english} />
+            </div>
+            <div className="bg-slate-50/60 px-4 py-3 sm:bg-white">
+              <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-slate-400 sm:hidden">
+                {DEFAULT_NATIVE_LANGUAGE.nativeName}
+              </p>
+              <p className="whitespace-pre-wrap text-sm leading-relaxed text-slate-700">
+                {row.native}
+              </p>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
   );
 }
 
@@ -208,8 +251,9 @@ export function WordsReview() {
   const [selectedWords, setSelectedWords] = useState<string[]>([]);
   const [customInput, setCustomInput] = useState("");
   const [storyLoading, setStoryLoading] = useState(false);
-  const [story, setStory] = useState<string | null>(null);
+  const [storyResult, setStoryResult] = useState<StoryResult | null>(null);
   const [storyError, setStoryError] = useState("");
+  const [lastStoryWords, setLastStoryWords] = useState<string[]>([]);
 
   const [wbEntries, setWbEntries] = useState<WbEntry[]>([]);
   const [dueCards, setDueCards] = useState<DueCard[]>([]);
@@ -257,27 +301,40 @@ export function WordsReview() {
     }
   }
 
-  async function handleGenerateStory(e?: React.SyntheticEvent) {
-    e?.preventDefault();
-    const words = customInput.trim()
+  function getActiveWords() {
+    return customInput.trim()
       ? customInput.split(",").map((w) => w.trim()).filter(Boolean)
       : selectedWords;
+  }
+
+  async function handleGenerateStory(
+    mode: StoryMode = "english",
+    variant?: StoryVariant,
+    e?: React.SyntheticEvent
+  ) {
+    e?.preventDefault();
+    const words = variant ? lastStoryWords : getActiveWords();
     if (!words.length) return;
 
     setStoryLoading(true);
     setStoryError("");
-    setStory(null);
+    setStoryResult(null);
 
     const res = await fetch("/api/review/generate", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ words }),
+      body: JSON.stringify({ words, mode, variant }),
     });
 
     const data = await res.json();
     setStoryLoading(false);
     if (!res.ok) { setStoryError(data.error || "Something went wrong"); return; }
-    setStory(data.story);
+    setLastStoryWords(data.words ?? words);
+    if (data.mode === "bilingual") {
+      setStoryResult({ mode: "bilingual", rows: data.rows ?? [], words: data.words ?? words });
+    } else {
+      setStoryResult({ mode: "english", story: data.story ?? "", words: data.words ?? words });
+    }
   }
 
   function startFlashcards(cards: WbEntry[]) {
@@ -291,6 +348,10 @@ export function WordsReview() {
   }
 
   const allDates = Object.keys(wordsByDate).sort().reverse();
+  const activeWords = getActiveWords();
+  const activeWordsCount = activeWords.length;
+  const flashcardWordsCount = activeWords.filter((word) => wbEntries.some((entry) => entry.word === word)).length;
+  const currentStoryMode = storyResult?.mode ?? "english";
 
   return (
     <div className="space-y-8">
@@ -412,30 +473,32 @@ export function WordsReview() {
 
               {/* Action buttons */}
               {(selectedWords.length > 0 || customInput.trim()) && (
-                <div className="flex gap-3">
+                <div className="grid gap-3 sm:grid-cols-3">
                   <button
                     type="button"
                     onClick={() => {
-                      const words = customInput.trim()
-                        ? customInput.split(",").map((w) => w.trim()).filter(Boolean)
-                        : selectedWords;
-                      const cards = wbEntries.filter((e) => words.includes(e.word));
+                      const cards = wbEntries.filter((e) => activeWords.includes(e.word));
                       if (cards.length) startFlashcards(cards);
                     }}
-                    className="flex-1 bg-teal-600 text-white rounded-xl py-2.5 text-sm font-medium hover:bg-teal-700 transition-colors"
+                    className="bg-teal-600 text-white rounded-xl py-2.5 text-sm font-medium hover:bg-teal-700 transition-colors"
                   >
-                    🃏 Flashcards ({(customInput.trim()
-                      ? customInput.split(",").map(w => w.trim()).filter(Boolean)
-                      : selectedWords
-                    ).filter(w => wbEntries.some(e => e.word === w)).length} words)
+                    🃏 Flashcards ({flashcardWordsCount} words)
                   </button>
                   <button
                     type="button"
-                    onClick={() => handleGenerateStory()}
+                    onClick={() => handleGenerateStory("english")}
                     disabled={storyLoading}
-                    className="flex-1 bg-blue-600 text-white rounded-xl py-2.5 text-sm font-medium hover:bg-blue-700 disabled:opacity-50 transition-colors"
+                    className="bg-blue-600 text-white rounded-xl py-2.5 text-sm font-medium hover:bg-blue-700 disabled:opacity-50 transition-colors"
                   >
-                    {storyLoading ? "Generating…" : `📖 Story (${selectedWords.length || customInput.split(",").filter(Boolean).length} words)`}
+                    {storyLoading ? "Generating…" : `📖 Story (${activeWordsCount} words)`}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleGenerateStory("bilingual")}
+                    disabled={storyLoading}
+                    className="bg-violet-600 text-white rounded-xl py-2.5 text-sm font-medium hover:bg-violet-700 disabled:opacity-50 transition-colors"
+                  >
+                    {storyLoading ? "Generating…" : `🌐 Bilingual (${DEFAULT_NATIVE_LANGUAGE.nativeName})`}
                   </button>
                 </div>
               )}
@@ -448,9 +511,41 @@ export function WordsReview() {
             </div>
 
             {/* Story output */}
-            {story && (
-              <div className="mt-4 border border-slate-200 rounded-2xl p-5">
-                <HighlightedStory text={story} />
+            {storyResult && (
+              <div className="mt-4 space-y-3 rounded-2xl border border-slate-200 p-5">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <h3 className="text-sm font-semibold text-slate-700">
+                      {storyResult.mode === "bilingual" ? "Bilingual story" : "Story"}
+                    </h3>
+                    <p className="mt-0.5 text-xs text-slate-400">
+                      {storyResult.words.length} word{storyResult.words.length > 1 ? "s" : ""} included
+                    </p>
+                  </div>
+                  <div className="flex flex-col gap-2 sm:flex-row">
+                    <button
+                      type="button"
+                      onClick={() => handleGenerateStory(currentStoryMode, "fresh")}
+                      disabled={storyLoading}
+                      className="rounded-xl border border-blue-200 px-3 py-2 text-xs font-medium text-blue-600 hover:bg-blue-50 disabled:opacity-50"
+                    >
+                      Fresh version
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleGenerateStory(storyResult.mode === "bilingual" ? "english" : "bilingual")}
+                      disabled={storyLoading}
+                      className="rounded-xl border border-slate-200 px-3 py-2 text-xs font-medium text-slate-600 hover:bg-slate-50 disabled:opacity-50"
+                    >
+                      {storyResult.mode === "bilingual" ? "English only" : "Bilingual"}
+                    </button>
+                  </div>
+                </div>
+                {storyResult.mode === "bilingual" ? (
+                  <BilingualStory rows={storyResult.rows} />
+                ) : (
+                  <HighlightedStory text={storyResult.story} />
+                )}
               </div>
             )}
           </div>
