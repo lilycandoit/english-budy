@@ -44,3 +44,4 @@ uvicorn.log
 # internal and pending context
 /internal-info/
 .planning/
+CLAUDE.md
