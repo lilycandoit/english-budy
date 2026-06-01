@@ -6,10 +6,12 @@ import { VocabBuilder } from "@/components/tabs/VocabBuilder";
 import { DailyTopic } from "@/components/tabs/DailyTopic";
 import { WordsReview } from "@/components/tabs/WordsReview";
 import { Progress } from "@/components/tabs/Progress";
+import { PhraseExpansion } from "@/components/tabs/PhraseExpansion";
 
 const TABS = [
   { id: "sentence", label: "Sentence Check", icon: "✏️" },
   { id: "vocab", label: "Vocabulary Builder", icon: "📖" },
+  { id: "phrases", label: "Say It Differently", icon: "🗣️" },
   { id: "topic", label: "Daily Topic", icon: "💬" },
   { id: "review", label: "Words Review", icon: "🔁" },
   { id: "progress", label: "Progress", icon: "📊" },
@@ -44,6 +46,7 @@ export function TabShell() {
       <div className="p-6">
         {active === "sentence" && <SentenceCheck />}
         {active === "vocab" && <VocabBuilder />}
+        {active === "phrases" && <PhraseExpansion />}
         {active === "topic" && <DailyTopic />}
         {active === "review" && <WordsReview />}
         {active === "progress" && <Progress />}
