@@ -8,12 +8,35 @@ import { DEFAULT_NATIVE_LANGUAGE } from "@/lib/languages";
 interface WbEntry {
   word: string;
   wordInfo: {
+    kind?: string;
     ipa?: string;
     meanings?: string[];                                    // legacy format
     forms?: { pos: string; meanings: string[] }[];          // new format
     synonyms?: string[];
     examples?: string[];
+    phraseExpansion?: PhraseExpansion;
   };
+}
+
+interface PhraseAlternative {
+  text: string;
+  tone: string;
+  whenToUse: string;
+  avoidWhen: string;
+  example: string;
+}
+
+interface PhraseAlternativeGroup {
+  label: string;
+  description: string;
+  items: PhraseAlternative[];
+}
+
+interface PhraseExpansion {
+  phrase: string;
+  meaning: string;
+  alternatives: PhraseAlternativeGroup[];
+  notes: string[];
 }
 
 /** Extract flat meanings from either old or new word format */
@@ -23,6 +46,15 @@ function getMeanings(wordInfo: WbEntry["wordInfo"]): string[] {
     return wordInfo.forms.flatMap((f) => f.meanings ?? []);
   }
   return [];
+}
+
+function getPhraseExpansion(wordInfo: WbEntry["wordInfo"]): PhraseExpansion | null {
+  if (wordInfo.kind !== "phraseExpansion" && !wordInfo.phraseExpansion) return null;
+  return wordInfo.phraseExpansion ?? null;
+}
+
+function getTopAlternatives(expansion: PhraseExpansion, limit = 5): PhraseAlternative[] {
+  return expansion.alternatives.flatMap((group) => group.items).slice(0, limit);
 }
 
 interface DueCard {
@@ -112,6 +144,7 @@ function FlashcardViewer({
   const [done, setDone] = useState(false);
 
   const card = cards[index];
+  const phraseExpansion = getPhraseExpansion(card.wordInfo);
 
   function rate(result: FcRating) {
     setRatings((r) => ({ ...r, [card.word]: result }));
@@ -197,6 +230,11 @@ function FlashcardViewer({
             className="absolute inset-0 border-2 border-blue-200 rounded-2xl bg-gradient-to-br from-blue-50 to-white flex flex-col items-center justify-center p-6"
           >
             <p className="text-3xl font-bold text-slate-800">{card.word}</p>
+            {phraseExpansion && (
+              <p className="mt-2 rounded-full bg-teal-50 px-3 py-1 text-xs font-medium text-teal-700">
+                phrase
+              </p>
+            )}
             {card.wordInfo?.ipa && (
               <p className="text-slate-400 font-mono text-sm mt-2">{card.wordInfo.ipa}</p>
             )}
@@ -209,15 +247,42 @@ function FlashcardViewer({
             className="absolute inset-0 border-2 border-teal-200 rounded-2xl bg-gradient-to-br from-teal-50 to-white p-5 overflow-y-auto"
           >
             <p className="text-lg font-bold text-slate-800 mb-3">{card.word}</p>
-            {getMeanings(card.wordInfo).slice(0, 3).map((m, i) => (
-              <li key={i} className="text-sm text-slate-600 list-none">
-                <span className="text-slate-400 mr-1">{i + 1}.</span>{m}
-              </li>
-            ))}
-            {card.wordInfo?.examples?.[0] && (
-              <p className="text-xs text-slate-400 italic border-l-2 border-teal-200 pl-3">
-                {card.wordInfo.examples[0]}
-              </p>
+            {phraseExpansion ? (
+              <div className="space-y-3">
+                {phraseExpansion.meaning && (
+                  <p className="text-sm text-slate-600">{phraseExpansion.meaning}</p>
+                )}
+                <div>
+                  <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-slate-400">
+                    Alternatives
+                  </p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {getTopAlternatives(phraseExpansion).map((item) => (
+                      <span key={item.text} className="rounded-full border border-blue-200 bg-blue-50 px-2 py-0.5 text-xs font-medium text-blue-700">
+                        {item.text}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+                {getTopAlternatives(phraseExpansion, 2).map((item) => item.example).filter(Boolean).map((example) => (
+                  <p key={example} className="text-xs text-slate-400 italic border-l-2 border-teal-200 pl-3">
+                    {example}
+                  </p>
+                ))}
+              </div>
+            ) : (
+              <>
+                {getMeanings(card.wordInfo).slice(0, 3).map((m, i) => (
+                  <li key={i} className="text-sm text-slate-600 list-none">
+                    <span className="text-slate-400 mr-1">{i + 1}.</span>{m}
+                  </li>
+                ))}
+                {card.wordInfo?.examples?.[0] && (
+                  <p className="text-xs text-slate-400 italic border-l-2 border-teal-200 pl-3">
+                    {card.wordInfo.examples[0]}
+                  </p>
+                )}
+              </>
             )}
           </div>
         </div>

@@ -39,6 +39,11 @@ interface WbEntry {
 
 const SESSIONS_PREVIEW = 5;
 
+function isPhraseExpansion(wordInfo: WordInfo) {
+  return (wordInfo as WordInfo & { kind?: string; phraseExpansion?: unknown }).kind === "phraseExpansion"
+    || Boolean((wordInfo as WordInfo & { phraseExpansion?: unknown }).phraseExpansion);
+}
+
 // ── Main component ────────────────────────────────────────────────────────────
 
 export function VocabBuilder() {
@@ -178,7 +183,17 @@ export function VocabBuilder() {
     }
   }
 
-  const filteredWb = wordBank.filter((e) =>
+  const vocabWordBank = wordBank.filter((e) => !isPhraseExpansion(e.wordInfo));
+  const now = new Date();
+  const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const weekStart = new Date(todayStart);
+  weekStart.setDate(weekStart.getDate() - 7);
+  const vocabStats = {
+    total: vocabWordBank.length,
+    thisWeek: vocabWordBank.filter((entry) => new Date(entry.updatedAt) >= weekStart).length,
+    today: vocabWordBank.filter((entry) => new Date(entry.updatedAt) >= todayStart).length,
+  };
+  const filteredWb = vocabWordBank.filter((e) =>
     e.word.toLowerCase().includes(wbSearch.toLowerCase())
   );
   const visibleSessions = showAll ? pastSessions : pastSessions.slice(0, SESSIONS_PREVIEW);
@@ -352,13 +367,13 @@ export function VocabBuilder() {
       )}
 
       {/* ── Word Bank ── */}
-      {wordBank.length > 0 && (
+      {vocabWordBank.length > 0 && (
         <div>
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-3">
             <div className="flex items-center gap-2 flex-wrap min-w-0">
               <h3 className="text-sm font-semibold text-slate-700 whitespace-nowrap">Word Bank</h3>
               <p className="text-xs text-slate-400 whitespace-nowrap">
-                {wbStats.total} words · {wbStats.thisWeek} this week · {wbStats.today} today
+                {vocabStats.total} words · {vocabStats.thisWeek} this week · {vocabStats.today} today
               </p>
             </div>
             <input

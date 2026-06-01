@@ -12,7 +12,7 @@ Built with Next.js, PostgreSQL, and Groq AI. Designed for Australian English pra
 |-----|-------------|
 | **Sentence Check** | Write a sentence → AI corrects grammar/spelling/punctuation → shows a native-speaker rewrite with a naturalness tip → refresh the native version for another natural phrasing → history and stats saved |
 | **Vocabulary Builder** | Enter words or phrases (including slang and idioms) → AI returns full breakdown: IPA, stress, compact Vietnamese translation, all parts of speech with inflections, meanings per POS, synonyms, antonyms, collocations, and Australian English examples → generate the quiz only when needed → click any tag to drill down into that word |
-| **Say It Differently** | Enter one phrase → AI explains the meaning and gives natural alternatives grouped by tone/context, with examples, avoid-when notes, usage tips, and a short practice question |
+| **Say It Differently** | Enter one phrase → AI explains the meaning and gives natural alternatives grouped by tone/context, with best-pick highlights, examples, avoid-when notes, and usage tips → saves the phrase to history for faster reuse and later review |
 | **Daily Topic** | Pick a topic + format (Dialog / Story) + level (Everyday / Natural / Advanced) → optional Aussie flavour → AI generates content with 12 vocabulary words highlighted → **🔄 Fresh version** regenerates with different phrases (excludes all previously seen vocab for that topic) → **select any text to look it up instantly** → 🔊 listen aloud |
 | **Words Review** | Select words by date → **🃏 start flashcards** for chosen words only OR generate an English review story, a fresh version, or a bilingual English/Vietnamese story → SM-2 spaced repetition schedules "Due Today" reviews automatically |
 | **Progress** | Day streak 🔥, words learned, mastery breakdown (new/learning/mastered), sentence check stats, quiz average, 4-week GitHub-style activity heatmap |
@@ -150,7 +150,7 @@ PasswordResetToken — reset-token infrastructure; email delivery is intentional
 | Vocab lesson | 450 + (words × 550), max 4800 | No quiz in the initial request; includes compact native-language translation |
 | Vocab quick lookup | 800 | Lightweight drill-down lookup; no session saved |
 | Vocab quiz | 900 | Generated on demand after the word lesson |
-| Phrase expansion | 1700 | Structured alternatives, tone guidance, examples, and compact quiz |
+| Phrase expansion | 3400 | Structured alternatives across 5 tone groups, 4 alternatives per group, examples, best-pick highlights, and cached phrase history |
 | Review story | 600 | English story mode |
 | Bilingual review story | 1200 | Structured English/native-language rows |
 | Daily topic | 2000 | Higher temp (0.85) for variety; exclusion list in prompt for Fresh version |
