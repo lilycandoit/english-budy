@@ -37,6 +37,7 @@ export function SentenceCheck() {
   const [filter, setFilter] = useState("all");
   const [error, setError] = useState("");
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
+  const [nativeRefreshing, setNativeRefreshing] = useState(false);
 
   useEffect(() => {
     Promise.all([loadHistory(), loadStats()]);
@@ -94,6 +95,39 @@ export function SentenceCheck() {
     await navigator.clipboard.writeText(text);
     setCopiedKey(key);
     window.setTimeout(() => setCopiedKey((current) => current === key ? null : current), 1600);
+  }
+
+  async function refreshNativeRewrite() {
+    if (!result) return;
+    setNativeRefreshing(true);
+    setError("");
+
+    const res = await fetch("/api/mistakes/native-rewrite", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        originalText: result.originalText,
+        correctedText: result.correctedText,
+        currentNaturalText: result.naturalText,
+      }),
+    });
+
+    const data = await res.json();
+    setNativeRefreshing(false);
+
+    if (!res.ok) {
+      setError(data.error || "Could not refresh native rewrite");
+      return;
+    }
+
+    setResult((current) => current
+      ? {
+          ...current,
+          naturalText: data.naturalText,
+          naturalnessTip: data.naturalnessTip,
+        }
+      : current
+    );
   }
 
   return (
@@ -163,7 +197,18 @@ export function SentenceCheck() {
 
           {result.naturalText && result.naturalText !== result.correctedText && (
             <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 shadow-sm">
-              <p className="text-xs font-semibold text-amber-800 uppercase tracking-wide mb-2">Native speaker</p>
+              <div className="mb-2 flex items-center justify-between gap-3">
+                <p className="text-xs font-semibold text-amber-800 uppercase tracking-wide">Native speaker</p>
+                <button
+                  type="button"
+                  onClick={refreshNativeRewrite}
+                  disabled={nativeRefreshing}
+                  title="Generate a different native speaker version"
+                  className="inline-flex items-center rounded-lg border border-amber-200 bg-white/70 px-2.5 py-1 text-xs font-medium text-amber-800 hover:bg-white disabled:opacity-50 transition-colors"
+                >
+                  {nativeRefreshing ? "Refreshing…" : "↻ Fresh version"}
+                </button>
+              </div>
               <p className="text-sm text-slate-800 leading-relaxed">{result.naturalText}</p>
               {result.naturalnessTip && (
                 <p className="text-xs text-amber-900/75 mt-2 border-l-2 border-amber-300 pl-2">{result.naturalnessTip}</p>
