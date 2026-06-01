@@ -10,7 +10,7 @@ Built with Next.js, PostgreSQL, and Groq AI. Designed for Australian English pra
 
 | Tab | What it does |
 |-----|-------------|
-| **Sentence Check** | Write a sentence → AI corrects grammar/spelling/punctuation → shows a native-speaker rewrite with a naturalness tip → history and stats saved |
+| **Sentence Check** | Write a sentence → AI corrects grammar/spelling/punctuation → shows a native-speaker rewrite with a naturalness tip → refresh the native version for another natural phrasing → history and stats saved |
 | **Vocabulary Builder** | Enter words or phrases (including slang and idioms) → AI returns full breakdown: IPA, stress, compact Vietnamese translation, all parts of speech with inflections, meanings per POS, synonyms, antonyms, collocations, and Australian English examples → generate the quiz only when needed → click any tag to drill down into that word |
 | **Daily Topic** | Pick a topic + format (Dialog / Story) + level (Everyday / Natural / Advanced) → optional Aussie flavour → AI generates content with 12 vocabulary words highlighted → **🔄 Fresh version** regenerates with different phrases (excludes all previously seen vocab for that topic) → **select any text to look it up instantly** → 🔊 listen aloud |
 | **Words Review** | Select words by date → **🃏 start flashcards** for chosen words only OR generate an English review story, a fresh version, or a bilingual English/Vietnamese story → SM-2 spaced repetition schedules "Due Today" reviews automatically |
@@ -159,6 +159,7 @@ PasswordResetToken — reset-token infrastructure; email delivery is intentional
 |---------|--------|
 | Sentence Check + history | ✅ |
 | Sentence Check result-card UI + copy buttons | ✅ |
+| Sentence Check — fresh Native Speaker rewrites | ✅ |
 | Vocabulary Builder with full word breakdown | ✅ |
 | Vocabulary Builder performance split: cached words, quick lookup, on-demand quiz | ✅ |
 | Vocabulary Builder compact Vietnamese translations | ✅ |
