@@ -184,7 +184,7 @@ export async function POST(req: NextRequest) {
         { role: "system", content: SYSTEM },
         { role: "user", content: prompt },
       ],
-      { max_tokens: quickLookup ? 800 : Math.min(450 + words.length * 550, 4800), temperature: 0.7 }
+      { max_tokens: quickLookup ? 700 : Math.min(420 + words.length * 480, 4200), temperature: 0.7 }
     );
     const parsed = extractJson(raw) as { words: unknown[]; quiz?: unknown[] };
     wordInfos = applyVerifiedIpa((parsed.words ?? []) as { word: string; ipa?: string }[]);

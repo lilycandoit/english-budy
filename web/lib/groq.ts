@@ -30,7 +30,7 @@ export async function groqChat(
   messages: GroqMessage[],
   opts: GroqOptions = {}
 ): Promise<string> {
-  const { model = "llama-3.3-70b-versatile", max_tokens = 300, temperature = 0.2 } = opts;
+  const { model = "openai/gpt-oss-120b", max_tokens = 300, temperature = 0.2 } = opts;
 
   const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
     method: "POST",

@@ -123,7 +123,7 @@ export async function POST(req: NextRequest) {
         { role: "system", content: SYSTEM },
         { role: "user", content: buildPrompt(topic.trim(), baseFormat, level as Level, aussieMode, excludedPhrases) },
       ],
-      { max_tokens: 2000, temperature: 0.85 }
+      { max_tokens: 1750, temperature: 0.85 }
     );
   } catch (err) {
     console.error("[topic/generate] Groq API error:", err);
