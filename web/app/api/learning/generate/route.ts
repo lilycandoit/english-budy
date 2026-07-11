@@ -4,6 +4,7 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { getUserGroqKey, groqChat, extractJson } from "@/lib/groq";
 import { DEFAULT_NATIVE_LANGUAGE, formatNativeLanguageForPrompt } from "@/lib/languages";
+import { lookupIpa } from "@/lib/ipaLookup";
 
 const SYSTEM = "You are an English vocabulary teacher for Australian learners. Always respond with valid JSON only.";
 
@@ -94,6 +95,13 @@ function buildQuickLookupPrompt(word: string): string {
   );
 }
 
+function applyVerifiedIpa<T extends { word: string; ipa?: string }>(wordInfos: T[]): T[] {
+  return wordInfos.map((w) => {
+    const verified = lookupIpa(w.word);
+    return verified ? { ...w, ipa: verified } : w;
+  });
+}
+
 async function upsertWordBank(userId: string, wordInfos: { word: string; [key: string]: unknown }[]) {
   await Promise.all(wordInfos.map((w) =>
     prisma.wordEntry.upsert({
@@ -142,7 +150,9 @@ export async function POST(req: NextRequest) {
     const allCached = words.every((word) => cachedByWord.has(word.toLowerCase()));
 
     if (allCached) {
-      const wordInfos = words.map((word) => JSON.parse(cachedByWord.get(word.toLowerCase())!.wordInfo));
+      const wordInfos = applyVerifiedIpa(
+        words.map((word) => JSON.parse(cachedByWord.get(word.toLowerCase())!.wordInfo))
+      );
       const learningSession = await prisma.learningSession.create({
         data: {
           userId: session.user.id,
@@ -177,7 +187,7 @@ export async function POST(req: NextRequest) {
       { max_tokens: quickLookup ? 800 : Math.min(450 + words.length * 550, 4800), temperature: 0.7 }
     );
     const parsed = extractJson(raw) as { words: unknown[]; quiz?: unknown[] };
-    wordInfos = parsed.words ?? [];
+    wordInfos = applyVerifiedIpa((parsed.words ?? []) as { word: string; ipa?: string }[]);
     quiz = [];
   } catch (err) {
     return NextResponse.json({ error: "AI request failed. Please try again." }, { status: 502 });
