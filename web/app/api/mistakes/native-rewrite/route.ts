@@ -53,7 +53,10 @@ export async function POST(req: NextRequest) {
           ),
         },
       ],
-      { max_tokens: 250, temperature: 0.85 }
+      // Scale with input length instead of a flat ceiling — see app/api/mistakes/route.ts
+      // for why: Groq reserves rate-limit budget against requested max_tokens, not
+      // actual usage.
+      { max_tokens: Math.min(300 + Math.ceil(correctedText.trim().length / 3), 900), temperature: 0.85 }
     );
 
     return NextResponse.json({

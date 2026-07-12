@@ -171,7 +171,7 @@ export function SentenceCheck() {
         <div className="space-y-3">
           <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
             <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">You wrote</p>
-            <p className="text-sm text-slate-800 leading-relaxed">{result.originalText}</p>
+            <p className="text-sm text-slate-800 leading-relaxed whitespace-pre-wrap">{result.originalText}</p>
             <button
               type="button"
               onClick={() => copyText("original", result.originalText)}
@@ -188,7 +188,7 @@ export function SentenceCheck() {
                 {TYPE_LABELS[result.mistakeType]?.label}
               </span>
             </div>
-            <p className="text-sm text-slate-800 leading-relaxed">{result.correctedText}</p>
+            <p className="text-sm text-slate-800 leading-relaxed whitespace-pre-wrap">{result.correctedText}</p>
             {result.explanation && result.explanation !== "Looks good!" && (
               <p className="text-xs text-blue-900/70 mt-2 border-l-2 border-blue-300 pl-2">{result.explanation}</p>
             )}
@@ -215,7 +215,7 @@ export function SentenceCheck() {
                   {nativeRefreshing ? "Refreshing…" : "↻ Fresh version"}
                 </button>
               </div>
-              <p className="text-sm text-slate-800 leading-relaxed">{result.naturalText}</p>
+              <p className="text-sm text-slate-800 leading-relaxed whitespace-pre-wrap">{result.naturalText}</p>
               {result.naturalnessTip && (
                 <p className="text-xs text-amber-900/75 mt-2 border-l-2 border-amber-300 pl-2">{result.naturalnessTip}</p>
               )}
@@ -309,10 +309,10 @@ export function SentenceCheck() {
                   </button>
                 </div>
 
-                <p className="text-slate-500 line-through text-xs leading-relaxed">{m.originalText}</p>
-                <p className="text-slate-800 text-sm mt-2 leading-relaxed">{m.correctedText}</p>
+                <p className="text-slate-500 line-through text-xs leading-relaxed whitespace-pre-wrap">{m.originalText}</p>
+                <p className="text-slate-800 text-sm mt-2 leading-relaxed whitespace-pre-wrap">{m.correctedText}</p>
                 {m.naturalText && m.naturalText !== m.correctedText && (
-                  <p className="text-teal-700 mt-2 text-xs leading-relaxed">💬 {m.naturalText}</p>
+                  <p className="text-teal-700 mt-2 text-xs leading-relaxed whitespace-pre-wrap">💬 {m.naturalText}</p>
                 )}
                 {m.explanation && m.explanation !== "Looks good!" && (
                   <p className="text-slate-600 text-xs mt-2 leading-relaxed">💡 {m.explanation}</p>

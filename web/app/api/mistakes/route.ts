@@ -48,7 +48,11 @@ export async function POST(req: NextRequest) {
         { role: "system", content: SYSTEM },
         { role: "user", content: buildPrompt(text.trim()) },
       ],
-      { max_tokens: 300, temperature: 0.2 }
+      // Scale with input length instead of a flat ceiling — Groq reserves against
+      // the free-tier per-minute token budget based on requested max_tokens, not
+      // actual usage, so a flat high value costs headroom on every short sentence
+      // check too, not just the occasional longer draft.
+      { max_tokens: Math.min(400 + Math.ceil(text.trim().length / 3), 1200), temperature: 0.2 }
     );
 
     correctedText = parsed.corrected_text ?? correctedText;
