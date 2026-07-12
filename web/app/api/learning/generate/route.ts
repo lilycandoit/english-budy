@@ -20,7 +20,6 @@ function buildPrompt(words: string[]): string {
     `    {\n` +
     `      "word": "sanction",\n` +
     `      "ipa": "/ˈsæŋkʃən/",\n` +
-    `      "stress": "SANK-shun",\n` +
     `      "translations": { "${nativeLanguage.code}": "hình phạt; sự cho phép chính thức" },\n` +
     `      "forms": [\n` +
     `        {\n` +
@@ -85,7 +84,7 @@ function buildQuickLookupPrompt(word: string): string {
   return (
     `Look up this word or phrase for an Australian English learner: "${word}"\n\n` +
     `Return ONLY valid JSON — no markdown, no extra text:\n` +
-    `{ "words": [ { "word": "...", "ipa": "...", "stress": "...", "translations": { "${nativeLanguage.code}": "..." }, "forms": [...], "synonyms": [...], "antonyms": [...], "collocations": [...], "examples": [...] } ] }\n\n` +
+    `{ "words": [ { "word": "...", "ipa": "...", "translations": { "${nativeLanguage.code}": "..." }, "forms": [...], "synonyms": [...], "antonyms": [...], "collocations": [...], "examples": [...] } ] }\n\n` +
     `Rules:\n` +
     `- Same word/phrase structure as a full vocabulary lesson\n` +
     `- Always use the base/lemma form; detect if it's a phrase/idiom/slang\n` +

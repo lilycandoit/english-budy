@@ -12,7 +12,6 @@ export interface WordForm {
 export interface WordInfo {
   word: string;
   ipa: string;
-  stress: string;
   translations?: Partial<Record<NativeLanguageCode, string>>;
   forms?: WordForm[];    // rich per-POS data (new format)
   meanings?: string[];  // legacy fallback for old word bank entries
@@ -55,7 +54,6 @@ export function WordCard({
           <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
             <h3 className="text-lg sm:text-xl font-bold text-slate-800">{w.word}</h3>
             {w.ipa && <span className="text-sm text-slate-400 font-mono">{w.ipa}</span>}
-            {w.stress && <span className="text-xs bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full whitespace-nowrap">{w.stress}</span>}
           </div>
           {nativeTranslation && (
             <p className="mt-1 text-sm text-slate-600">

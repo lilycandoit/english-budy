@@ -97,7 +97,6 @@ function buildWordInfo(expansion: PhraseExpansion) {
     kind: "phraseExpansion",
     word: expansion.phrase,
     ipa: "",
-    stress: "",
     forms: [
       {
         pos: "phrase",
