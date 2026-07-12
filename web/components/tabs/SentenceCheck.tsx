@@ -86,6 +86,12 @@ export function SentenceCheck() {
     loadStats();
   }
 
+  function openHistoryEntry(entry: MistakeResult) {
+    setResult(entry);
+    setError("");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
   async function handleFilterChange(type: string) {
     setFilter(type);
     loadHistory(type);
@@ -268,7 +274,19 @@ export function SentenceCheck() {
               <p className="text-sm text-slate-400 py-4 text-center">No entries for this filter.</p>
             )}
             {history.map((m) => (
-              <div key={m.id} className="border border-slate-200 rounded-xl p-4 text-sm">
+              <div
+                key={m.id}
+                role="button"
+                tabIndex={0}
+                onClick={() => openHistoryEntry(m)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    openHistoryEntry(m);
+                  }
+                }}
+                className="border border-slate-200 rounded-xl p-4 text-sm cursor-pointer hover:border-blue-300 hover:bg-slate-50 transition-colors"
+              >
                 <div className="flex items-start justify-between gap-2 mb-3">
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${TYPE_LABELS[m.mistakeType]?.color}`}>
@@ -281,7 +299,10 @@ export function SentenceCheck() {
                     </span>
                   </div>
                   <button
-                    onClick={() => handleDelete(m.id)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDelete(m.id);
+                    }}
                     className="text-slate-300 hover:text-red-400 transition-colors text-xs flex-shrink-0"
                   >
                     ✕
