@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { getUserGroqKey, groqChat, extractJson } from "@/lib/groq";
+import { getUserGroqKey, groqChatJson, GroqRateLimitError } from "@/lib/groq";
 
 const SYSTEM = "You are an English writing coach. Help learners sound natural in Australian English.";
 
@@ -40,7 +40,7 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const raw = await groqChat(
+    const parsed = await groqChatJson<{ natural_text?: string; naturalness_tip?: string }>(
       apiKey,
       [
         { role: "system", content: SYSTEM },
@@ -56,12 +56,14 @@ export async function POST(req: NextRequest) {
       { max_tokens: 250, temperature: 0.85 }
     );
 
-    const parsed = extractJson(raw) as { natural_text?: string; naturalness_tip?: string };
     return NextResponse.json({
       naturalText: parsed.natural_text ?? correctedText.trim(),
       naturalnessTip: parsed.naturalness_tip ?? null,
     });
-  } catch {
+  } catch (err) {
+    if (err instanceof GroqRateLimitError) {
+      return NextResponse.json({ error: err.message }, { status: 429 });
+    }
     return NextResponse.json({ error: "AI request failed. Please try again." }, { status: 502 });
   }
 }

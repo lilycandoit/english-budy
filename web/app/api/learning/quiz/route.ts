@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
-import { getUserGroqKey, groqChat, extractJson } from "@/lib/groq";
+import { getUserGroqKey, groqChatJson, GroqRateLimitError } from "@/lib/groq";
 
 const SYSTEM = "You are an English vocabulary teacher for Australian learners. Always respond with valid JSON only.";
 
@@ -63,7 +63,7 @@ export async function POST(req: NextRequest) {
   const wordInfos = JSON.parse(learningSession.wordInfo) as unknown[];
 
   try {
-    const raw = await groqChat(
+    const parsed = await groqChatJson<{ quiz?: unknown[] }>(
       apiKey,
       [
         { role: "system", content: SYSTEM },
@@ -71,7 +71,6 @@ export async function POST(req: NextRequest) {
       ],
       { max_tokens: 900, temperature: 0.5 }
     );
-    const parsed = extractJson(raw) as { quiz?: unknown[] };
     const quiz = parsed.quiz ?? [];
 
     await prisma.learningSession.update({
@@ -80,7 +79,10 @@ export async function POST(req: NextRequest) {
     });
 
     return NextResponse.json({ quiz });
-  } catch {
+  } catch (err) {
+    if (err instanceof GroqRateLimitError) {
+      return NextResponse.json({ error: err.message }, { status: 429 });
+    }
     return NextResponse.json({ error: "Quiz generation failed. Please try again." }, { status: 502 });
   }
 }

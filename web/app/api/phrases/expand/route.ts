@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
-import { getUserGroqKey, groqChat, extractJson } from "@/lib/groq";
+import { getUserGroqKey, groqChatJson, GroqRateLimitError } from "@/lib/groq";
 import { DEFAULT_NATIVE_LANGUAGE, formatNativeLanguageForPrompt } from "@/lib/languages";
 
 const SYSTEM = "You are an Australian English phrase coach. Teach practical alternatives with clear tone and usage guidance.";
@@ -209,7 +209,7 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const raw = await groqChat(
+    const parsed = await groqChatJson<unknown>(
       apiKey,
       [
         { role: "system", content: SYSTEM },
@@ -218,11 +218,14 @@ export async function POST(req: NextRequest) {
       { max_tokens: 3000, temperature: 0.65 }
     );
 
-    const expansion = normalizeExpansion(extractJson(raw), input);
+    const expansion = normalizeExpansion(parsed, input);
     if (!expansion.alternatives.length) throw new Error("No alternatives returned");
     await saveToWordBank(session.user.id, expansion);
     return NextResponse.json({ ...expansion, savedToWordBank: true });
-  } catch {
+  } catch (err) {
+    if (err instanceof GroqRateLimitError) {
+      return NextResponse.json({ error: err.message }, { status: 429 });
+    }
     return NextResponse.json({ error: "AI request failed. Please try again." }, { status: 502 });
   }
 }

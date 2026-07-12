@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
-import { getUserGroqKey, groqChat, extractJson } from "@/lib/groq";
+import { getUserGroqKey, groqChatJson, GroqRateLimitError } from "@/lib/groq";
 import { DEFAULT_NATIVE_LANGUAGE, formatNativeLanguageForPrompt } from "@/lib/languages";
 import { lookupIpa } from "@/lib/ipaLookup";
 
@@ -177,7 +177,7 @@ export async function POST(req: NextRequest) {
 
   try {
     const prompt = quickLookup ? buildQuickLookupPrompt(words[0]) : buildPrompt(words);
-    const raw = await groqChat(
+    const parsed = await groqChatJson<{ words: unknown[]; quiz?: unknown[] }>(
       apiKey,
       [
         { role: "system", content: SYSTEM },
@@ -185,10 +185,12 @@ export async function POST(req: NextRequest) {
       ],
       { max_tokens: quickLookup ? 700 : Math.min(420 + words.length * 480, 4200), temperature: 0.7 }
     );
-    const parsed = extractJson(raw) as { words: unknown[]; quiz?: unknown[] };
     wordInfos = applyVerifiedIpa((parsed.words ?? []) as { word: string; ipa?: string }[]);
     quiz = [];
   } catch (err) {
+    if (err instanceof GroqRateLimitError) {
+      return NextResponse.json({ error: err.message }, { status: 429 });
+    }
     return NextResponse.json({ error: "AI request failed. Please try again." }, { status: 502 });
   }
 

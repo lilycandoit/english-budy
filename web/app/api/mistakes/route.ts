@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
-import { getUserGroqKey, groqChat, extractJson } from "@/lib/groq";
+import { getUserGroqKey, groqChatJson } from "@/lib/groq";
 
 const SYSTEM = "You are an English writing coach. Help learners improve both accuracy and naturalness.";
 
@@ -42,7 +42,7 @@ export async function POST(req: NextRequest) {
   let naturalnessTip: string | null = null;
 
   try {
-    const raw = await groqChat(
+    const parsed = await groqChatJson<Record<string, string>>(
       apiKey,
       [
         { role: "system", content: SYSTEM },
@@ -51,7 +51,6 @@ export async function POST(req: NextRequest) {
       { max_tokens: 300, temperature: 0.2 }
     );
 
-    const parsed = extractJson(raw) as Record<string, string>;
     correctedText = parsed.corrected_text ?? correctedText;
     naturalText = parsed.natural_text ?? naturalText;
     mistakeType = parsed.mistake_type ?? mistakeType;

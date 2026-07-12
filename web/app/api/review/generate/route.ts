@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
-import { getUserGroqKey, groqChat, extractJson } from "@/lib/groq";
+import { getUserGroqKey, groqChat, groqChatJson, GroqRateLimitError } from "@/lib/groq";
 import { DEFAULT_NATIVE_LANGUAGE, formatNativeLanguageForPrompt } from "@/lib/languages";
 
 const SYSTEM = "You are an Australian English creative writing teacher.";
@@ -64,8 +64,7 @@ function normalizeVariant(variant: unknown): StoryVariant | undefined {
   return variant === "fresh" || variant === "paraphrase" ? variant : undefined;
 }
 
-function parseBilingualRows(raw: string): BilingualStoryRow[] {
-  const parsed = extractJson(raw) as { rows?: BilingualStoryRow[] };
+function normalizeBilingualRows(parsed: { rows?: BilingualStoryRow[] }): BilingualStoryRow[] {
   const rows = parsed.rows ?? [];
 
   return rows
@@ -96,21 +95,23 @@ export async function POST(req: NextRequest) {
   let story = "";
   let rows: BilingualStoryRow[] = [];
   try {
-    const raw = await groqChat(
-      apiKey,
-      [
-        { role: "system", content: SYSTEM },
-        { role: "user", content: mode === "bilingual" ? buildBilingualPrompt(words, variant) : buildEnglishPrompt(words, variant) },
-      ],
-      { max_tokens: mode === "bilingual" ? 1200 : 600, temperature: variant ? 0.9 : 0.8 }
-    );
+    const messages: { role: "system" | "user"; content: string }[] = [
+      { role: "system", content: SYSTEM },
+      { role: "user", content: mode === "bilingual" ? buildBilingualPrompt(words, variant) : buildEnglishPrompt(words, variant) },
+    ];
+    const opts = { max_tokens: mode === "bilingual" ? 1200 : 600, temperature: variant ? 0.9 : 0.8 };
+
     if (mode === "bilingual") {
-      rows = parseBilingualRows(raw);
+      const parsed = await groqChatJson<{ rows?: BilingualStoryRow[] }>(apiKey, messages, opts);
+      rows = normalizeBilingualRows(parsed);
       if (!rows.length) throw new Error("No bilingual rows returned");
     } else {
-      story = raw;
+      story = await groqChat(apiKey, messages, opts);
     }
-  } catch {
+  } catch (err) {
+    if (err instanceof GroqRateLimitError) {
+      return NextResponse.json({ error: err.message }, { status: 429 });
+    }
     return NextResponse.json({ error: "AI request failed. Please try again." }, { status: 502 });
   }
 

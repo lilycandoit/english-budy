@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
-import { getUserGroqKey, groqChat, extractJson } from "@/lib/groq";
+import { getUserGroqKey, groqChatJson, GroqRateLimitError } from "@/lib/groq";
 
 const SYSTEM = "You are an English teacher. Always respond with valid JSON only.";
 
@@ -115,9 +115,8 @@ export async function POST(req: NextRequest) {
   let content = "";
   let words: { word: string; meaning: string; example: string }[] = [];
 
-  let raw = "";
   try {
-    raw = await groqChat(
+    const parsed = await groqChatJson<{ title: string; content: string; words: typeof words }>(
       apiKey,
       [
         { role: "system", content: SYSTEM },
@@ -125,13 +124,6 @@ export async function POST(req: NextRequest) {
       ],
       { max_tokens: 1750, temperature: 0.85 }
     );
-  } catch (err) {
-    console.error("[topic/generate] Groq API error:", err);
-    return NextResponse.json({ error: "AI request failed. Please try again." }, { status: 502 });
-  }
-
-  try {
-    const parsed = extractJson(raw) as { title: string; content: string; words: typeof words };
     title = parsed.title ?? topic;
     content = (parsed.content ?? "").replace(/(?<!\n)\s+(Alex|Sam):/g, "\n$1:");
     words = (parsed.words ?? []).map((w) => ({
@@ -140,9 +132,11 @@ export async function POST(req: NextRequest) {
       example: (w.example ?? "").replace(/\*\*/g, "").trim(),
     }));
   } catch (err) {
-    console.error("[topic/generate] JSON parse error. Raw response:\n", raw);
-    console.error(err);
-    return NextResponse.json({ error: "AI returned an unexpected response. Please try again." }, { status: 502 });
+    console.error("[topic/generate] Groq error:", err);
+    if (err instanceof GroqRateLimitError) {
+      return NextResponse.json({ error: err.message }, { status: 429 });
+    }
+    return NextResponse.json({ error: "AI request failed. Please try again." }, { status: 502 });
   }
 
   const topicSession = await prisma.topicSession.create({
