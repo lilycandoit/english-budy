@@ -311,10 +311,14 @@ function FlashcardViewer({
 
 // ── Main component ────────────────────────────────────────────────────────────
 
+const WORDS_PER_PAGE = 30;
+
 export function WordsReview() {
   const [wordsByDate, setWordsByDate] = useState<Record<string, string[]>>({});
   const [selectedWords, setSelectedWords] = useState<string[]>([]);
   const [customInput, setCustomInput] = useState("");
+  const [datePage, setDatePage] = useState(1);
+  const [showAllDates, setShowAllDates] = useState(false);
   const [storyLoading, setStoryLoading] = useState(false);
   const [storyResult, setStoryResult] = useState<StoryResult | null>(null);
   const [storyError, setStoryError] = useState("");
@@ -418,8 +422,26 @@ export function WordsReview() {
   const flashcardWordsCount = activeWords.filter((word) => wbEntries.some((entry) => entry.word === word)).length;
   const currentStoryMode = storyResult?.mode ?? "english";
 
+  // Show whole date groups (never split one) until reaching ~WORDS_PER_PAGE * datePage words
+  const visibleDates: string[] = [];
+  if (showAllDates) {
+    visibleDates.push(...allDates);
+  } else {
+    let total = 0;
+    for (const date of allDates) {
+      visibleDates.push(date);
+      total += wordsByDate[date].length;
+      if (total >= WORDS_PER_PAGE * datePage) break;
+    }
+  }
+  const hasMoreDates = !showAllDates && visibleDates.length < allDates.length;
+  const remainingWordsCount = allDates
+    .slice(visibleDates.length)
+    .reduce((sum, date) => sum + wordsByDate[date].length, 0);
+  const isActionBarVisible = selectedWords.length > 0 || customInput.trim().length > 0;
+
   return (
-    <div className="space-y-8">
+    <div className={`space-y-8 ${!fcCards && isActionBarVisible ? "pb-32 sm:pb-20" : ""}`}>
 
       {/* ── Flashcard session (takes over when active) ── */}
       {fcCards && (
@@ -479,7 +501,7 @@ export function WordsReview() {
               {/* Word selection by date */}
               {allDates.length > 0 && (
                 <div className="space-y-2">
-                  {allDates.map((date) => {
+                  {visibleDates.map((date) => {
                     const words = wordsByDate[date];
                     const allSel = words.every((w) => selectedWords.includes(w));
                     return (
@@ -517,6 +539,25 @@ export function WordsReview() {
                       </div>
                     );
                   })}
+                  {hasMoreDates && (
+                    <div className="flex items-center justify-center gap-4 pt-1">
+                      <button
+                        type="button"
+                        onClick={() => setDatePage((p) => p + 1)}
+                        className="text-xs text-blue-600 hover:underline"
+                      >
+                        Show more ({Math.min(remainingWordsCount, WORDS_PER_PAGE)} more words)
+                      </button>
+                      <span className="text-slate-300">·</span>
+                      <button
+                        type="button"
+                        onClick={() => setShowAllDates(true)}
+                        className="text-xs text-slate-400 hover:underline"
+                      >
+                        Show all ({remainingWordsCount} remaining)
+                      </button>
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -536,39 +577,7 @@ export function WordsReview() {
 
               {storyError && <p className="text-red-500 text-sm">{storyError}</p>}
 
-              {/* Action buttons */}
-              {(selectedWords.length > 0 || customInput.trim()) && (
-                <div className="grid gap-3 sm:grid-cols-3">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const cards = wbEntries.filter((e) => activeWords.includes(e.word));
-                      if (cards.length) startFlashcards(cards);
-                    }}
-                    className="bg-teal-600 text-white rounded-xl py-2.5 text-sm font-medium hover:bg-teal-700 transition-colors"
-                  >
-                    🃏 Flashcards ({flashcardWordsCount} words)
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleGenerateStory("english")}
-                    disabled={storyLoading}
-                    className="bg-blue-600 text-white rounded-xl py-2.5 text-sm font-medium hover:bg-blue-700 disabled:opacity-50 transition-colors"
-                  >
-                    {storyLoading ? "Generating…" : `📖 Story (${activeWordsCount} words)`}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleGenerateStory("bilingual")}
-                    disabled={storyLoading}
-                    className="bg-violet-600 text-white rounded-xl py-2.5 text-sm font-medium hover:bg-violet-700 disabled:opacity-50 transition-colors"
-                  >
-                    {storyLoading ? "Generating…" : `🌐 Bilingual (${DEFAULT_NATIVE_LANGUAGE.nativeName})`}
-                  </button>
-                </div>
-              )}
-
-              {!selectedWords.length && !customInput.trim() && (
+              {!isActionBarVisible && (
                 <p className="text-xs text-slate-400 text-center py-2">
                   Select words above to start flashcards or generate a story
                 </p>
@@ -614,6 +623,40 @@ export function WordsReview() {
               </div>
             )}
           </div>
+
+          {/* ── Sticky action bar — reachable without scrolling past the word list ── */}
+          {isActionBarVisible && (
+            <div className="fixed inset-x-0 bottom-0 z-30 border-t border-slate-200 bg-white/95 px-4 py-3 backdrop-blur shadow-[0_-4px_12px_rgba(0,0,0,0.06)]">
+              <div className="mx-auto grid max-w-4xl gap-2 sm:grid-cols-3 sm:gap-3">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const cards = wbEntries.filter((e) => activeWords.includes(e.word));
+                    if (cards.length) startFlashcards(cards);
+                  }}
+                  className="bg-teal-600 text-white rounded-xl py-2.5 text-sm font-medium hover:bg-teal-700 transition-colors"
+                >
+                  🃏 Flashcards ({flashcardWordsCount} words)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleGenerateStory("english")}
+                  disabled={storyLoading}
+                  className="bg-blue-600 text-white rounded-xl py-2.5 text-sm font-medium hover:bg-blue-700 disabled:opacity-50 transition-colors"
+                >
+                  {storyLoading ? "Generating…" : `📖 Story (${activeWordsCount} words)`}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleGenerateStory("bilingual")}
+                  disabled={storyLoading}
+                  className="bg-violet-600 text-white rounded-xl py-2.5 text-sm font-medium hover:bg-violet-700 disabled:opacity-50 transition-colors"
+                >
+                  {storyLoading ? "Generating…" : `🌐 Bilingual (${DEFAULT_NATIVE_LANGUAGE.nativeName})`}
+                </button>
+              </div>
+            </div>
+          )}
         </>
       )}
     </div>
