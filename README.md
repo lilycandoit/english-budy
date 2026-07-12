@@ -11,7 +11,7 @@ Built with Next.js, PostgreSQL, and Groq AI. Designed for Australian English pra
 | Tab | What it does |
 |-----|-------------|
 | **Sentence Check** | Write a sentence → AI corrects grammar/spelling/punctuation → shows a native-speaker rewrite with a naturalness tip → refresh the native version for another natural phrasing → history and stats saved |
-| **Vocabulary Builder** | Enter words or phrases (including slang and idioms) → AI returns full breakdown: IPA, stress, compact Vietnamese translation, all parts of speech with inflections, meanings per POS, synonyms, antonyms, collocations, and Australian English examples → generate the quiz only when needed → click any tag to drill down into that word |
+| **Vocabulary Builder** | Enter words or phrases (including slang and idioms) → AI returns full breakdown: dictionary-verified IPA, compact Vietnamese translation, all parts of speech with inflections, meanings per POS, synonyms, antonyms, collocations, and Australian English examples → generate the quiz only when needed → click any tag to drill down into that word |
 | **Say It Differently** | Enter one phrase → AI explains the meaning and gives natural alternatives grouped by tone/context, with best-pick highlights, examples, avoid-when notes, and usage tips → saves the phrase to history for faster reuse and later review |
 | **Daily Topic** | Pick a topic + format (Dialog / Story) + level (Everyday / Natural / Advanced) → optional Aussie flavour → AI generates content with 12 vocabulary words highlighted → **🔄 Fresh version** regenerates with different phrases (excludes all previously seen vocab for that topic) → **select any text to look it up instantly** → 🔊 listen aloud |
 | **Words Review** | Select words by date → **🃏 start flashcards** for chosen words only OR generate an English review story, a fresh version, or a bilingual English/Vietnamese story → SM-2 spaced repetition schedules "Due Today" reviews automatically |
@@ -28,7 +28,7 @@ Built with Next.js, PostgreSQL, and Groq AI. Designed for Australian English pra
 | Language | TypeScript |
 | Auth | NextAuth.js (credentials + OAuth) |
 | Database | PostgreSQL (Neon) · Prisma ORM |
-| AI | Groq API — `llama-3.3-70b-versatile` (user supplies own API key) |
+| AI | Groq API — `openai/gpt-oss-120b`, with automatic retry on rate limits and malformed responses (user supplies own API key) |
 | Text-to-Speech | Microsoft Edge TTS — `en-AU-NatashaNeural` (free, no API key) · browser `speechSynthesis` fallback |
 | Styling | Tailwind CSS |
 | Deployment | Vercel |
@@ -66,7 +66,8 @@ web/
 ├── lib/
 │   ├── auth.ts              NextAuth config
 │   ├── db.ts                Prisma client singleton
-│   ├── groq.ts              Groq API wrapper
+│   ├── groq.ts              Groq API wrapper — retries 429s and malformed JSON responses
+│   ├── ipaLookup.ts         Verified IPA lookup (vendored dictionary, overrides AI-guessed pronunciation)
 │   ├── encrypt.ts           AES-256-GCM for stored API keys
 │   ├── languages.ts         Native-language config (Vietnamese default)
 │   └── useSpeech.ts         TTS hook — Edge TTS with browser speechSynthesis fallback
@@ -144,16 +145,21 @@ PasswordResetToken — reset-token infrastructure; email delivery is intentional
 
 ## AI Token Budget
 
+All Groq calls run with `reasoning_effort: "low"`, since `gpt-oss-120b` otherwise spends part of `max_tokens` on hidden reasoning before writing the visible answer.
+
 | Feature | max_tokens | Notes |
 |---------|-----------|-------|
-| Sentence correction | 400 | Low temp (0.2) for accuracy |
-| Vocab lesson | 450 + (words × 550), max 4800 | No quiz in the initial request; includes compact native-language translation |
-| Vocab quick lookup | 800 | Lightweight drill-down lookup; no session saved |
+| Sentence correction | 300 | Low temp (0.2) for accuracy |
+| Native rewrite refresh | 250 | Higher temp (0.85) for a noticeably different rephrasing each time |
+| Vocab lesson | 420 + (words × 480), max 4200 | No quiz in the initial request; includes compact native-language translation |
+| Vocab quick lookup | 700 | Lightweight drill-down lookup; no session saved |
 | Vocab quiz | 900 | Generated on demand after the word lesson |
-| Phrase expansion | 3400 | Structured alternatives across 5 tone groups, 4 alternatives per group, examples, best-pick highlights, and cached phrase history |
+| Phrase expansion | 3000 | Structured alternatives across 5 tone groups, 4 alternatives per group, examples, best-pick highlights, and cached phrase history |
 | Review story | 600 | English story mode |
 | Bilingual review story | 1200 | Structured English/native-language rows |
-| Daily topic | 2000 | Higher temp (0.85) for variety; exclusion list in prompt for Fresh version |
+| Daily topic | 1750 | Higher temp (0.85) for variety; exclusion list in prompt for Fresh version |
+
+Free-tier Groq rate limits are tight relative to some of these budgets (an 8-word vocab lesson alone can use ~40% of the per-minute token budget), so `lib/groq.ts` automatically retries once on a 429 if Groq's suggested wait is short, and retries once on a malformed JSON response.
 
 ---
 
@@ -180,6 +186,9 @@ PasswordResetToken — reset-token infrastructure; email delivery is intentional
 | Progress dashboard + activity heatmap | ✅ |
 | Text-to-speech (en-AU) for words and stories | ✅ |
 | Multi-user auth | ✅ |
+| Verified (dictionary-backed) IPA in Vocabulary Builder | ✅ |
+| Migrated off deprecated `llama-3.3-70b-versatile` to `gpt-oss-120b` | ✅ |
+| Automatic retry on Groq rate limits and malformed responses | ✅ |
 | Password reset email delivery | Deferred until the app needs broader user support |
 | Mistake Pattern Coach | Planned |
 | Writing Practice | Deferred |
