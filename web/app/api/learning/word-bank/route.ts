@@ -22,13 +22,19 @@ export async function GET() {
     prisma.wordEntry.count({ where: { userId: session.user.id, updatedAt: { gte: todayStart } } }),
   ]);
 
+  // Only send the small fields the chip list needs — the full AI payload per
+  // word (IPA, forms, synonyms, examples, etc.) is fetched lazily per word via
+  // GET /api/learning/word-bank/[word] when a chip is actually expanded.
   return NextResponse.json({
-    entries: entries.map((e) => ({
-      id: e.id,
-      word: e.word,
-      wordInfo: JSON.parse(e.wordInfo),
-      updatedAt: e.updatedAt,
-    })),
+    entries: entries.map((e) => {
+      const wordInfo = JSON.parse(e.wordInfo);
+      return {
+        id: e.id,
+        word: e.word,
+        isPhrase: wordInfo.kind === "phraseExpansion" || Boolean(wordInfo.phraseExpansion),
+        updatedAt: e.updatedAt,
+      };
+    }),
     stats: { total, thisWeek, today },
   });
 }

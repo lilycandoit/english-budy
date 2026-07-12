@@ -33,15 +33,36 @@ interface PastSession {
 interface WbEntry {
   id: string;
   word: string;
-  wordInfo: WordInfo;
+  isPhrase: boolean;
   updatedAt: string;
 }
 
 const SESSIONS_PREVIEW = 5;
+const WORD_BANK_CHIPS_PER_PAGE = 40;
 
-function isPhraseExpansion(wordInfo: WordInfo) {
-  return (wordInfo as WordInfo & { kind?: string; phraseExpansion?: unknown }).kind === "phraseExpansion"
-    || Boolean((wordInfo as WordInfo & { phraseExpansion?: unknown }).phraseExpansion);
+// Shared detail card for whichever word chip is currently expanded (Word Bank
+// or Past Sessions) — wordInfo is fetched lazily per word, not held for every
+// entry up front, so this renders whatever the parent has loaded so far.
+function ExpandedWordCard({
+  expandedWord,
+  wordInfo,
+  loading,
+  error,
+}: {
+  expandedWord: string | null;
+  wordInfo: WordInfo | null;
+  loading: boolean;
+  error: boolean;
+}) {
+  if (!expandedWord) return null;
+  if (loading) return <p className="mt-3 text-sm text-slate-400">Loading "{expandedWord}"…</p>;
+  if (error) return <p className="mt-3 text-sm text-slate-400">This word is no longer available.</p>;
+  if (!wordInfo) return null;
+  return (
+    <div className="mt-3">
+      <WordCard w={wordInfo} onDrilldown={() => {}} />
+    </div>
+  );
 }
 
 // ── Main component ────────────────────────────────────────────────────────────
@@ -61,7 +82,11 @@ export function VocabBuilder() {
   const [wordBank, setWordBank] = useState<WbEntry[]>([]);
   const [wbSearch, setWbSearch] = useState("");
   const [wbStats, setWbStats] = useState({ total: 0, thisWeek: 0, today: 0 });
+  const [wbShowAllChips, setWbShowAllChips] = useState(false);
   const [expandedWord, setExpandedWord] = useState<string | null>(null);
+  const [expandedWordInfo, setExpandedWordInfo] = useState<WordInfo | null>(null);
+  const [expandedLoading, setExpandedLoading] = useState(false);
+  const [expandedError, setExpandedError] = useState(false);
 
   const [pastSessions, setPastSessions] = useState<PastSession[]>([]);
   const [showAll, setShowAll] = useState(false);
@@ -88,6 +113,28 @@ export function VocabBuilder() {
   async function loadSessions() {
     const res = await fetch("/api/learning/sessions");
     if (res.ok) setPastSessions(await res.json());
+  }
+
+  async function toggleExpandedWord(word: string) {
+    if (expandedWord === word) {
+      setExpandedWord(null);
+      setExpandedWordInfo(null);
+      return;
+    }
+    setExpandedWord(word);
+    setExpandedWordInfo(null);
+    setExpandedError(false);
+    setExpandedLoading(true);
+
+    const res = await fetch(`/api/learning/word-bank/${encodeURIComponent(word)}`);
+    setExpandedLoading(false);
+
+    if (res.ok) {
+      const data = await res.json();
+      setExpandedWordInfo(data.wordInfo);
+    } else {
+      setExpandedError(true);
+    }
   }
 
   async function handleGenerate(e: React.SyntheticEvent) {
@@ -183,7 +230,7 @@ export function VocabBuilder() {
     }
   }
 
-  const vocabWordBank = wordBank.filter((e) => !isPhraseExpansion(e.wordInfo));
+  const vocabWordBank = wordBank.filter((e) => !e.isPhrase);
   const now = new Date();
   const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
   const weekStart = new Date(todayStart);
@@ -196,6 +243,11 @@ export function VocabBuilder() {
   const filteredWb = vocabWordBank.filter((e) =>
     e.word.toLowerCase().includes(wbSearch.toLowerCase())
   );
+  const isSearchingWb = wbSearch.trim().length > 0;
+  const visibleWb = isSearchingWb || wbShowAllChips
+    ? filteredWb
+    : filteredWb.slice(0, WORD_BANK_CHIPS_PER_PAGE);
+  const hasMoreWb = !isSearchingWb && !wbShowAllChips && filteredWb.length > WORD_BANK_CHIPS_PER_PAGE;
   const visibleSessions = showAll ? pastSessions : pastSessions.slice(0, SESSIONS_PREVIEW);
 
   return (
@@ -386,10 +438,10 @@ export function VocabBuilder() {
           </div>
 
           <div className="flex flex-wrap gap-2">
-            {filteredWb.map((entry) => (
+            {visibleWb.map((entry) => (
               <button
                 key={entry.id}
-                onClick={() => setExpandedWord(expandedWord === entry.word ? null : entry.word)}
+                onClick={() => toggleExpandedWord(entry.word)}
                 className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
                   expandedWord === entry.word
                     ? "bg-blue-600 text-white border-blue-600"
@@ -400,14 +452,21 @@ export function VocabBuilder() {
               </button>
             ))}
           </div>
-          {expandedWord && (() => {
-            const entry = filteredWb.find((e) => e.word === expandedWord);
-            return entry ? (
-              <div className="mt-3">
-                <WordCard w={entry.wordInfo} onDrilldown={() => {}} />
-              </div>
-            ) : null;
-          })()}
+          {hasMoreWb && (
+            <button
+              type="button"
+              onClick={() => setWbShowAllChips(true)}
+              className="mt-2 text-xs text-blue-600 hover:underline"
+            >
+              Show all ({filteredWb.length})
+            </button>
+          )}
+          <ExpandedWordCard
+            expandedWord={expandedWord}
+            wordInfo={expandedWordInfo}
+            loading={expandedLoading}
+            error={expandedError}
+          />
           {filteredWb.length === 0 && wbSearch && (
             <p className="text-sm text-slate-400">No words match &quot;{wbSearch}&quot;</p>
           )}
@@ -436,7 +495,7 @@ export function VocabBuilder() {
                     {s.words.map((w) => (
                       <button
                         key={w}
-                        onClick={() => setExpandedWord(expandedWord === w ? null : w)}
+                        onClick={() => toggleExpandedWord(w)}
                         className={`text-xs px-2 py-0.5 rounded-full transition-colors ${
                           expandedWord === w
                             ? "bg-blue-600 text-white"
@@ -458,14 +517,14 @@ export function VocabBuilder() {
                     </span>
                   </div>
                 </div>
-                {s.words.some((w) => w === expandedWord) && (() => {
-                  const entry = wordBank.find((e) => e.word === expandedWord);
-                  return entry ? (
-                    <div className="mt-3">
-                      <WordCard w={entry.wordInfo} onDrilldown={() => {}} />
-                    </div>
-                  ) : null;
-                })()}
+                {s.words.some((w) => w === expandedWord) && (
+                  <ExpandedWordCard
+                    expandedWord={expandedWord}
+                    wordInfo={expandedWordInfo}
+                    loading={expandedLoading}
+                    error={expandedError}
+                  />
+                )}
               </div>
             ))}
           </div>
