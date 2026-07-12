@@ -10,6 +10,7 @@ interface GroqOptions {
   model?: string;
   max_tokens?: number;
   temperature?: number;
+  reasoning_effort?: "low" | "medium" | "high";
 }
 
 /** Fetch the user's decrypted Groq API key from DB. Throws if missing. */
@@ -30,7 +31,7 @@ export async function groqChat(
   messages: GroqMessage[],
   opts: GroqOptions = {}
 ): Promise<string> {
-  const { model = "openai/gpt-oss-120b", max_tokens = 300, temperature = 0.2 } = opts;
+  const { model = "openai/gpt-oss-120b", max_tokens = 300, temperature = 0.2, reasoning_effort = "low" } = opts;
 
   const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
     method: "POST",
@@ -39,7 +40,11 @@ export async function groqChat(
       Authorization: `Bearer ${apiKey}`,
       "User-Agent": "english-buddy/2.0",
     },
-    body: JSON.stringify({ model, messages, max_tokens, temperature }),
+    // gpt-oss models spend part of max_tokens on hidden reasoning before writing
+    // the visible answer; reasoning_effort keeps that overhead small so JSON
+    // output isn't truncated (a "high"-effort call can burn the whole budget
+    // on reasoning and return empty content with finish_reason "length").
+    body: JSON.stringify({ model, messages, max_tokens, temperature, reasoning_effort }),
   });
 
   if (!res.ok) {
@@ -48,7 +53,11 @@ export async function groqChat(
   }
 
   const data = await res.json();
-  return data.choices?.[0]?.message?.content ?? "";
+  const content = data.choices?.[0]?.message?.content ?? "";
+  if (!content && data.choices?.[0]?.finish_reason === "length") {
+    throw new Error("Groq response truncated before any content was generated (reasoning consumed the token budget)");
+  }
+  return content;
 }
 
 /** Extract the first JSON object from a string (handles markdown code fences). */
