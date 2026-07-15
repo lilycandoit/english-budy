@@ -39,14 +39,42 @@ const SUGGESTIONS = [
 
 const HISTORY_PREVIEW = 10;
 
-const TONE_STYLES: Record<string, string> = {
-  casual: "border-teal-200 bg-teal-50 text-teal-800",
-  neutral: "border-blue-200 bg-blue-50 text-blue-800",
-  formal: "border-violet-200 bg-violet-50 text-violet-800",
+const TONE_STYLES: Record<string, { badge: string; active: string; inactive: string }> = {
+  casual: {
+    badge: "border-teal-200 bg-teal-50 text-teal-800",
+    active: "bg-teal-600 text-white border-teal-600",
+    inactive: "bg-teal-50 text-teal-700 border-teal-200 hover:opacity-80",
+  },
+  neutral: {
+    badge: "border-blue-200 bg-blue-50 text-blue-800",
+    active: "bg-blue-600 text-white border-blue-600",
+    inactive: "bg-blue-50 text-blue-700 border-blue-200 hover:opacity-80",
+  },
+  formal: {
+    badge: "border-violet-200 bg-violet-50 text-violet-800",
+    active: "bg-violet-600 text-white border-violet-600",
+    inactive: "bg-violet-50 text-violet-700 border-violet-200 hover:opacity-80",
+  },
+};
+const REGION_STYLE = {
+  badge: "border-emerald-200 bg-emerald-50 text-emerald-700",
+  active: "bg-emerald-600 text-white border-emerald-600",
+  inactive: "bg-emerald-50 text-emerald-700 border-emerald-200 hover:opacity-80",
+};
+const ALL_STYLE = {
+  active: "bg-slate-800 text-white border-slate-800",
+  inactive: "border-slate-200 text-slate-600 hover:border-slate-400",
 };
 
 function toneClass(tone: string) {
-  return TONE_STYLES[tone.toLowerCase()] ?? "border-slate-200 bg-slate-50 text-slate-700";
+  return TONE_STYLES[tone.toLowerCase()]?.badge ?? "border-slate-200 bg-slate-50 text-slate-700";
+}
+
+function filterChipClass(filter: string, active: boolean) {
+  if (filter === "All") return active ? ALL_STYLE.active : ALL_STYLE.inactive;
+  const toneStyle = TONE_STYLES[filter.toLowerCase()];
+  const style = toneStyle ?? REGION_STYLE;
+  return active ? style.active : style.inactive;
 }
 
 function AlternativeCard({
@@ -115,6 +143,7 @@ export function PhraseExpansion() {
   const [copied, setCopied] = useState<string | null>(null);
   const [history, setHistory] = useState<PhraseHistoryEntry[]>([]);
   const [showAllHistory, setShowAllHistory] = useState(false);
+  const [activeFilter, setActiveFilter] = useState("All");
   const { speak, stop, speaking } = useSpeech();
 
   useEffect(() => {
@@ -152,6 +181,7 @@ export function PhraseExpansion() {
     }
 
     setResult(data);
+    setActiveFilter("All");
     setPhrase("");
     loadHistory();
   }
@@ -162,8 +192,15 @@ export function PhraseExpansion() {
     window.setTimeout(() => setCopied((current) => current === text ? null : current), 1400);
   }
 
-  const recommended = result?.alternatives.filter((item) => item.recommended) ?? [];
-  const rest = result?.alternatives.filter((item) => !item.recommended) ?? [];
+  const filterOptions = result
+    ? ["All", ...Array.from(new Set(result.alternatives.map((item) => item.tone).filter(Boolean))),
+       ...Array.from(new Set(result.alternatives.map((item) => item.region).filter((r) => r && r.toLowerCase() !== "general")))]
+    : [];
+  const filteredAlternatives = result
+    ? result.alternatives.filter((item) => activeFilter === "All" || item.tone === activeFilter || item.region === activeFilter)
+    : [];
+  const recommended = filteredAlternatives.filter((item) => item.recommended);
+  const rest = filteredAlternatives.filter((item) => !item.recommended);
   const visibleHistory = showAllHistory ? history : history.slice(0, HISTORY_PREVIEW);
 
   return (
@@ -259,6 +296,21 @@ export function PhraseExpansion() {
             )}
           </section>
 
+          {filterOptions.length > 2 && (
+            <div className="flex flex-wrap gap-2">
+              {filterOptions.map((filter) => (
+                <button
+                  key={filter}
+                  type="button"
+                  onClick={() => setActiveFilter(filter)}
+                  className={`rounded-full border px-3 py-1.5 text-xs font-medium capitalize transition-colors ${filterChipClass(filter, activeFilter === filter)}`}
+                >
+                  {filter}
+                </button>
+              ))}
+            </div>
+          )}
+
           {recommended.length > 0 && (
             <section className="space-y-3">
               <div>
@@ -295,6 +347,10 @@ export function PhraseExpansion() {
             </section>
           )}
 
+          {filteredAlternatives.length === 0 && (
+            <p className="text-sm text-slate-400 text-center py-2">No alternatives match this filter.</p>
+          )}
+
           {result.notes.length > 0 && (
             <section className="rounded-2xl border border-amber-200 bg-amber-50 p-5">
               <h3 className="text-sm font-semibold text-amber-900">Notes</h3>
@@ -324,7 +380,10 @@ export function PhraseExpansion() {
               <button
                 key={entry.id}
                 type="button"
-                onClick={() => setResult({ ...entry.expansion, cached: true, savedToWordBank: true })}
+                onClick={() => {
+                  setResult({ ...entry.expansion, cached: true, savedToWordBank: true });
+                  setActiveFilter("All");
+                }}
                 className={`rounded-full border px-3 py-1.5 text-xs font-medium transition-colors ${
                   result?.phrase.toLowerCase() === entry.expansion.phrase.toLowerCase()
                     ? "border-blue-300 bg-white text-blue-700 shadow-sm ring-2 ring-blue-100"
