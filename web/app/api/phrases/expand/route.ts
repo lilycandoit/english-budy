@@ -5,26 +5,22 @@ import { prisma } from "@/lib/db";
 import { getUserGroqKey, groqChatJson, GroqRateLimitError } from "@/lib/groq";
 import { DEFAULT_NATIVE_LANGUAGE, formatNativeLanguageForPrompt } from "@/lib/languages";
 
-const SYSTEM = "You are an Australian English phrase coach. Teach practical alternatives with clear tone and usage guidance.";
+const SYSTEM = "You are an English phrase coach who helps learners sound natural in everyday conversation. Prioritize how native speakers actually talk over textbook or stiff phrasing.";
 
 interface PhraseAlternative {
   text: string;
   tone: string;
+  region: string;
+  recommended: boolean;
   whenToUse: string;
   avoidWhen: string;
   example: string;
 }
 
-interface PhraseAlternativeGroup {
-  label: string;
-  description: string;
-  items: PhraseAlternative[];
-}
-
 interface PhraseExpansion {
   phrase: string;
   meaning: string;
-  alternatives: PhraseAlternativeGroup[];
+  alternatives: PhraseAlternative[];
   notes: string[];
   savedToWordBank: boolean;
   cached?: boolean;
@@ -45,50 +41,56 @@ function asStringArray(value: unknown): string[] {
     : [];
 }
 
+// Normalizes both the new flat AI response shape and the old grouped shape
+// (pre-redesign saved phrases: [{ label, items: [...] }]) into one flat list,
+// so existing saved phrases keep rendering correctly without a DB migration.
+function normalizeAlternativeItem(raw: unknown, fallbackTone = ""): PhraseAlternative {
+  const obj = raw && typeof raw === "object" ? raw as Record<string, unknown> : {};
+  return {
+    text: asString(obj.text),
+    tone: asString(obj.tone, fallbackTone).toLowerCase(),
+    region: asString(obj.region, "general"),
+    recommended: obj.recommended === true,
+    whenToUse: asString(obj.whenToUse),
+    avoidWhen: asString(obj.avoidWhen),
+    example: asString(obj.example),
+  };
+}
+
+function normalizeAlternatives(raw: unknown): PhraseAlternative[] {
+  if (!Array.isArray(raw) || !raw.length) return [];
+
+  const first = raw[0] && typeof raw[0] === "object" ? raw[0] as Record<string, unknown> : {};
+  const isOldGroupedShape = Array.isArray(first.items);
+
+  const items = isOldGroupedShape
+    ? (raw as Record<string, unknown>[]).flatMap((group) => {
+        const label = asString(group.label);
+        const groupItems = Array.isArray(group.items) ? group.items : [];
+        return groupItems.map((item) => ({
+          ...normalizeAlternativeItem(item, label),
+          region: /australian/i.test(label) ? "Australian" : "general",
+        }));
+      })
+    : raw.map((item) => normalizeAlternativeItem(item));
+
+  return items.filter((item) => item.text && item.whenToUse);
+}
+
 function normalizeExpansion(parsed: unknown, phrase: string): PhraseExpansion {
   const obj = parsed && typeof parsed === "object" ? parsed as Record<string, unknown> : {};
-  const rawAlternatives = Array.isArray(obj.alternatives) ? obj.alternatives : [];
-  const alternatives = rawAlternatives
-    .map((group) => {
-      const groupObj = group && typeof group === "object" ? group as Record<string, unknown> : {};
-      const rawItems = Array.isArray(groupObj.items) ? groupObj.items : [];
-      const items = rawItems
-        .map((item) => {
-          const itemObj = item && typeof item === "object" ? item as Record<string, unknown> : {};
-          return {
-            text: asString(itemObj.text),
-            tone: asString(itemObj.tone),
-            whenToUse: asString(itemObj.whenToUse),
-            avoidWhen: asString(itemObj.avoidWhen),
-            example: asString(itemObj.example),
-          };
-        })
-        .filter((item) => item.text && item.whenToUse);
-
-      return {
-        label: asString(groupObj.label),
-        description: asString(groupObj.description),
-        items,
-      };
-    })
-    .filter((group) => group.label && group.items.length);
 
   return {
     phrase: asString(obj.phrase, phrase),
     meaning: asString(obj.meaning),
-    alternatives,
+    alternatives: normalizeAlternatives(obj.alternatives),
     notes: asStringArray(obj.notes),
     savedToWordBank: false,
   };
 }
 
-function flattenAlternatives(expansion: PhraseExpansion): PhraseAlternative[] {
-  return expansion.alternatives.flatMap((group) => group.items);
-}
-
 function buildWordInfo(expansion: PhraseExpansion) {
-  const alternatives = flattenAlternatives(expansion);
-  const examples = alternatives
+  const examples = expansion.alternatives
     .map((item) => item.example)
     .filter(Boolean)
     .slice(0, 5);
@@ -117,8 +119,12 @@ function getCachedExpansion(wordInfo: unknown): PhraseExpansion | null {
   const info = wordInfo as PhraseWordInfo;
   if (info.kind !== "phraseExpansion" && !info.phraseExpansion) return null;
   if (!info.phraseExpansion) return null;
+  const stored = info.phraseExpansion as unknown as Record<string, unknown>;
   return {
-    ...info.phraseExpansion,
+    phrase: asString(stored.phrase),
+    meaning: asString(stored.meaning),
+    alternatives: normalizeAlternatives(stored.alternatives),
+    notes: asStringArray(stored.notes),
     savedToWordBank: true,
     cached: true,
   };
@@ -165,25 +171,22 @@ function buildPrompt(phrase: string): string {
   const nativeLanguageLabel = formatNativeLanguageForPrompt(DEFAULT_NATIVE_LANGUAGE);
 
   return (
-    `Teach this English phrase or expression to a Vietnamese learner of Australian English: "${phrase}"\n\n` +
+    `Teach this English phrase or expression to a ${nativeLanguageLabel} learner of English: "${phrase}"\n\n` +
     `Return ONLY valid JSON, no markdown and no extra explanation:\n` +
     `{\n` +
     `  "phrase": "${phrase}",\n` +
     `  "meaning": "Short plain-English meaning.",\n` +
     `  "alternatives": [\n` +
-    `    { "label": "Casual", "description": "When this group sounds natural.", "items": [] },\n` +
-    `    { "label": "Neutral", "description": "When this group sounds natural.", "items": [] },\n` +
-    `    { "label": "Professional", "description": "When this group sounds natural.", "items": [] },\n` +
-    `    { "label": "Softer", "description": "When this group sounds natural.", "items": [] },\n` +
-    `    { "label": "Australian English", "description": "When this group sounds natural.", "items": [] }\n` +
+    `    { "text": "...", "tone": "casual|neutral|formal", "region": "general", "recommended": true, "whenToUse": "...", "avoidWhen": "...", "example": "..." }\n` +
     `  ],\n` +
-    `  "notes": ["Useful fact, Australian usage note, or learner warning."]\n` +
+    `  "notes": ["Useful fact or learner confusion note."]\n` +
     `}\n\n` +
     `Rules:\n` +
-    `- Return exactly these 5 groups in this order: Casual, Neutral, Professional, Softer, Australian English (if available).\n` +
-    `- Each group should include 2-5 alternatives. Do not put most alternatives in only one group.\n` +
-    `- Every alternative item must include text, tone, whenToUse, avoidWhen, and example.\n` +
-    `- Keep examples short and natural.\n` +
+    `- Return 4-6 alternatives total. Every one must be a genuinely distinct, natural way native speakers actually say this — do not pad with stiff, textbook-sounding, or repetitive variations just to reach a count.\n` +
+    `- tone: "casual", "neutral", or "formal" — pick whichever best fits each alternative.\n` +
+    `- region: "general" for everyday English anyone would say; only use a specific region (e.g. "Australian") when a phrasing is genuinely distinct slang from that region. Do not force regional flavour — most alternatives should be "general".\n` +
+    `- recommended: true on the 1-2 alternatives that are the most natural, most commonly used way to say this in everyday conversation. false on the rest.\n` +
+    `- Every alternative needs whenToUse and a short natural example. avoidWhen can be an empty string if there's nothing important to avoid.\n` +
     `- Mention ${nativeLanguageLabel} only in notes when it helps explain a common learner confusion.\n` +
     `- Do not create a long essay.`
   );
@@ -215,7 +218,7 @@ export async function POST(req: NextRequest) {
         { role: "system", content: SYSTEM },
         { role: "user", content: buildPrompt(input) },
       ],
-      { max_tokens: 3000, temperature: 0.65 }
+      { max_tokens: 1500, temperature: 0.65 }
     );
 
     const expansion = normalizeExpansion(parsed, input);

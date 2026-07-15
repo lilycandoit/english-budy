@@ -1,25 +1,22 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useSpeech } from "@/lib/useSpeech";
 
 interface PhraseAlternative {
   text: string;
   tone: string;
+  region: string;
+  recommended: boolean;
   whenToUse: string;
   avoidWhen: string;
   example: string;
 }
 
-interface PhraseAlternativeGroup {
-  label: string;
-  description: string;
-  items: PhraseAlternative[];
-}
-
 interface PhraseExpansionResult {
   phrase: string;
   meaning: string;
-  alternatives: PhraseAlternativeGroup[];
+  alternatives: PhraseAlternative[];
   notes: string[];
   savedToWordBank: boolean;
   cached?: boolean;
@@ -40,65 +37,74 @@ const SUGGESTIONS = [
   "I'm not sure",
 ];
 
+const HISTORY_PREVIEW = 10;
+
 const TONE_STYLES: Record<string, string> = {
   casual: "border-teal-200 bg-teal-50 text-teal-800",
   neutral: "border-blue-200 bg-blue-50 text-blue-800",
-  professional: "border-violet-200 bg-violet-50 text-violet-800",
-  softer: "border-amber-200 bg-amber-50 text-amber-800",
-  stronger: "border-red-200 bg-red-50 text-red-800",
+  formal: "border-violet-200 bg-violet-50 text-violet-800",
 };
 
-const GROUP_STYLES = [
-  { key: "casual", accent: "border-teal-300", pill: "bg-teal-600 text-white", soft: "bg-teal-50 text-teal-700 border-teal-200" },
-  { key: "neutral", accent: "border-blue-300", pill: "bg-blue-600 text-white", soft: "bg-blue-50 text-blue-700 border-blue-200" },
-  { key: "professional", accent: "border-violet-300", pill: "bg-violet-600 text-white", soft: "bg-violet-50 text-violet-700 border-violet-200" },
-  { key: "softer", accent: "border-amber-300", pill: "bg-amber-500 text-white", soft: "bg-amber-50 text-amber-700 border-amber-200" },
-  { key: "stronger", accent: "border-red-300", pill: "bg-red-600 text-white", soft: "bg-red-50 text-red-700 border-red-200" },
-  { key: "australian", accent: "border-emerald-300", pill: "bg-emerald-600 text-white", soft: "bg-emerald-50 text-emerald-700 border-emerald-200" },
-];
-
 function toneClass(tone: string) {
-  const key = tone.toLowerCase();
-  return Object.entries(TONE_STYLES).find(([name]) => key.includes(name))?.[1]
-    ?? "border-slate-200 bg-slate-50 text-slate-700";
+  return TONE_STYLES[tone.toLowerCase()] ?? "border-slate-200 bg-slate-50 text-slate-700";
 }
 
-function groupStyle(label: string) {
-  const key = label.toLowerCase();
-  return GROUP_STYLES.find((style) => key.includes(style.key))
-    ?? { accent: "border-slate-300", pill: "bg-slate-700 text-white", soft: "bg-slate-50 text-slate-700 border-slate-200" };
-}
-
-function getAlternatives(result: PhraseExpansionResult) {
-  return result.alternatives.flatMap((group) =>
-    group.items.map((item) => ({ ...item, group: group.label }))
+function AlternativeCard({
+  item,
+  copied,
+  onCopy,
+  emphasized = false,
+}: {
+  item: PhraseAlternative;
+  copied: boolean;
+  onCopy: () => void;
+  emphasized?: boolean;
+}) {
+  return (
+    <article className={`rounded-xl border p-4 ${emphasized ? "border-blue-200 bg-blue-50/40" : "border-slate-200 bg-white"}`}>
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex flex-wrap items-center gap-2">
+          <p className="text-base font-semibold text-slate-800">{item.text}</p>
+          {item.tone && (
+            <span className={`inline-flex rounded-full border px-2 py-0.5 text-xs font-medium ${toneClass(item.tone)}`}>
+              {item.tone}
+            </span>
+          )}
+          {item.region && item.region.toLowerCase() !== "general" && (
+            <span className="inline-flex rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-700">
+              {item.region}
+            </span>
+          )}
+        </div>
+        <button
+          type="button"
+          onClick={onCopy}
+          className="flex-shrink-0 rounded-lg border border-slate-200 px-2.5 py-1 text-xs font-medium text-slate-500 hover:bg-slate-50 transition-colors"
+        >
+          {copied ? "Copied" : "Copy"}
+        </button>
+      </div>
+      {item.example && (
+        <p className="mt-3 border-l-2 border-slate-200 pl-3 text-sm italic leading-relaxed text-slate-500">
+          {item.example}
+        </p>
+      )}
+      <div className="mt-3 grid gap-2 text-sm">
+        {item.whenToUse && (
+          <p className="text-slate-600">
+            <span className="mr-2 rounded-md bg-slate-100 px-2 py-0.5 text-xs font-semibold text-slate-500">Best for</span>
+            {item.whenToUse}
+          </p>
+        )}
+        {item.avoidWhen && (
+          <p className="text-slate-600">
+            <span className="mr-2 rounded-md bg-red-50 px-2 py-0.5 text-xs font-semibold text-red-600">Avoid</span>
+            {item.avoidWhen}
+          </p>
+        )}
+      </div>
+    </article>
   );
-}
-
-function getBestPicks(result: PhraseExpansionResult) {
-  const all = getAlternatives(result);
-  const picks = [
-    {
-      label: "Everyday",
-      item: all.find((item) => /casual|neutral/i.test(`${item.group} ${item.tone}`)),
-    },
-    {
-      label: "Polite",
-      item: all.find((item) => /professional|softer/i.test(`${item.group} ${item.tone}`)),
-    },
-    {
-      label: "Natural",
-      item: all.find((item) => /australian|casual/i.test(`${item.group} ${item.tone}`)),
-    },
-  ];
-  const used = new Set<string>();
-  return picks.flatMap((pick) => {
-    const fallback = all.find((item) => !used.has(item.text));
-    const item = pick.item && !used.has(pick.item.text) ? pick.item : fallback;
-    if (!item) return [];
-    used.add(item.text);
-    return [{ label: pick.label, item }];
-  });
 }
 
 export function PhraseExpansion() {
@@ -108,7 +114,8 @@ export function PhraseExpansion() {
   const [result, setResult] = useState<PhraseExpansionResult | null>(null);
   const [copied, setCopied] = useState<string | null>(null);
   const [history, setHistory] = useState<PhraseHistoryEntry[]>([]);
-  const [activeGroup, setActiveGroup] = useState("All");
+  const [showAllHistory, setShowAllHistory] = useState(false);
+  const { speak, stop, speaking } = useSpeech();
 
   useEffect(() => {
     loadHistory();
@@ -145,7 +152,6 @@ export function PhraseExpansion() {
     }
 
     setResult(data);
-    setActiveGroup(data.alternatives?.[0]?.label ?? "All");
     setPhrase("");
     loadHistory();
   }
@@ -155,6 +161,10 @@ export function PhraseExpansion() {
     setCopied(text);
     window.setTimeout(() => setCopied((current) => current === text ? null : current), 1400);
   }
+
+  const recommended = result?.alternatives.filter((item) => item.recommended) ?? [];
+  const rest = result?.alternatives.filter((item) => !item.recommended) ?? [];
+  const visibleHistory = showAllHistory ? history : history.slice(0, HISTORY_PREVIEW);
 
   return (
     <div className="space-y-6">
@@ -206,66 +216,42 @@ export function PhraseExpansion() {
         <div className="space-y-3 rounded-2xl border border-slate-200 bg-white p-5">
           <div className="h-4 w-32 rounded bg-slate-100" />
           <div className="h-7 w-56 rounded bg-slate-100" />
-          <div className="grid gap-3 sm:grid-cols-3">
-            {[0, 1, 2].map((item) => (
+          <div className="grid gap-3 sm:grid-cols-2">
+            {[0, 1].map((item) => (
               <div key={item} className="h-24 rounded-xl border border-slate-200 bg-slate-50" />
             ))}
           </div>
         </div>
       )}
 
-      {history.length > 0 && (
-        <section className="rounded-2xl border border-slate-200 bg-slate-50/70 p-5">
-          <div className="mb-3 flex items-center justify-between gap-2">
-            <div>
-              <h3 className="text-sm font-semibold text-slate-700">Saved Phrase History</h3>
-              <p className="mt-0.5 text-xs text-slate-400">Tap a saved phrase to load it instantly from cache.</p>
-            </div>
-            <span className="text-xs text-slate-400">{history.length} saved</span>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            {history.map((entry) => (
-              <button
-                key={entry.id}
-                type="button"
-                onClick={() => {
-                  setResult({ ...entry.expansion, cached: true, savedToWordBank: true });
-                  setActiveGroup(entry.expansion.alternatives?.[0]?.label ?? "All");
-                }}
-                className={`rounded-full border px-3 py-1.5 text-xs font-medium transition-colors ${
-                  result?.phrase.toLowerCase() === entry.expansion.phrase.toLowerCase()
-                    ? "border-blue-300 bg-white text-blue-700 shadow-sm ring-2 ring-blue-100"
-                    : "border-slate-200 text-slate-600 hover:border-blue-400 hover:text-blue-600"
-                }`}
-              >
-                {entry.expansion.phrase}
-              </button>
-            ))}
-          </div>
-        </section>
-      )}
-
       {result && (
         <div className="space-y-5">
-          <section className="rounded-2xl border border-blue-200 bg-blue-50/40 p-5 shadow-sm">
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-wide text-blue-600">
-                  {result.cached ? "Viewing saved phrase" : "Current search"}
-                </p>
-                <h3 className="mt-1 text-xl font-bold text-slate-800">{result.phrase}</h3>
-                {result.meaning && (
-                  <p className="mt-2 max-w-2xl text-sm leading-relaxed text-slate-600">{result.meaning}</p>
-                )}
-              </div>
+          {/* Hero — the searched phrase itself, elevated */}
+          <section className="rounded-2xl border-2 border-blue-200 bg-blue-50/40 p-6 shadow-sm">
+            <p className="text-xs font-semibold uppercase tracking-wide text-blue-600">
+              {result.cached ? "Viewing saved phrase" : "You searched"}
+            </p>
+            <div className="mt-1 flex flex-wrap items-center gap-3">
+              <h2 className="text-2xl font-bold text-slate-800">{result.phrase}</h2>
+              <button
+                type="button"
+                onClick={() => speaking ? stop() : speak(result.phrase)}
+                title={speaking ? "Stop" : "Listen"}
+                className="text-slate-400 hover:text-blue-600 transition-colors text-lg"
+              >
+                {speaking ? "⏹" : "🔊"}
+              </button>
               <button
                 type="button"
                 onClick={() => copyText(result.phrase)}
-                className="w-fit rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50 transition-colors"
+                className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50 transition-colors"
               >
                 {copied === result.phrase ? "Copied" : "Copy"}
               </button>
             </div>
+            {result.meaning && (
+              <p className="mt-2 max-w-2xl text-sm leading-relaxed text-slate-600">{result.meaning}</p>
+            )}
             {result.savedToWordBank && (
               <p className="mt-3 rounded-lg border border-green-200 bg-green-50 px-3 py-2 text-xs font-medium text-green-700">
                 {result.cached ? "Loaded from saved phrases." : "Saved to phrase history."} You can review this phrase later in Words Review.
@@ -273,126 +259,41 @@ export function PhraseExpansion() {
             )}
           </section>
 
-          <section className="space-y-3">
-            <div>
-              <h3 className="text-sm font-semibold text-slate-700">Best picks</h3>
-              <p className="mt-0.5 text-xs text-slate-400">Start with these before exploring every tone.</p>
-            </div>
-            <div className="grid gap-3 sm:grid-cols-3">
-              {getBestPicks(result).map((pick) => (
-                <article key={`${pick.label}-${pick.item.text}`} className="rounded-xl border border-slate-200 bg-white p-4">
-                  <div className="mb-3 flex items-center justify-between gap-2">
-                    <span className="text-xs font-semibold uppercase tracking-wide text-slate-400">{pick.label}</span>
-                    <button
-                      type="button"
-                      onClick={() => copyText(pick.item.text)}
-                      className="rounded-lg border border-slate-200 px-2.5 py-1 text-xs font-medium text-slate-500 hover:bg-slate-50 transition-colors"
-                    >
-                      {copied === pick.item.text ? "Copied" : "Copy"}
-                    </button>
-                  </div>
-                  <p className="text-base font-semibold text-slate-800">{pick.item.text}</p>
-                  {pick.item.example && (
-                    <p className="mt-2 border-l-2 border-blue-200 pl-3 text-sm italic leading-relaxed text-slate-500">
-                      {pick.item.example}
-                    </p>
-                  )}
-                </article>
-              ))}
-            </div>
-          </section>
+          {recommended.length > 0 && (
+            <section className="space-y-3">
+              <div>
+                <h3 className="text-sm font-semibold text-slate-700">Best ways to say it</h3>
+                <p className="mt-0.5 text-xs text-slate-400">The most natural, most commonly used options.</p>
+              </div>
+              <div className="grid gap-3 sm:grid-cols-2">
+                {recommended.map((item) => (
+                  <AlternativeCard
+                    key={item.text}
+                    item={item}
+                    copied={copied === item.text}
+                    onCopy={() => copyText(item.text)}
+                    emphasized
+                  />
+                ))}
+              </div>
+            </section>
+          )}
 
-          <section className="rounded-2xl border border-slate-200 bg-white p-5">
-            <div className="mb-4 flex flex-wrap gap-2">
-              <button
-                type="button"
-                onClick={() => setActiveGroup("All")}
-                className={`rounded-full border px-3 py-1.5 text-xs font-medium transition-colors ${
-                  activeGroup === "All"
-                    ? "border-slate-700 bg-slate-800 text-white"
-                    : "border-slate-200 text-slate-600 hover:border-slate-400"
-                }`}
-              >
-                All
-              </button>
-              {result.alternatives.map((group) => {
-                const style = groupStyle(group.label);
-                return (
-                  <button
-                    key={group.label}
-                    type="button"
-                    onClick={() => setActiveGroup(group.label)}
-                    className={`rounded-full border px-3 py-1.5 text-xs font-medium transition-colors ${
-                      activeGroup === group.label
-                        ? style.pill
-                        : `${style.soft} hover:opacity-80`
-                    }`}
-                  >
-                    {group.label}
-                  </button>
-                );
-              })}
-            </div>
-
-            {(activeGroup === "All"
-              ? result.alternatives
-              : result.alternatives.filter((group) => group.label === activeGroup)
-            ).map((group) => {
-              const style = groupStyle(group.label);
-              return (
-                <div key={group.label} className={`mb-5 border-l-4 pl-4 last:mb-0 ${style.accent}`}>
-                  <div className="mb-4">
-                    <h3 className="text-sm font-semibold text-slate-800">{group.label}</h3>
-                    {group.description && (
-                      <p className="mt-1 text-xs text-slate-500">{group.description}</p>
-                    )}
-                  </div>
-                  <div className="grid gap-3 md:grid-cols-2">
-                    {group.items.map((item) => (
-                      <article key={`${group.label}-${item.text}`} className="rounded-xl border border-slate-200 bg-white p-4">
-                        <div className="flex items-start justify-between gap-3">
-                          <div>
-                            <p className="text-base font-semibold text-slate-800">{item.text}</p>
-                            {item.tone && (
-                              <span className={`mt-2 inline-flex rounded-full border px-2 py-0.5 text-xs font-medium ${toneClass(item.tone)}`}>
-                                {item.tone}
-                              </span>
-                            )}
-                          </div>
-                          <button
-                            type="button"
-                            onClick={() => copyText(item.text)}
-                            className="rounded-lg border border-slate-200 px-2.5 py-1 text-xs font-medium text-slate-500 hover:bg-slate-50 transition-colors"
-                          >
-                            {copied === item.text ? "Copied" : "Copy"}
-                          </button>
-                        </div>
-                        {item.example && (
-                          <p className="mt-3 border-l-2 border-slate-200 pl-3 text-sm italic leading-relaxed text-slate-500">
-                            {item.example}
-                          </p>
-                        )}
-                        <div className="mt-3 grid gap-2 text-sm">
-                          {item.whenToUse && (
-                            <p className="text-slate-600">
-                              <span className="mr-2 rounded-md bg-slate-100 px-2 py-0.5 text-xs font-semibold text-slate-500">Best for</span>
-                              {item.whenToUse}
-                            </p>
-                          )}
-                          {item.avoidWhen && (
-                            <p className="text-slate-600">
-                              <span className="mr-2 rounded-md bg-red-50 px-2 py-0.5 text-xs font-semibold text-red-600">Avoid</span>
-                              {item.avoidWhen}
-                            </p>
-                          )}
-                        </div>
-                      </article>
-                    ))}
-                  </div>
-                </div>
-              );
-            })}
-          </section>
+          {rest.length > 0 && (
+            <section className="space-y-3">
+              <h3 className="text-sm font-semibold text-slate-700">More ways to say it</h3>
+              <div className="grid gap-3 sm:grid-cols-2">
+                {rest.map((item) => (
+                  <AlternativeCard
+                    key={item.text}
+                    item={item}
+                    copied={copied === item.text}
+                    onCopy={() => copyText(item.text)}
+                  />
+                ))}
+              </div>
+            </section>
+          )}
 
           {result.notes.length > 0 && (
             <section className="rounded-2xl border border-amber-200 bg-amber-50 p-5">
@@ -406,8 +307,44 @@ export function PhraseExpansion() {
               </ul>
             </section>
           )}
-
         </div>
+      )}
+
+      {history.length > 0 && (
+        <section className="rounded-2xl border border-slate-200 bg-slate-50/70 p-5">
+          <div className="mb-3 flex items-center justify-between gap-2">
+            <div>
+              <h3 className="text-sm font-semibold text-slate-700">Saved Phrase History</h3>
+              <p className="mt-0.5 text-xs text-slate-400">Tap a saved phrase to load it instantly from cache.</p>
+            </div>
+            <span className="text-xs text-slate-400">{history.length} saved</span>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {visibleHistory.map((entry) => (
+              <button
+                key={entry.id}
+                type="button"
+                onClick={() => setResult({ ...entry.expansion, cached: true, savedToWordBank: true })}
+                className={`rounded-full border px-3 py-1.5 text-xs font-medium transition-colors ${
+                  result?.phrase.toLowerCase() === entry.expansion.phrase.toLowerCase()
+                    ? "border-blue-300 bg-white text-blue-700 shadow-sm ring-2 ring-blue-100"
+                    : "border-slate-200 text-slate-600 hover:border-blue-400 hover:text-blue-600"
+                }`}
+              >
+                {entry.expansion.phrase}
+              </button>
+            ))}
+          </div>
+          {!showAllHistory && history.length > HISTORY_PREVIEW && (
+            <button
+              type="button"
+              onClick={() => setShowAllHistory(true)}
+              className="mt-3 text-xs text-blue-600 hover:underline"
+            >
+              Show all ({history.length})
+            </button>
+          )}
+        </section>
       )}
     </div>
   );

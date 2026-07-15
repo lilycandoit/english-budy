@@ -26,16 +26,13 @@ interface PhraseAlternative {
   example: string;
 }
 
-interface PhraseAlternativeGroup {
-  label: string;
-  description: string;
-  items: PhraseAlternative[];
-}
-
+// alternatives can be the old grouped shape ([{ label, items: [...] }]) from
+// saved phrases predating the Say It Differently redesign, or the current flat
+// shape ([{ text, tone, recommended, ... }]) — getTopAlternatives handles both.
 interface PhraseExpansion {
   phrase: string;
   meaning: string;
-  alternatives: PhraseAlternativeGroup[];
+  alternatives: unknown[];
   notes: string[];
 }
 
@@ -54,7 +51,11 @@ function getPhraseExpansion(wordInfo: WbEntry["wordInfo"]): PhraseExpansion | nu
 }
 
 function getTopAlternatives(expansion: PhraseExpansion, limit = 5): PhraseAlternative[] {
-  return expansion.alternatives.flatMap((group) => group.items).slice(0, limit);
+  const flat = expansion.alternatives.flatMap((entry) => {
+    const group = entry as { items?: PhraseAlternative[] };
+    return Array.isArray(group.items) ? group.items : [entry as PhraseAlternative];
+  });
+  return flat.slice(0, limit);
 }
 
 interface DueCard {
