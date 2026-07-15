@@ -407,8 +407,23 @@ export function WordsReview() {
     }
   }
 
-  function startFlashcards(cards: WbEntry[]) {
-    setFcCards(cards);
+  // `wordInfo` may be missing here — /api/learning/word-bank's list response
+  // only sends { word, isPhrase, updatedAt } now (see Vocabulary Builder's
+  // payload fix), so hydrate any card missing full detail before opening
+  // the flashcard viewer, which needs it all up front.
+  async function startFlashcards(cards: { word: string; wordInfo?: WbEntry["wordInfo"] }[]) {
+    const hydrated = await Promise.all(
+      cards.map(async (c) => {
+        if (c.wordInfo) return c as WbEntry;
+        const res = await fetch(`/api/learning/word-bank/${encodeURIComponent(c.word)}`);
+        if (res.ok) {
+          const data = await res.json();
+          return { word: c.word, wordInfo: data.wordInfo };
+        }
+        return { word: c.word, wordInfo: {} };
+      })
+    );
+    setFcCards(hydrated);
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
