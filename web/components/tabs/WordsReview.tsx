@@ -118,9 +118,7 @@ function BilingualStory({ rows }: { rows: BilingualStoryRow[] }) {
               <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-slate-400 sm:hidden">
                 {DEFAULT_NATIVE_LANGUAGE.nativeName}
               </p>
-              <p className="whitespace-pre-wrap text-sm leading-relaxed text-slate-700">
-                {row.native}
-              </p>
+              <HighlightedStory text={row.native} />
             </div>
           </div>
         ))}
