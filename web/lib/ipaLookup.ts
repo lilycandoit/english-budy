@@ -14,3 +14,16 @@ export function lookupIpa(word: string): string | null {
   const pronunciations = dict[key];
   return pronunciations?.[0] ?? null;
 }
+
+/**
+ * Simplifies a strict-IPA transcription to the looser notation most online
+ * dictionaries and search engines display (e.g. Google, Merriam-Webster),
+ * swapping linguistically-precise symbols for their everyday equivalents.
+ * Purely a display transform — the underlying stored IPA is untouched.
+ */
+export function simplifyPhonetic(ipa: string): string {
+  if (!ipa) return "";
+  return ipa
+    .replace(/ɹ/g, "r") // the English "r" sound (ɹ is precise, r is what people expect)
+    .replace(/ɫ/g, "l"); // "dark l" (e.g. in "school") simplified to plain l
+}

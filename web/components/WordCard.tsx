@@ -2,6 +2,7 @@
 
 import { DEFAULT_NATIVE_LANGUAGE, type NativeLanguageCode } from "@/lib/languages";
 import { useSpeech } from "@/lib/useSpeech";
+import { simplifyPhonetic } from "@/lib/ipaLookup";
 
 export interface WordForm {
   pos: string;          // "noun" | "verb" | "adjective" | "adverb" | "phrase" | "idiom" | "slang"
@@ -53,7 +54,7 @@ export function WordCard({
         <div>
           <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
             <h3 className="text-lg sm:text-xl font-bold text-slate-800">{w.word}</h3>
-            {w.ipa && <span className="text-sm text-slate-400 font-mono">{w.ipa}</span>}
+            {w.ipa && <span className="text-sm text-slate-400 font-mono">{simplifyPhonetic(w.ipa)}</span>}
           </div>
           {nativeTranslation && (
             <p className="mt-1 text-sm text-slate-600">

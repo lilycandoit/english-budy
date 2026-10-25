@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { DEFAULT_NATIVE_LANGUAGE } from "@/lib/languages";
+import { simplifyPhonetic } from "@/lib/ipaLookup";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -235,7 +236,7 @@ function FlashcardViewer({
               </p>
             )}
             {card.wordInfo?.ipa && (
-              <p className="text-slate-400 font-mono text-sm mt-2">{card.wordInfo.ipa}</p>
+              <p className="text-slate-400 font-mono text-sm mt-2">{simplifyPhonetic(card.wordInfo.ipa)}</p>
             )}
             <p className="text-xs text-slate-300 mt-6">Tap to reveal</p>
           </div>
