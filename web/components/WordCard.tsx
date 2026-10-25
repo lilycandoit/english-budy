@@ -3,6 +3,9 @@
 import { DEFAULT_NATIVE_LANGUAGE, type NativeLanguageCode } from "@/lib/languages";
 import { useSpeech } from "@/lib/useSpeech";
 import { simplifyPhonetic } from "@/lib/ipaLookup";
+import { Card } from "@/components/ui/Card";
+import { Button } from "@/components/ui/Button";
+import { Badge, type BadgeColor } from "@/components/ui/Badge";
 
 export interface WordForm {
   pos: string;          // "noun" | "verb" | "adjective" | "adverb" | "phrase" | "idiom" | "slang"
@@ -22,14 +25,14 @@ export interface WordInfo {
   examples: string[];
 }
 
-const POS_COLORS: Record<string, string> = {
-  noun:      "bg-blue-50 text-blue-700 border-blue-200",
-  verb:      "bg-violet-50 text-violet-700 border-violet-200",
-  adjective: "bg-amber-50 text-amber-700 border-amber-200",
-  adverb:    "bg-teal-50 text-teal-700 border-teal-200",
-  phrase:    "bg-green-50 text-green-700 border-green-200",
-  idiom:     "bg-green-50 text-green-700 border-green-200",
-  slang:     "bg-pink-50 text-pink-700 border-pink-200",
+const POS_COLORS: Record<string, BadgeColor> = {
+  noun: "blue",
+  verb: "violet",
+  adjective: "amber",
+  adverb: "teal",
+  phrase: "green",
+  idiom: "green",
+  slang: "pink",
 };
 
 const POS_ABBR: Record<string, string> = {
@@ -48,62 +51,58 @@ export function WordCard({
   const nativeTranslation = w.translations?.[DEFAULT_NATIVE_LANGUAGE.code];
 
   return (
-    <div className="border border-slate-200 rounded-2xl p-4 bg-white">
+    <Card>
       {/* Header */}
       <div className="flex items-start justify-between gap-2 mb-4">
         <div>
           <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
-            <h3 className="text-lg sm:text-xl font-bold text-slate-800">{w.word}</h3>
-            {w.ipa && <span className="text-sm text-slate-400 font-mono">{simplifyPhonetic(w.ipa)}</span>}
+            <h3 className="text-lg sm:text-xl font-bold text-ink-primary">{w.word}</h3>
+            {w.ipa && <span className="text-sm text-ink-secondary font-mono">{simplifyPhonetic(w.ipa)}</span>}
           </div>
           {nativeTranslation && (
-            <p className="mt-1 text-sm text-slate-600">
-              <span className="font-medium text-slate-400">{DEFAULT_NATIVE_LANGUAGE.nativeName}:</span>{" "}
+            <p className="mt-1 text-sm text-ink-secondary">
+              <span className="font-medium text-ink-secondary">{DEFAULT_NATIVE_LANGUAGE.nativeName}:</span>{" "}
               {nativeTranslation}
             </p>
           )}
         </div>
-        <button
-          onClick={() => speaking ? stop() : speak(w.word)}
+        <Button
+          variant="ghost"
+          onClick={() => (speaking ? stop() : speak(w.word))}
           title={speaking ? "Stop" : "Listen"}
-          className="flex-shrink-0 text-slate-300 hover:text-blue-500 transition-colors text-base mt-0.5"
+          className="flex-shrink-0 mt-0.5"
         >
           {speaking ? "⏹" : "🔊"}
-        </button>
+        </Button>
       </div>
 
       {/* Per-POS forms (new format) */}
       {w.forms && w.forms.length > 0 ? (
         <div className="space-y-4 mb-4">
-          {w.forms.filter((form) => form.pos && form.meanings?.length).map((form, fi) => {
-            const colorClass = POS_COLORS[form.pos] ?? "bg-slate-50 text-slate-600 border-slate-200";
-            return (
-              <div key={fi}>
-                <div className="flex items-center gap-2 mb-1.5">
-                  <span className={`text-xs font-semibold px-2 py-0.5 rounded-full border ${colorClass}`}>
-                    {POS_ABBR[form.pos] ?? form.pos}
-                  </span>
-                  {form.inflections && (
-                    <span className="text-xs text-slate-400 font-mono">{form.inflections}</span>
-                  )}
-                </div>
-                <ul className="space-y-0.5 pl-1">
-                  {(form.meanings ?? []).map((m, i) => (
-                    <li key={i} className="text-sm text-slate-700">
-                      <span className="text-slate-400 mr-1">{i + 1}.</span>{m}
-                    </li>
-                  ))}
-                </ul>
+          {w.forms.filter((form) => form.pos && form.meanings?.length).map((form, fi) => (
+            <div key={fi}>
+              <div className="flex items-center gap-2 mb-1.5">
+                <Badge color={POS_COLORS[form.pos] ?? "slate"}>{POS_ABBR[form.pos] ?? form.pos}</Badge>
+                {form.inflections && (
+                  <span className="text-xs text-ink-secondary font-mono">{form.inflections}</span>
+                )}
               </div>
-            );
-          })}
+              <ul className="space-y-0.5 pl-1">
+                {(form.meanings ?? []).map((m, i) => (
+                  <li key={i} className="text-sm text-ink-primary">
+                    <span className="text-ink-muted mr-1">{i + 1}.</span>{m}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
         </div>
       ) : w.meanings && w.meanings.length > 0 ? (
         /* Legacy fallback */
         <ul className="space-y-0.5 mb-4">
           {w.meanings.map((m, i) => (
-            <li key={i} className="text-sm text-slate-700">
-              <span className="text-slate-400 mr-1">{i + 1}.</span>{m}
+            <li key={i} className="text-sm text-ink-primary">
+              <span className="text-ink-muted mr-1">{i + 1}.</span>{m}
             </li>
           ))}
         </ul>
@@ -116,13 +115,13 @@ export function WordCard({
       {(w.examples?.length ?? 0) > 0 && (
         <div className="mt-3 space-y-1.5">
           {w.examples.map((ex, i) => (
-            <p key={i} className="text-sm text-slate-600 italic border-l-2 border-slate-200 pl-3">
+            <p key={i} className="text-sm text-ink-secondary italic border-l-2 border-slate-200 pl-3">
               {ex}
             </p>
           ))}
         </div>
       )}
-    </div>
+    </Card>
   );
 }
 
@@ -134,28 +133,18 @@ function TagRow({
 }: {
   label: string;
   tags: string[];
-  color: "blue" | "red" | "teal";
+  color: BadgeColor;
   onDrilldown: (tag: string) => void;
 }) {
   if (!tags?.length) return null;
 
-  const styles = {
-    blue: "bg-blue-50 text-blue-700 hover:bg-blue-100 border-blue-200",
-    red:  "bg-red-50 text-red-700 hover:bg-red-100 border-red-200",
-    teal: "bg-teal-50 text-teal-700 hover:bg-teal-100 border-teal-200",
-  };
-
   return (
     <div className="flex flex-wrap items-center gap-1.5 mt-2">
-      <span className="text-xs text-slate-400 w-20 flex-shrink-0">{label}</span>
+      <span className="text-xs text-ink-muted w-20 flex-shrink-0">{label}</span>
       {tags.map((tag) => (
-        <button
-          key={tag}
-          onClick={() => onDrilldown(tag)}
-          className={`text-xs px-2.5 py-1 rounded-full border font-medium transition-colors ${styles[color]}`}
-        >
+        <Badge key={tag} color={color} onClick={() => onDrilldown(tag)}>
           {tag}
-        </button>
+        </Badge>
       ))}
     </div>
   );

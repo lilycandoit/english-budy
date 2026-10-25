@@ -14,22 +14,22 @@ export function Navbar() {
         <div className="max-w-4xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-2">
             <span className="text-xl">📚</span>
-            <span className="font-semibold text-slate-800 text-sm">Daily English Buddy</span>
+            <span className="font-semibold text-ink-primary text-sm">Daily English Buddy</span>
           </div>
           <div className="flex items-center gap-3">
-            <span className="text-sm text-slate-500 hidden sm:block">
+            <span className="text-sm text-ink-secondary hidden sm:block">
               {session?.user?.name || session?.user?.email}
             </span>
             <button
               onClick={() => setShowSettings(true)}
               title="Settings"
-              className="text-slate-400 hover:text-slate-700 transition-colors text-base"
+              className="text-ink-muted hover:text-ink-primary transition-colors text-base"
             >
               ⚙️
             </button>
             <button
               onClick={() => signOut({ callbackUrl: "/login" })}
-              className="text-sm text-slate-500 hover:text-slate-800 transition-colors"
+              className="text-sm text-ink-secondary hover:text-ink-primary transition-colors"
             >
               Sign out
             </button>
