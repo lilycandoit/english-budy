@@ -154,7 +154,7 @@ export function SentenceCheck() {
           }}
           rows={3}
           placeholder="e.g. I have went to the shops yesterday and buyed some milk."
-          className="w-full border border-line-strong rounded-xl px-4 py-3 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          className="w-full border border-strong rounded-xl px-4 py-3 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
         />
         {error && <p className="text-red-500 text-sm">{error}</p>}
         <button

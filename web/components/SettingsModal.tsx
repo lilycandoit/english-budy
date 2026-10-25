@@ -65,7 +65,7 @@ export function SettingsModal({ onClose }: { onClose: () => void }) {
               value={groqKey}
               onChange={(e) => setGroqKey(e.target.value)}
               placeholder={session?.user?.hasGroqKey ? "Enter new key to update…" : "gsk_..."}
-              className="flex-1 border border-line-strong rounded-lg px-3 py-2 text-xs font-mono focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="flex-1 border border-strong rounded-lg px-3 py-2 text-xs font-mono focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
             <button
               type="submit"

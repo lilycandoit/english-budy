@@ -2,8 +2,130 @@
 @tailwind components;
 @tailwind utilities;
 
+/*
+ * Theme tokens — light values here, dark values repeated under `.dark`.
+ * tailwind.config.ts points its color theme at these variables, so
+ * components use plain class names (bg-surface, text-ink-primary, ...)
+ * and never need a dark: variant — the variable swap handles both themes.
+ * Values are the WCAG-checked palette from the Phase 6 design artifact;
+ * see .planning/phases/phase-7-dark-mode/plan.md for the full table.
+ */
+:root {
+  --color-page: #f8fafc;
+  --color-surface: #ffffff;
+  --color-surface-sunken: #f1f5f9;
+
+  --color-ink-primary: #1e293b;
+  --color-ink-secondary: #475569;
+  --color-ink-muted: #64748b;
+
+  --color-border: #e2e8f0;
+  --color-border-strong: #64748b;
+
+  --color-primary: #2563eb;
+  --color-primary-hover: #1d4ed8;
+  --color-primary-ink: #ffffff;
+
+  --color-good: #16a34a;
+  --color-good-wash: #f0fdf4;
+  --color-good-border: #bbf7d0;
+
+  --color-bad: #dc2626;
+  --color-bad-wash: #fef2f2;
+  --color-bad-border: #fecaca;
+
+  --color-badge-blue-bg: #eff6ff;
+  --color-badge-blue-ink: #1d4ed8;
+  --color-badge-blue-border: #bfdbfe;
+
+  --color-badge-violet-bg: #f5f3ff;
+  --color-badge-violet-ink: #6d28d9;
+  --color-badge-violet-border: #ddd6fe;
+
+  --color-badge-amber-bg: #fffbeb;
+  --color-badge-amber-ink: #b45309;
+  --color-badge-amber-border: #fde68a;
+
+  --color-badge-teal-bg: #f0fdfa;
+  --color-badge-teal-ink: #0f766e;
+  --color-badge-teal-border: #99f6e4;
+
+  --color-badge-green-bg: #f0fdf4;
+  --color-badge-green-ink: #15803d;
+  --color-badge-green-border: #bbf7d0;
+
+  --color-badge-pink-bg: #fdf2f8;
+  --color-badge-pink-ink: #be185d;
+  --color-badge-pink-border: #fbcfe8;
+
+  --color-badge-red-bg: #fef2f2;
+  --color-badge-red-ink: #b91c1c;
+  --color-badge-red-border: #fecaca;
+
+  --color-badge-slate-bg: #f8fafc;
+  --color-badge-slate-ink: #475569;
+  --color-badge-slate-border: #e2e8f0;
+}
+
+.dark {
+  --color-page: #0f172a;
+  --color-surface: #1e293b;
+  --color-surface-sunken: #152033;
+
+  --color-ink-primary: #f1f5f9;
+  --color-ink-secondary: #cbd5e1;
+  --color-ink-muted: #94a3b8;
+
+  --color-border: #334155;
+  --color-border-strong: #94a3b8;
+
+  --color-primary: #3b82f6;
+  --color-primary-hover: #60a5fa;
+  --color-primary-ink: #0f172a;
+
+  --color-good: #4ade80;
+  --color-good-wash: #0f2a1a;
+  --color-good-border: #166534;
+
+  --color-bad: #f87171;
+  --color-bad-wash: #2d1414;
+  --color-bad-border: #7f1d1d;
+
+  --color-badge-blue-bg: #1e3a5f;
+  --color-badge-blue-ink: #93c5fd;
+  --color-badge-blue-border: #2563eb;
+
+  --color-badge-violet-bg: #2e1065;
+  --color-badge-violet-ink: #c4b5fd;
+  --color-badge-violet-border: #6d28d9;
+
+  --color-badge-amber-bg: #2d2008;
+  --color-badge-amber-ink: #fcd34d;
+  --color-badge-amber-border: #78350f;
+
+  --color-badge-teal-bg: #042f2e;
+  --color-badge-teal-ink: #5eead4;
+  --color-badge-teal-border: #0f766e;
+
+  --color-badge-green-bg: #14301f;
+  --color-badge-green-ink: #86efac;
+  --color-badge-green-border: #166534;
+
+  --color-badge-pink-bg: #500724;
+  --color-badge-pink-ink: #f9a8d4;
+  --color-badge-pink-border: #be185d;
+
+  --color-badge-red-bg: #450a0a;
+  --color-badge-red-ink: #fca5a5;
+  --color-badge-red-border: #b91c1c;
+
+  --color-badge-slate-bg: #1e293b;
+  --color-badge-slate-ink: #cbd5e1;
+  --color-badge-slate-border: #334155;
+}
+
 @layer base {
   body {
-    @apply bg-slate-50 text-slate-800 antialiased;
+    @apply bg-page text-ink-primary antialiased;
   }
 }

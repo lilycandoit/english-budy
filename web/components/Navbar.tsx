@@ -3,6 +3,7 @@
 import { signOut, useSession } from "next-auth/react";
 import { useState } from "react";
 import { SettingsModal } from "@/components/SettingsModal";
+import { ThemeToggle } from "@/components/ui/ThemeToggle";
 
 export function Navbar() {
   const { data: session } = useSession();
@@ -10,7 +11,7 @@ export function Navbar() {
 
   return (
     <>
-      <header className="bg-white border-b border-slate-200 px-4 py-3">
+      <header className="bg-surface border-b px-4 py-3">
         <div className="max-w-4xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-2">
             <span className="text-xl">📚</span>
@@ -20,6 +21,7 @@ export function Navbar() {
             <span className="text-sm text-ink-secondary hidden sm:block">
               {session?.user?.name || session?.user?.email}
             </span>
+            <ThemeToggle />
             <button
               onClick={() => setShowSettings(true)}
               title="Settings"

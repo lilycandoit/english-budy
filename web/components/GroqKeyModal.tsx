@@ -67,7 +67,7 @@ export function GroqKeyModal() {
               onChange={(e) => setKey(e.target.value)}
               required
               placeholder="gsk_..."
-              className="w-full border border-line-strong rounded-lg px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full border border-strong rounded-lg px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
             <p className="text-xs text-ink-secondary mt-1">
               Your key is encrypted and stored securely. It is never exposed to anyone else.

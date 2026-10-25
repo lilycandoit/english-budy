@@ -115,7 +115,7 @@ export function WordCard({
       {(w.examples?.length ?? 0) > 0 && (
         <div className="mt-3 space-y-1.5">
           {w.examples.map((ex, i) => (
-            <p key={i} className="text-sm text-ink-secondary italic border-l-2 border-slate-200 pl-3">
+            <p key={i} className="text-sm text-ink-secondary italic border-l-2 pl-3">
               {ex}
             </p>
           ))}
