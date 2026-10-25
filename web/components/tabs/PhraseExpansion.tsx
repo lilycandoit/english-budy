@@ -215,7 +215,7 @@ export function PhraseExpansion() {
             value={phrase}
             onChange={(e) => setPhrase(e.target.value)}
             placeholder="e.g. keep going"
-            className="flex-1 border border-slate-300 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="flex-1 border border-line-strong rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           />
           <button
             type="submit"
@@ -274,7 +274,7 @@ export function PhraseExpansion() {
                 type="button"
                 onClick={() => speaking ? stop() : speak(result.phrase)}
                 title={speaking ? "Stop" : "Listen"}
-                className="text-slate-400 hover:text-blue-600 transition-colors text-lg"
+                className="text-ink-secondary hover:text-blue-600 transition-colors text-lg"
               >
                 {speaking ? "⏹" : "🔊"}
               </button>
@@ -315,7 +315,7 @@ export function PhraseExpansion() {
             <section className="space-y-3">
               <div>
                 <h3 className="text-sm font-semibold text-slate-700">Best ways to say it</h3>
-                <p className="mt-0.5 text-xs text-slate-400">The most natural, most commonly used options.</p>
+                <p className="mt-0.5 text-xs text-ink-secondary">The most natural, most commonly used options.</p>
               </div>
               <div className="grid gap-3 sm:grid-cols-2">
                 {recommended.map((item) => (
@@ -348,7 +348,7 @@ export function PhraseExpansion() {
           )}
 
           {filteredAlternatives.length === 0 && (
-            <p className="text-sm text-slate-400 text-center py-2">No alternatives match this filter.</p>
+            <p className="text-sm text-ink-secondary text-center py-2">No alternatives match this filter.</p>
           )}
 
           {result.notes.length > 0 && (
@@ -371,9 +371,9 @@ export function PhraseExpansion() {
           <div className="mb-3 flex items-center justify-between gap-2">
             <div>
               <h3 className="text-sm font-semibold text-slate-700">Saved Phrase History</h3>
-              <p className="mt-0.5 text-xs text-slate-400">Tap a saved phrase to load it instantly from cache.</p>
+              <p className="mt-0.5 text-xs text-ink-secondary">Tap a saved phrase to load it instantly from cache.</p>
             </div>
-            <span className="text-xs text-slate-400">{history.length} saved</span>
+            <span className="text-xs text-ink-secondary">{history.length} saved</span>
           </div>
           <div className="flex flex-wrap gap-2">
             {visibleHistory.map((entry) => (

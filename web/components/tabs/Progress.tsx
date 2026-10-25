@@ -42,9 +42,9 @@ function StatCard({ label, value, sub, color = "text-slate-800" }: {
 }) {
   return (
     <div className="bg-white border border-slate-200 rounded-2xl p-4 flex flex-col gap-1">
-      <p className="text-xs text-slate-400 font-medium uppercase tracking-wide">{label}</p>
+      <p className="text-xs text-ink-secondary font-medium uppercase tracking-wide">{label}</p>
       <p className={`text-3xl font-bold ${color}`}>{value}</p>
-      {sub && <p className="text-xs text-slate-400">{sub}</p>}
+      {sub && <p className="text-xs text-ink-secondary">{sub}</p>}
     </div>
   );
 }
@@ -61,7 +61,7 @@ export function Progress() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-20 text-slate-400 text-sm">
+      <div className="flex items-center justify-center py-20 text-ink-secondary text-sm">
         Loading…
       </div>
     );
@@ -133,7 +133,7 @@ export function Progress() {
       {/* ── Mastery breakdown ── */}
       {masteryTotal > 0 && (
         <div className="bg-white border border-slate-200 rounded-2xl p-4">
-          <p className="text-xs text-slate-400 font-medium uppercase tracking-wide mb-3">Mastery breakdown</p>
+          <p className="text-xs text-ink-secondary font-medium uppercase tracking-wide mb-3">Mastery breakdown</p>
           <div className="flex rounded-full overflow-hidden h-3 mb-3">
             {stats.mastery.mastered > 0 && (
               <div className="bg-green-400 transition-all" style={{ width: `${(stats.mastery.mastered / masteryTotal) * 100}%` }} />
@@ -156,7 +156,7 @@ export function Progress() {
       {/* ── Sentence check breakdown ── */}
       {stats.sentences.total > 0 && (
         <div className="bg-white border border-slate-200 rounded-2xl p-4">
-          <p className="text-xs text-slate-400 font-medium uppercase tracking-wide mb-3">
+          <p className="text-xs text-ink-secondary font-medium uppercase tracking-wide mb-3">
             Sentence checks — {stats.sentences.total} total
           </p>
           <div className="grid grid-cols-4 gap-2 text-center">
@@ -170,7 +170,7 @@ export function Progress() {
                 <p className={`text-2xl font-bold ${color}`}>
                   {stats.sentences[key as keyof typeof stats.sentences]}
                 </p>
-                <p className="text-xs text-slate-400 mt-0.5">{label}</p>
+                <p className="text-xs text-ink-secondary mt-0.5">{label}</p>
               </div>
             ))}
           </div>
@@ -179,14 +179,14 @@ export function Progress() {
 
       {/* ── Activity heatmap ── */}
       <div className="bg-white border border-slate-200 rounded-2xl p-4">
-        <p className="text-xs text-slate-400 font-medium uppercase tracking-wide mb-3">Activity — last 4 weeks</p>
+        <p className="text-xs text-ink-secondary font-medium uppercase tracking-wide mb-3">Activity — last 4 weeks</p>
 
         {/* Month labels */}
         <div className="flex gap-1.5 mb-1 pl-7">
           {weeks.map((_, wi) => {
             const ml = monthLabels.find(m => m.col === wi);
             return (
-              <div key={wi} className="w-5 text-xs text-slate-400 text-center">
+              <div key={wi} className="w-5 text-xs text-ink-secondary text-center">
                 {ml ? ml.label : ""}
               </div>
             );
@@ -197,7 +197,7 @@ export function Progress() {
           {/* Day labels */}
           <div className="flex flex-col gap-1.5 justify-between pr-1">
             {DAYS.map((d, i) => (
-              <div key={d} className="text-xs text-slate-300 w-5 text-right h-5 flex items-center justify-end">
+              <div key={d} className="text-xs text-ink-muted w-5 text-right h-5 flex items-center justify-end">
                 {i % 2 === 1 ? d.slice(0, 1) : ""}
               </div>
             ))}
@@ -226,11 +226,11 @@ export function Progress() {
 
         {/* Legend */}
         <div className="flex items-center gap-1.5 mt-3 justify-end">
-          <span className="text-xs text-slate-400">Less</span>
+          <span className="text-xs text-ink-secondary">Less</span>
           {HEAT_COLORS.map((c, i) => (
             <div key={i} className={`w-3.5 h-3.5 rounded-sm ${c}`} />
           ))}
-          <span className="text-xs text-slate-400">More</span>
+          <span className="text-xs text-ink-secondary">More</span>
         </div>
       </div>
 
@@ -238,15 +238,15 @@ export function Progress() {
       <div className="grid grid-cols-3 gap-3 text-center">
         <div className="bg-white border border-slate-200 rounded-2xl py-4">
           <p className="text-2xl font-bold text-slate-800">{stats.topics}</p>
-          <p className="text-xs text-slate-400 mt-0.5">Topics explored</p>
+          <p className="text-xs text-ink-secondary mt-0.5">Topics explored</p>
         </div>
         <div className="bg-white border border-slate-200 rounded-2xl py-4">
           <p className="text-2xl font-bold text-slate-800">{stats.words.today}</p>
-          <p className="text-xs text-slate-400 mt-0.5">Words today</p>
+          <p className="text-xs text-ink-secondary mt-0.5">Words today</p>
         </div>
         <div className="bg-white border border-slate-200 rounded-2xl py-4">
           <p className="text-2xl font-bold text-slate-800">{stats.sentences.none}</p>
-          <p className="text-xs text-slate-400 mt-0.5">Perfect sentences</p>
+          <p className="text-xs text-ink-secondary mt-0.5">Perfect sentences</p>
         </div>
       </div>
 

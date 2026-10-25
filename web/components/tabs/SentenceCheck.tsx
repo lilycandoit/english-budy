@@ -154,7 +154,7 @@ export function SentenceCheck() {
           }}
           rows={3}
           placeholder="e.g. I have went to the shops yesterday and buyed some milk."
-          className="w-full border border-slate-300 rounded-xl px-4 py-3 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          className="w-full border border-line-strong rounded-xl px-4 py-3 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
         />
         {error && <p className="text-red-500 text-sm">{error}</p>}
         <button
@@ -271,7 +271,7 @@ export function SentenceCheck() {
 
           <div className="space-y-2 max-h-[32rem] overflow-y-auto pr-0.5">
             {history.length === 0 && (
-              <p className="text-sm text-slate-400 py-4 text-center">No entries for this filter.</p>
+              <p className="text-sm text-ink-secondary py-4 text-center">No entries for this filter.</p>
             )}
             {history.map((m) => (
               <div
@@ -292,7 +292,7 @@ export function SentenceCheck() {
                     <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${TYPE_LABELS[m.mistakeType]?.color}`}>
                       {TYPE_LABELS[m.mistakeType]?.label}
                     </span>
-                    <span className="text-xs text-slate-400">
+                    <span className="text-xs text-ink-secondary">
                       {new Date(m.createdAt).toLocaleDateString("en-AU", {
                         day: "numeric", month: "short", hour: "2-digit", minute: "2-digit",
                       })}
@@ -303,7 +303,7 @@ export function SentenceCheck() {
                       e.stopPropagation();
                       handleDelete(m.id);
                     }}
-                    className="text-slate-300 hover:text-red-400 transition-colors text-xs flex-shrink-0"
+                    className="text-ink-muted hover:text-red-400 transition-colors text-xs flex-shrink-0"
                   >
                     ✕
                   </button>

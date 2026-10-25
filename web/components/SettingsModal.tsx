@@ -45,7 +45,7 @@ export function SettingsModal({ onClose }: { onClose: () => void }) {
         {/* Header */}
         <div className="flex items-center justify-between mb-5">
           <h2 className="text-lg font-bold text-slate-800">Settings</h2>
-          <button onClick={onClose} className="text-slate-400 hover:text-slate-600 text-lg">✕</button>
+          <button onClick={onClose} className="text-ink-secondary hover:text-slate-600 text-lg">✕</button>
         </div>
 
         {/* ── Groq API Key ── */}
@@ -65,7 +65,7 @@ export function SettingsModal({ onClose }: { onClose: () => void }) {
               value={groqKey}
               onChange={(e) => setGroqKey(e.target.value)}
               placeholder={session?.user?.hasGroqKey ? "Enter new key to update…" : "gsk_..."}
-              className="flex-1 border border-slate-300 rounded-lg px-3 py-2 text-xs font-mono focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="flex-1 border border-line-strong rounded-lg px-3 py-2 text-xs font-mono focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
             <button
               type="submit"

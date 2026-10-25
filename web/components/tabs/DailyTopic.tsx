@@ -213,7 +213,7 @@ export function DailyTopic() {
 
       {/* ── Suggestion chips ── */}
       <div>
-        <p className="text-xs text-slate-400 mb-2">Try a topic:</p>
+        <p className="text-xs text-ink-secondary mb-2">Try a topic:</p>
         <div className="flex flex-wrap gap-2">
           {SUGGESTIONS.map((s) => (
             <button
@@ -236,7 +236,7 @@ export function DailyTopic() {
 
         {/* Format row */}
         <div className="flex items-center gap-2">
-          <span className="text-xs text-slate-400 w-12 flex-shrink-0">Format</span>
+          <span className="text-xs text-ink-secondary w-12 flex-shrink-0">Format</span>
           <div className="flex gap-2">
             {FORMAT_OPTIONS.map((f) => (
               <button
@@ -257,7 +257,7 @@ export function DailyTopic() {
 
         {/* Level row */}
         <div className="flex items-center gap-2">
-          <span className="text-xs text-slate-400 w-12 flex-shrink-0">Level</span>
+          <span className="text-xs text-ink-secondary w-12 flex-shrink-0">Level</span>
           <div className="flex gap-2 flex-wrap">
             {LEVEL_OPTIONS.map((l) => (
               <button
@@ -295,7 +295,7 @@ export function DailyTopic() {
             value={topic}
             onChange={(e) => setTopic(e.target.value)}
             placeholder="Enter a topic or pick one above…"
-            className="flex-1 border border-slate-300 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="flex-1 border border-line-strong rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           />
           <button
             type="submit"
@@ -325,7 +325,7 @@ export function DailyTopic() {
         <div className="border border-slate-200 rounded-2xl overflow-hidden">
           <div className="bg-slate-50 px-5 py-3 border-b border-slate-200">
             <div className="flex items-center justify-between gap-2">
-              <span className="text-xs font-medium text-slate-400 uppercase tracking-wide">
+              <span className="text-xs font-medium text-ink-secondary uppercase tracking-wide">
                 {formatLabel(result.format)} · {levelLabel(result.level)}
               </span>
               <div className="flex items-center gap-3">
@@ -334,7 +334,7 @@ export function DailyTopic() {
                   onClick={handleFreshVersion}
                   disabled={loading}
                   title="Generate a new version using different phrases"
-                  className="text-slate-400 hover:text-blue-500 transition-colors text-xs font-medium disabled:opacity-40"
+                  className="text-ink-secondary hover:text-blue-500 transition-colors text-xs font-medium disabled:opacity-40"
                 >
                   🔄 Fresh version
                 </button>
@@ -348,7 +348,7 @@ export function DailyTopic() {
                     speak(clean);
                   }}
                   title={speaking ? "Stop" : "Read aloud"}
-                  className="text-slate-300 hover:text-blue-500 transition-colors text-sm"
+                  className="text-ink-muted hover:text-blue-500 transition-colors text-sm"
                 >
                   {speaking ? "⏹ Stop" : "🔊 Listen"}
                 </button>
@@ -368,7 +368,7 @@ export function DailyTopic() {
                 <p className="text-xs font-semibold text-blue-600 uppercase tracking-wide">🔍 Lookup</p>
                 <button
                   onClick={() => { setLookupResult(null); setLookupLoading(false); }}
-                  className="text-slate-400 hover:text-slate-600 text-sm"
+                  className="text-ink-secondary hover:text-slate-600 text-sm"
                 >
                   ✕
                 </button>
@@ -383,7 +383,7 @@ export function DailyTopic() {
 
           {result.words.length > 0 && (
             <div className="border-t border-slate-200 px-5 py-4">
-              <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-3">
+              <p className="text-xs font-semibold text-ink-secondary uppercase tracking-wide mb-3">
                 Vocabulary — {result.words.length} words
               </p>
               <div className="space-y-2">
@@ -392,10 +392,10 @@ export function DailyTopic() {
                   return (
                     <div key={w.word} className="text-sm">
                       <span className="font-semibold text-slate-800">{w.word}</span>
-                      <span className="text-slate-400 mx-2">—</span>
+                      <span className="text-ink-secondary mx-2">—</span>
                       <span className="text-slate-600">{w.meaning}</span>
                       {w.example && (
-                        <p className="text-slate-400 italic text-xs mt-0.5">
+                        <p className="text-ink-secondary italic text-xs mt-0.5">
                           e.g. {w.example}
                         </p>
                       )}
@@ -429,14 +429,14 @@ export function DailyTopic() {
                   onClick={() => toggleAccordion(s.id)}
                   className="w-full text-left px-4 py-3 hover:bg-slate-50 transition-colors"
                 >
-                  <div className="flex items-center gap-2 text-xs text-slate-400 mb-1">
+                  <div className="flex items-center gap-2 text-xs text-ink-secondary mb-1">
                     <span>{formatLabel(s.format)}</span>
                     <span>·</span>
                     <span>{levelLabel(s.level)}</span>
                   </div>
                   <div className="flex items-start justify-between gap-2">
                     <span className="font-medium text-sm text-slate-700">{s.title}</span>
-                    <span className="text-slate-400 text-sm flex-shrink-0">
+                    <span className="text-ink-secondary text-sm flex-shrink-0">
                       {openId === s.id ? "▾" : "▸"}
                     </span>
                   </div>
@@ -447,7 +447,7 @@ export function DailyTopic() {
                       </span>
                     );})}
                     {s.words.length > 8 && (
-                      <span className="text-xs text-slate-400">+{s.words.length - 8}</span>
+                      <span className="text-xs text-ink-secondary">+{s.words.length - 8}</span>
                     )}
                   </div>
                 </button>
@@ -459,7 +459,7 @@ export function DailyTopic() {
                     </div>
                     {s.words.length > 0 && (
                       <div className="border-t border-slate-100 px-4 py-3">
-                        <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-2">
+                        <p className="text-xs font-semibold text-ink-secondary uppercase tracking-wide mb-2">
                           Vocabulary
                         </p>
                         <div className="space-y-1.5">
@@ -468,7 +468,7 @@ export function DailyTopic() {
                             return (
                               <div key={w.word} className="text-sm">
                                 <span className="font-semibold text-slate-700">{w.word}</span>
-                                <span className="text-slate-400 mx-2">—</span>
+                                <span className="text-ink-secondary mx-2">—</span>
                                 <span className="text-slate-500">{w.meaning}</span>
                               </div>
                             );

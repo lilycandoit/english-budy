@@ -102,7 +102,7 @@ function HighlightedStory({ text }: { text: string }) {
 function BilingualStory({ rows }: { rows: BilingualStoryRow[] }) {
   return (
     <div className="overflow-hidden rounded-xl border border-slate-200">
-      <div className="hidden sm:grid sm:grid-cols-2 bg-slate-50 text-xs font-semibold uppercase tracking-wide text-slate-400">
+      <div className="hidden sm:grid sm:grid-cols-2 bg-slate-50 text-xs font-semibold uppercase tracking-wide text-ink-secondary">
         <div className="border-r border-slate-200 px-4 py-2">English</div>
         <div className="px-4 py-2">{DEFAULT_NATIVE_LANGUAGE.nativeName}</div>
       </div>
@@ -110,13 +110,13 @@ function BilingualStory({ rows }: { rows: BilingualStoryRow[] }) {
         {rows.map((row, index) => (
           <div key={index} className="grid gap-0 sm:grid-cols-2">
             <div className="border-slate-200 px-4 py-3 sm:border-r">
-              <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-slate-400 sm:hidden">
+              <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-ink-secondary sm:hidden">
                 English
               </p>
               <HighlightedStory text={row.english} />
             </div>
             <div className="bg-slate-50/60 px-4 py-3 sm:bg-white">
-              <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-slate-400 sm:hidden">
+              <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-ink-secondary sm:hidden">
                 {DEFAULT_NATIVE_LANGUAGE.nativeName}
               </p>
               <HighlightedStory text={row.native} />
@@ -198,7 +198,7 @@ function FlashcardViewer({
   return (
     <div className="space-y-4">
       {/* Progress */}
-      <div className="flex items-center justify-between text-xs text-slate-400">
+      <div className="flex items-center justify-between text-xs text-ink-secondary">
         <span>{index + 1} / {cards.length}</span>
         <div className="flex-1 mx-3 bg-slate-100 rounded-full h-1.5">
           <div
@@ -236,9 +236,9 @@ function FlashcardViewer({
               </p>
             )}
             {card.wordInfo?.ipa && (
-              <p className="text-slate-400 font-mono text-sm mt-2">{simplifyPhonetic(card.wordInfo.ipa)}</p>
+              <p className="text-ink-secondary font-mono text-sm mt-2">{simplifyPhonetic(card.wordInfo.ipa)}</p>
             )}
-            <p className="text-xs text-slate-300 mt-6">Tap to reveal</p>
+            <p className="text-xs text-ink-muted mt-6">Tap to reveal</p>
           </div>
 
           {/* Back — definition */}
@@ -253,7 +253,7 @@ function FlashcardViewer({
                   <p className="text-sm text-slate-600">{phraseExpansion.meaning}</p>
                 )}
                 <div>
-                  <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-slate-400">
+                  <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-ink-secondary">
                     Alternatives
                   </p>
                   <div className="flex flex-wrap gap-1.5">
@@ -265,7 +265,7 @@ function FlashcardViewer({
                   </div>
                 </div>
                 {getTopAlternatives(phraseExpansion, 2).map((item) => item.example).filter(Boolean).map((example) => (
-                  <p key={example} className="text-xs text-slate-400 italic border-l-2 border-teal-200 pl-3">
+                  <p key={example} className="text-xs text-ink-secondary italic border-l-2 border-teal-200 pl-3">
                     {example}
                   </p>
                 ))}
@@ -274,11 +274,11 @@ function FlashcardViewer({
               <>
                 {getMeanings(card.wordInfo).slice(0, 3).map((m, i) => (
                   <li key={i} className="text-sm text-slate-600 list-none">
-                    <span className="text-slate-400 mr-1">{i + 1}.</span>{m}
+                    <span className="text-ink-secondary mr-1">{i + 1}.</span>{m}
                   </li>
                 ))}
                 {card.wordInfo?.examples?.[0] && (
-                  <p className="text-xs text-slate-400 italic border-l-2 border-teal-200 pl-3">
+                  <p className="text-xs text-ink-secondary italic border-l-2 border-teal-200 pl-3">
                     {card.wordInfo.examples[0]}
                   </p>
                 )}
@@ -463,7 +463,7 @@ export function WordsReview() {
         <div>
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-sm font-semibold text-slate-700">Flashcard Review</h3>
-            <button onClick={() => setFcCards(null)} className="text-xs text-slate-400 hover:text-slate-600">
+            <button onClick={() => setFcCards(null)} className="text-xs text-ink-secondary hover:text-slate-600">
               ✕ Cancel
             </button>
           </div>
@@ -499,7 +499,7 @@ export function WordsReview() {
               {wbEntries.length > 0 && (
                 <button
                   onClick={() => startFlashcards(wbEntries)}
-                  className="text-xs text-slate-400 hover:text-blue-600 transition-colors"
+                  className="text-xs text-ink-secondary hover:text-blue-600 transition-colors"
                 >
                   Study all {wbEntries.length} →
                 </button>
@@ -563,11 +563,11 @@ export function WordsReview() {
                       >
                         Show more ({Math.min(remainingWordsCount, WORDS_PER_PAGE)} more words)
                       </button>
-                      <span className="text-slate-300">·</span>
+                      <span className="text-ink-muted">·</span>
                       <button
                         type="button"
                         onClick={() => setShowAllDates(true)}
-                        className="text-xs text-slate-400 hover:underline"
+                        className="text-xs text-ink-secondary hover:underline"
                       >
                         Show all ({remainingWordsCount} remaining)
                       </button>
@@ -578,7 +578,7 @@ export function WordsReview() {
 
               {/* Custom words input */}
               <div>
-                <label className="block text-xs text-slate-400 mb-1">
+                <label className="block text-xs text-ink-secondary mb-1">
                   Or type specific words (comma-separated):
                 </label>
                 <input
@@ -586,14 +586,14 @@ export function WordsReview() {
                   value={customInput}
                   onChange={(e) => setCustomInput(e.target.value)}
                   placeholder="e.g. reckon, keen, arvo"
-                  className="w-full border border-slate-300 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full border border-line-strong rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
               </div>
 
               {storyError && <p className="text-red-500 text-sm">{storyError}</p>}
 
               {!isActionBarVisible && (
-                <p className="text-xs text-slate-400 text-center py-2">
+                <p className="text-xs text-ink-secondary text-center py-2">
                   Select words above to start flashcards or generate a story
                 </p>
               )}
@@ -607,7 +607,7 @@ export function WordsReview() {
                     <h3 className="text-sm font-semibold text-slate-700">
                       {storyResult.mode === "bilingual" ? "Bilingual story" : "Story"}
                     </h3>
-                    <p className="mt-0.5 text-xs text-slate-400">
+                    <p className="mt-0.5 text-xs text-ink-secondary">
                       {storyResult.words.length} word{storyResult.words.length > 1 ? "s" : ""} included
                     </p>
                   </div>

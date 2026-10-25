@@ -55,8 +55,8 @@ function ExpandedWordCard({
   error: boolean;
 }) {
   if (!expandedWord) return null;
-  if (loading) return <p className="mt-3 text-sm text-slate-400">Loading "{expandedWord}"…</p>;
-  if (error) return <p className="mt-3 text-sm text-slate-400">This word is no longer available.</p>;
+  if (loading) return <p className="mt-3 text-sm text-ink-secondary">Loading "{expandedWord}"…</p>;
+  if (error) return <p className="mt-3 text-sm text-ink-secondary">This word is no longer available.</p>;
   if (!wordInfo) return null;
   return (
     <div className="mt-3">
@@ -264,7 +264,7 @@ export function VocabBuilder() {
             value={input}
             onChange={(e) => setInput(e.target.value)}
             placeholder="e.g. reckon, keen, arvo"
-            className="flex-1 border border-slate-300 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="flex-1 border border-line-strong rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           />
           <button
             type="submit"
@@ -290,13 +290,13 @@ export function VocabBuilder() {
               {drillAnchor === w.word && (
                 <div className="mt-2 ml-4 border-l-4 border-blue-300 pl-4">
                   {drillLoading && drillWord && (
-                    <p className="text-sm text-slate-400 py-3">Loading "{drillWord}"…</p>
+                    <p className="text-sm text-ink-secondary py-3">Loading "{drillWord}"…</p>
                   )}
                   {drillData && drillAnchor === w.word && (
                     <div className="relative">
                       <button
                         onClick={() => { setDrillWord(null); setDrillData(null); }}
-                        className="absolute top-3 right-3 text-slate-300 hover:text-slate-500 text-xs"
+                        className="absolute top-3 right-3 text-ink-muted hover:text-slate-500 text-xs"
                       >
                         ✕ close
                       </button>
@@ -316,7 +316,7 @@ export function VocabBuilder() {
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div>
               <h3 className="text-sm font-semibold text-slate-700">Quiz</h3>
-              <p className="text-xs text-slate-400 mt-1">
+              <p className="text-xs text-ink-secondary mt-1">
                 Generate this only when you want to practise the word.
               </p>
             </div>
@@ -424,7 +424,7 @@ export function VocabBuilder() {
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-3">
             <div className="flex items-center gap-2 flex-wrap min-w-0">
               <h3 className="text-sm font-semibold text-slate-700 whitespace-nowrap">Word Bank</h3>
-              <p className="text-xs text-slate-400 whitespace-nowrap">
+              <p className="text-xs text-ink-secondary whitespace-nowrap">
                 {vocabStats.total} words · {vocabStats.thisWeek} this week · {vocabStats.today} today
               </p>
             </div>
@@ -468,7 +468,7 @@ export function VocabBuilder() {
             error={expandedError}
           />
           {filteredWb.length === 0 && wbSearch && (
-            <p className="text-sm text-slate-400">No words match &quot;{wbSearch}&quot;</p>
+            <p className="text-sm text-ink-secondary">No words match &quot;{wbSearch}&quot;</p>
           )}
         </div>
       )}
@@ -512,7 +512,7 @@ export function VocabBuilder() {
                         {s.score}/{s.total}
                       </span>
                     )}
-                    <span className="text-xs text-slate-400">
+                    <span className="text-xs text-ink-secondary">
                       {new Date(s.createdAt).toLocaleDateString("en-AU", { day: "numeric", month: "short" })}
                     </span>
                   </div>
