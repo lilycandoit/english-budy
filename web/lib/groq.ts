@@ -11,6 +11,7 @@ interface GroqOptions {
   max_tokens?: number;
   temperature?: number;
   reasoning_effort?: "low" | "medium" | "high";
+  response_format?: { type: "json_object" };
 }
 
 /** Thrown when Groq rate-limits the request. `retryAfterSeconds` is the wait Groq recommended. */
@@ -62,9 +63,9 @@ export async function groqChat(
   messages: GroqMessage[],
   opts: GroqOptions = {}
 ): Promise<string> {
-  const { model = "openai/gpt-oss-120b", max_tokens = 300, temperature = 0.2, reasoning_effort = "low" } = opts;
+  const { model = "openai/gpt-oss-120b", max_tokens = 300, temperature = 0.2, reasoning_effort = "low", response_format } = opts;
 
-  const body = JSON.stringify({ model, messages, max_tokens, temperature, reasoning_effort });
+  const body = JSON.stringify({ model, messages, max_tokens, temperature, reasoning_effort, response_format });
   const headers = {
     "Content-Type": "application/json",
     Authorization: `Bearer ${apiKey}`,
@@ -115,9 +116,10 @@ export async function groqChatJson<T>(
   messages: GroqMessage[],
   opts: GroqOptions = {}
 ): Promise<T> {
+  const jsonOpts: GroqOptions = { ...opts, response_format: { type: "json_object" } };
   let lastErr: unknown;
   for (let attempt = 0; attempt < 2; attempt++) {
-    const raw = await groqChat(apiKey, messages, opts);
+    const raw = await groqChat(apiKey, messages, jsonOpts);
     try {
       return extractJson(raw) as T;
     } catch (err) {

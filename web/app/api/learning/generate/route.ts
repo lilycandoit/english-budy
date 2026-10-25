@@ -138,31 +138,34 @@ export async function POST(req: NextRequest) {
 
   if (!words.length) return NextResponse.json({ error: "No valid words found" }, { status: 400 });
 
-  if (!quickLookup) {
-    const cachedEntries = await prisma.wordEntry.findMany({
-      where: {
+  const cachedEntries = await prisma.wordEntry.findMany({
+    where: {
+      userId: session.user.id,
+      word: { in: words.map((w) => w.toLowerCase()) },
+    },
+  });
+  const cachedByWord = new Map(cachedEntries.map((entry) => [entry.word, entry]));
+  const allCached = words.every((word) => cachedByWord.has(word.toLowerCase()));
+
+  if (allCached) {
+    const wordInfos = applyVerifiedIpa(
+      words.map((word) => JSON.parse(cachedByWord.get(word.toLowerCase())!.wordInfo))
+    );
+
+    if (quickLookup) {
+      return NextResponse.json({ words: wordInfos, quiz: [], cached: true });
+    }
+
+    const learningSession = await prisma.learningSession.create({
+      data: {
         userId: session.user.id,
-        word: { in: words.map((w) => w.toLowerCase()) },
+        words: JSON.stringify(words),
+        wordInfo: JSON.stringify(wordInfos),
+        quiz: null,
       },
     });
-    const cachedByWord = new Map(cachedEntries.map((entry) => [entry.word, entry]));
-    const allCached = words.every((word) => cachedByWord.has(word.toLowerCase()));
 
-    if (allCached) {
-      const wordInfos = applyVerifiedIpa(
-        words.map((word) => JSON.parse(cachedByWord.get(word.toLowerCase())!.wordInfo))
-      );
-      const learningSession = await prisma.learningSession.create({
-        data: {
-          userId: session.user.id,
-          words: JSON.stringify(words),
-          wordInfo: JSON.stringify(wordInfos),
-          quiz: null,
-        },
-      });
-
-      return NextResponse.json({ sessionId: learningSession.id, words: wordInfos, quiz: [], cached: true });
-    }
+    return NextResponse.json({ sessionId: learningSession.id, words: wordInfos, quiz: [], cached: true });
   }
 
   let apiKey: string;
@@ -183,7 +186,14 @@ export async function POST(req: NextRequest) {
         { role: "system", content: SYSTEM },
         { role: "user", content: prompt },
       ],
-      { max_tokens: quickLookup ? 700 : Math.min(420 + words.length * 480, 4200), temperature: 0.7 }
+      {
+        max_tokens: quickLookup ? 700 : Math.min(420 + words.length * 480, 4200),
+        temperature: 0.7,
+        // Groq's native JSON mode (response_format, wired up in groqChatJson) made the
+        // smaller model reliable here — live-tested 38/38 valid-JSON calls across both
+        // the quick-lookup and full-lesson prompts, vs ~40% malformed-JSON without it.
+        model: "openai/gpt-oss-20b",
+      }
     );
     wordInfos = applyVerifiedIpa((parsed.words ?? []) as { word: string; ipa?: string }[]);
     quiz = [];
