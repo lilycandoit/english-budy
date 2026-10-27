@@ -255,7 +255,7 @@ export function VocabBuilder() {
 
       {/* ── Input ── */}
       <form onSubmit={handleGenerate} className="space-y-3">
-        <label className="block text-sm font-medium text-slate-700">
+        <label className="block text-sm font-medium text-ink-primary">
           Enter words separated by commas
         </label>
         <div className="flex gap-2">
@@ -264,17 +264,17 @@ export function VocabBuilder() {
             value={input}
             onChange={(e) => setInput(e.target.value)}
             placeholder="e.g. reckon, keen, arvo"
-            className="flex-1 border border-strong rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="flex-1 bg-surface text-ink-primary border border-strong rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
           />
           <button
             type="submit"
             disabled={loading || !input.trim()}
-            className="bg-blue-600 text-white rounded-xl px-5 py-2.5 text-sm font-medium hover:bg-blue-700 disabled:opacity-50 transition-colors whitespace-nowrap"
+            className="bg-primary text-primary-ink rounded-xl px-5 py-2.5 text-sm font-medium hover:bg-primary-hover disabled:opacity-50 transition-colors whitespace-nowrap"
           >
             {loading ? "Generating…" : "Generate"}
           </button>
         </div>
-        {error && <p className="text-red-500 text-sm">{error}</p>}
+        {error && <p className="text-bad text-sm">{error}</p>}
       </form>
 
       {/* ── Word cards ── */}
@@ -288,7 +288,7 @@ export function VocabBuilder() {
               />
               {/* Drill-down card */}
               {drillAnchor === w.word && (
-                <div className="mt-2 ml-4 border-l-4 border-blue-300 pl-4">
+                <div className="mt-2 ml-4 border-l-4 border-primary pl-4">
                   {drillLoading && drillWord && (
                     <p className="text-sm text-ink-secondary py-3">Loading "{drillWord}"…</p>
                   )}
@@ -296,7 +296,7 @@ export function VocabBuilder() {
                     <div className="relative">
                       <button
                         onClick={() => { setDrillWord(null); setDrillData(null); }}
-                        className="absolute top-3 right-3 text-ink-muted hover:text-slate-500 text-xs"
+                        className="absolute top-3 right-3 text-ink-muted hover:text-ink-muted text-xs"
                       >
                         ✕ close
                       </button>
@@ -312,10 +312,10 @@ export function VocabBuilder() {
 
       {/* ── Quiz ── */}
       {result && result.quiz.length === 0 && (
-        <div className="border border-slate-200 rounded-2xl p-5">
+        <div className="border rounded-2xl p-5">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div>
-              <h3 className="text-sm font-semibold text-slate-700">Quiz</h3>
+              <h3 className="text-sm font-semibold text-ink-primary">Quiz</h3>
               <p className="text-xs text-ink-secondary mt-1">
                 Generate this only when you want to practise the word.
               </p>
@@ -324,28 +324,28 @@ export function VocabBuilder() {
               type="button"
               onClick={handleGenerateQuiz}
               disabled={quizLoading}
-              className="w-full sm:w-auto bg-blue-600 text-white rounded-xl px-5 py-2.5 text-sm font-medium hover:bg-blue-700 disabled:opacity-50 transition-colors"
+              className="w-full sm:w-auto bg-primary text-primary-ink rounded-xl px-5 py-2.5 text-sm font-medium hover:bg-primary-hover disabled:opacity-50 transition-colors"
             >
               {quizLoading ? "Generating quiz…" : "Generate quiz"}
             </button>
           </div>
-          {quizError && <p className="text-red-500 text-sm mt-3">{quizError}</p>}
+          {quizError && <p className="text-bad text-sm mt-3">{quizError}</p>}
         </div>
       )}
 
       {result && result.quiz.length > 0 && (
-        <div className="border border-slate-200 rounded-2xl p-5">
-          <h3 className="text-sm font-semibold text-slate-700 mb-4">
+        <div className="border rounded-2xl p-5">
+          <h3 className="text-sm font-semibold text-ink-primary mb-4">
             Quiz — {result.quiz.length} questions
           </h3>
 
           {quizResult ? (
             <div className="space-y-4">
               <div className="text-center py-3">
-                <p className="text-3xl font-bold text-blue-600">
+                <p className="text-3xl font-bold text-primary">
                   {quizResult.score}/{quizResult.total}
                 </p>
-                <p className="text-sm text-slate-500 mt-1">
+                <p className="text-sm text-ink-muted mt-1">
                   {quizResult.score === quizResult.total
                     ? "Perfect score! 🎉"
                     : quizResult.score >= quizResult.total / 2
@@ -356,16 +356,16 @@ export function VocabBuilder() {
               {result.quiz.map((q, i) => {
                 const fb = quizResult.feedback[i];
                 return (
-                  <div key={i} className={`rounded-xl p-3 text-sm ${fb.correct ? "bg-green-50 border border-green-200" : "bg-red-50 border border-red-200"}`}>
-                    <p className="font-medium text-slate-700 mb-1">{q.question}</p>
-                    <p className={fb.correct ? "text-green-700" : "text-red-600"}>
+                  <div key={i} className={`rounded-xl p-3 text-sm ${fb.correct ? "bg-good-wash border border-good-border" : "bg-bad-wash border border-bad-border"}`}>
+                    <p className="font-medium text-ink-primary mb-1">{q.question}</p>
+                    <p className={fb.correct ? "text-good" : "text-bad"}>
                       {fb.correct ? "✓" : "✗"} Your answer: {fb.selected || "(no answer)"}
                     </p>
                     {!fb.correct && (
                       <>
-                        <p className="text-slate-600 mt-0.5">Correct: <span className="font-medium">{fb.correctAnswer}</span></p>
+                        <p className="text-ink-secondary mt-0.5">Correct: <span className="font-medium">{fb.correctAnswer}</span></p>
                         {fb.explanation && (
-                          <p className="text-slate-500 text-xs mt-1.5 leading-relaxed border-l-2 border-red-200 pl-2">
+                          <p className="text-ink-muted text-xs mt-1.5 leading-relaxed border-l-2 border-bad-border pl-2">
                             {fb.explanation}
                           </p>
                         )}
@@ -379,7 +379,7 @@ export function VocabBuilder() {
             <form onSubmit={handleSubmitQuiz} className="space-y-5">
               {result.quiz.map((q, i) => (
                 <div key={i}>
-                  <p className="text-sm font-medium text-slate-700 mb-2">
+                  <p className="text-sm font-medium text-ink-primary mb-2">
                     {i + 1}. {q.question}
                   </p>
                   <div className="space-y-1.5">
@@ -388,8 +388,8 @@ export function VocabBuilder() {
                         key={opt}
                         className={`flex items-center gap-2.5 p-2.5 rounded-lg border text-sm cursor-pointer transition-colors ${
                           quizAnswers[i] === opt
-                            ? "border-blue-500 bg-blue-50 text-blue-700"
-                            : "border-slate-200 hover:border-slate-300"
+                            ? "border-primary bg-badge-blue-bg text-badge-blue-ink"
+                            : "border hover:border-strong"
                         }`}
                       >
                         <input
@@ -409,7 +409,7 @@ export function VocabBuilder() {
               <button
                 type="submit"
                 disabled={quizSubmitting || Object.keys(quizAnswers).length < result.quiz.length}
-                className="w-full bg-blue-600 text-white rounded-xl py-2.5 text-sm font-medium hover:bg-blue-700 disabled:opacity-50 transition-colors"
+                className="w-full bg-primary text-primary-ink rounded-xl py-2.5 text-sm font-medium hover:bg-primary-hover disabled:opacity-50 transition-colors"
               >
                 {quizSubmitting ? "Submitting…" : "Submit answers"}
               </button>
@@ -423,7 +423,7 @@ export function VocabBuilder() {
         <div>
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-3">
             <div className="flex items-center gap-2 flex-wrap min-w-0">
-              <h3 className="text-sm font-semibold text-slate-700 whitespace-nowrap">Word Bank</h3>
+              <h3 className="text-sm font-semibold text-ink-primary whitespace-nowrap">Word Bank</h3>
               <p className="text-xs text-ink-secondary whitespace-nowrap">
                 {vocabStats.total} words · {vocabStats.thisWeek} this week · {vocabStats.today} today
               </p>
@@ -433,7 +433,7 @@ export function VocabBuilder() {
               value={wbSearch}
               onChange={(e) => setWbSearch(e.target.value)}
               placeholder="Search…"
-              className="w-full sm:w-32 border border-slate-200 rounded-lg px-3 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full sm:w-32 bg-surface text-ink-primary border border-strong rounded-lg px-3 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-primary"
             />
           </div>
 
@@ -444,8 +444,8 @@ export function VocabBuilder() {
                 onClick={() => toggleExpandedWord(entry.word)}
                 className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
                   expandedWord === entry.word
-                    ? "bg-blue-600 text-white border-blue-600"
-                    : "bg-white border-slate-200 text-slate-600 hover:border-blue-400 hover:text-blue-600"
+                    ? "bg-primary text-primary-ink border-primary"
+                    : "bg-surface border text-ink-secondary hover:border-primary hover:text-primary"
                 }`}
               >
                 {entry.word}
@@ -456,7 +456,7 @@ export function VocabBuilder() {
             <button
               type="button"
               onClick={() => setWbShowAllChips(true)}
-              className="mt-2 text-xs text-blue-600 hover:underline"
+              className="mt-2 text-xs text-primary hover:underline"
             >
               Show all ({filteredWb.length})
             </button>
@@ -477,11 +477,11 @@ export function VocabBuilder() {
       {pastSessions.length > 0 && (
         <div>
           <div className="flex items-center justify-between mb-3">
-            <h3 className="text-sm font-semibold text-slate-700">Past Sessions</h3>
+            <h3 className="text-sm font-semibold text-ink-primary">Past Sessions</h3>
             {pastSessions.length > SESSIONS_PREVIEW && (
               <button
                 onClick={() => setShowAll((v) => !v)}
-                className="text-xs text-blue-600 hover:underline"
+                className="text-xs text-primary hover:underline"
               >
                 {showAll ? "Show less" : `Show all (${pastSessions.length})`}
               </button>
@@ -489,7 +489,7 @@ export function VocabBuilder() {
           </div>
           <div className="space-y-2">
             {visibleSessions.map((s) => (
-              <div key={s.id} className="border border-slate-200 rounded-xl px-4 py-3 text-sm">
+              <div key={s.id} className="border rounded-xl px-4 py-3 text-sm">
                 <div className="flex items-center justify-between">
                   <div className="flex flex-wrap gap-1.5 flex-1 mr-3">
                     {s.words.map((w) => (
@@ -498,8 +498,8 @@ export function VocabBuilder() {
                         onClick={() => toggleExpandedWord(w)}
                         className={`text-xs px-2 py-0.5 rounded-full transition-colors ${
                           expandedWord === w
-                            ? "bg-blue-600 text-white"
-                            : "bg-slate-100 text-slate-600 hover:bg-blue-50 hover:text-blue-600"
+                            ? "bg-primary text-primary-ink"
+                            : "bg-surface-sunken text-ink-secondary hover:bg-badge-blue-bg hover:text-primary"
                         }`}
                       >
                         {w}
@@ -508,7 +508,7 @@ export function VocabBuilder() {
                   </div>
                   <div className="flex items-center gap-3 flex-shrink-0">
                     {s.score !== null && (
-                      <span className="text-xs font-medium text-blue-600">
+                      <span className="text-xs font-medium text-primary">
                         {s.score}/{s.total}
                       </span>
                     )}

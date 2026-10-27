@@ -85,14 +85,14 @@ function HighlightedContent({ content }: { content: string }) {
   const dialogLineRe = /^([A-Za-z]+):\s*(.*)$/;
 
   return (
-    <div className="text-sm text-slate-700 leading-relaxed space-y-2">
+    <div className="text-sm text-ink-primary leading-relaxed space-y-2">
       {lines.map((line, i) => {
         const match = line.match(dialogLineRe);
         if (match) {
           const [, speaker, text] = match;
           return (
             <div key={i} className="flex gap-2">
-              <span className="font-bold text-blue-600 min-w-[3.5rem] flex-shrink-0">{speaker}:</span>
+              <span className="font-bold text-primary min-w-[3.5rem] flex-shrink-0">{speaker}:</span>
               <span><HighlightLine text={text} /></span>
             </div>
           );
@@ -221,8 +221,8 @@ export function DailyTopic() {
               onClick={() => setTopic(s)}
               className={`px-3 py-1.5 text-xs rounded-full border transition-colors ${
                 topic === s
-                  ? "bg-blue-600 text-white border-blue-600"
-                  : "border-slate-200 text-slate-600 hover:border-blue-400 hover:text-blue-600"
+                  ? "bg-primary text-primary-ink border-primary"
+                  : "border text-ink-secondary hover:border-primary hover:text-primary"
               }`}
             >
               {s}
@@ -245,8 +245,8 @@ export function DailyTopic() {
                 onClick={() => setFormat(f.id)}
                 className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ${
                   format === f.id
-                    ? "bg-blue-600 text-white border-blue-600"
-                    : "border-slate-200 text-slate-600 hover:border-slate-300"
+                    ? "bg-primary text-primary-ink border-primary"
+                    : "border text-ink-secondary hover:border-strong"
                 }`}
               >
                 {f.label}
@@ -267,8 +267,8 @@ export function DailyTopic() {
                 title={l.desc}
                 className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ${
                   level === l.id
-                    ? "bg-blue-600 text-white border-blue-600"
-                    : "border-slate-200 text-slate-600 hover:border-slate-300"
+                    ? "bg-primary text-primary-ink border-primary"
+                    : "border text-ink-secondary hover:border-strong"
                 }`}
               >
                 {l.label}
@@ -285,7 +285,7 @@ export function DailyTopic() {
             onChange={(e) => setAussieMode(e.target.checked)}
             className="accent-amber-500 w-3.5 h-3.5"
           />
-          <span className="text-xs text-slate-500">+ 🦘 Aussie flavour</span>
+          <span className="text-xs text-ink-muted">+ 🦘 Aussie flavour</span>
         </label>
 
         {/* Topic input + generate */}
@@ -295,17 +295,17 @@ export function DailyTopic() {
             value={topic}
             onChange={(e) => setTopic(e.target.value)}
             placeholder="Enter a topic or pick one above…"
-            className="flex-1 border border-strong rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="flex-1 bg-surface text-ink-primary border border-strong rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
           />
           <button
             type="submit"
             disabled={loading || !topic.trim()}
-            className="bg-blue-600 text-white rounded-xl px-5 py-2.5 text-sm font-medium hover:bg-blue-700 disabled:opacity-50 transition-colors whitespace-nowrap"
+            className="bg-primary text-primary-ink rounded-xl px-5 py-2.5 text-sm font-medium hover:bg-primary-hover disabled:opacity-50 transition-colors whitespace-nowrap"
           >
             {loading ? "Generating…" : "Generate"}
           </button>
         </div>
-        {error && <p className="text-red-500 text-sm">{error}</p>}
+        {error && <p className="text-bad text-sm">{error}</p>}
       </form>
 
       {/* ── Selection popup (fixed, follows cursor) ── */}
@@ -322,8 +322,8 @@ export function DailyTopic() {
 
       {/* ── Result ── */}
       {result && (
-        <div className="border border-slate-200 rounded-2xl overflow-hidden">
-          <div className="bg-slate-50 px-5 py-3 border-b border-slate-200">
+        <div className="border rounded-2xl overflow-hidden">
+          <div className="bg-surface-sunken px-5 py-3 border-b border">
             <div className="flex items-center justify-between gap-2">
               <span className="text-xs font-medium text-ink-secondary uppercase tracking-wide">
                 {formatLabel(result.format)} · {levelLabel(result.level)}
@@ -334,7 +334,7 @@ export function DailyTopic() {
                   onClick={handleFreshVersion}
                   disabled={loading}
                   title="Generate a new version using different phrases"
-                  className="text-ink-secondary hover:text-blue-500 transition-colors text-xs font-medium disabled:opacity-40"
+                  className="text-ink-secondary hover:text-primary transition-colors text-xs font-medium disabled:opacity-40"
                 >
                   🔄 Fresh version
                 </button>
@@ -348,13 +348,13 @@ export function DailyTopic() {
                     speak(clean);
                   }}
                   title={speaking ? "Stop" : "Read aloud"}
-                  className="text-ink-muted hover:text-blue-500 transition-colors text-sm"
+                  className="text-ink-muted hover:text-primary transition-colors text-sm"
                 >
                   {speaking ? "⏹ Stop" : "🔊 Listen"}
                 </button>
               </div>
             </div>
-            <h3 className="font-semibold text-slate-800 mt-0.5">{result.title}</h3>
+            <h3 className="font-semibold text-ink-primary mt-0.5">{result.title}</h3>
           </div>
 
           <div className="p-5 select-text" onMouseUp={handleMouseUp}>
@@ -363,18 +363,18 @@ export function DailyTopic() {
 
           {/* ── Lookup result ── */}
           {(lookupLoading || lookupResult) && (
-            <div className="border-t border-blue-100 bg-blue-50 px-5 py-4">
+            <div className="border-t border-badge-blue-border bg-badge-blue-bg px-5 py-4">
               <div className="flex items-center justify-between mb-3">
-                <p className="text-xs font-semibold text-blue-600 uppercase tracking-wide">🔍 Lookup</p>
+                <p className="text-xs font-semibold text-primary uppercase tracking-wide">🔍 Lookup</p>
                 <button
                   onClick={() => { setLookupResult(null); setLookupLoading(false); }}
-                  className="text-ink-secondary hover:text-slate-600 text-sm"
+                  className="text-ink-secondary hover:text-ink-secondary text-sm"
                 >
                   ✕
                 </button>
               </div>
               {lookupLoading ? (
-                <p className="text-sm text-slate-500">Looking up…</p>
+                <p className="text-sm text-ink-muted">Looking up…</p>
               ) : lookupResult ? (
                 <WordCard w={lookupResult} onDrilldown={(tag) => lookupWord(tag)} />
               ) : null}
@@ -382,7 +382,7 @@ export function DailyTopic() {
           )}
 
           {result.words.length > 0 && (
-            <div className="border-t border-slate-200 px-5 py-4">
+            <div className="border-t border px-5 py-4">
               <p className="text-xs font-semibold text-ink-secondary uppercase tracking-wide mb-3">
                 Vocabulary — {result.words.length} words
               </p>
@@ -391,9 +391,9 @@ export function DailyTopic() {
                   const w = cleanWord(raw);
                   return (
                     <div key={w.word} className="text-sm">
-                      <span className="font-semibold text-slate-800">{w.word}</span>
+                      <span className="font-semibold text-ink-primary">{w.word}</span>
                       <span className="text-ink-secondary mx-2">—</span>
-                      <span className="text-slate-600">{w.meaning}</span>
+                      <span className="text-ink-secondary">{w.meaning}</span>
                       {w.example && (
                         <p className="text-ink-secondary italic text-xs mt-0.5">
                           e.g. {w.example}
@@ -412,11 +412,11 @@ export function DailyTopic() {
       {pastTopics.length > 0 && (
         <div>
           <div className="flex items-center justify-between mb-3">
-            <h3 className="text-sm font-semibold text-slate-700">Past Topics</h3>
+            <h3 className="text-sm font-semibold text-ink-primary">Past Topics</h3>
             {pastTopics.length > 6 && (
               <button
                 onClick={() => setShowAll((v) => !v)}
-                className="text-xs text-blue-600 hover:underline"
+                className="text-xs text-primary hover:underline"
               >
                 {showAll ? "Show less" : `Show all (${pastTopics.length})`}
               </button>
@@ -424,10 +424,10 @@ export function DailyTopic() {
           </div>
           <div className="space-y-2">
             {(showAll ? pastTopics : pastTopics.slice(0, 6)).map((s) => (
-              <div key={s.id} className="border border-slate-200 rounded-xl overflow-hidden">
+              <div key={s.id} className="border rounded-xl overflow-hidden">
                 <button
                   onClick={() => toggleAccordion(s.id)}
-                  className="w-full text-left px-4 py-3 hover:bg-slate-50 transition-colors"
+                  className="w-full text-left px-4 py-3 hover:bg-surface-sunken transition-colors"
                 >
                   <div className="flex items-center gap-2 text-xs text-ink-secondary mb-1">
                     <span>{formatLabel(s.format)}</span>
@@ -435,14 +435,14 @@ export function DailyTopic() {
                     <span>{levelLabel(s.level)}</span>
                   </div>
                   <div className="flex items-start justify-between gap-2">
-                    <span className="font-medium text-sm text-slate-700">{s.title}</span>
+                    <span className="font-medium text-sm text-ink-primary">{s.title}</span>
                     <span className="text-ink-secondary text-sm flex-shrink-0">
                       {openId === s.id ? "▾" : "▸"}
                     </span>
                   </div>
                   <div className="flex flex-wrap gap-1 mt-2">
                     {s.words.slice(0, 8).map((raw) => { const w = cleanWord(raw); return (
-                      <span key={w.word} className="text-xs bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full">
+                      <span key={w.word} className="text-xs bg-surface-sunken text-ink-muted px-2 py-0.5 rounded-full">
                         {w.word}
                       </span>
                     );})}
@@ -453,12 +453,12 @@ export function DailyTopic() {
                 </button>
 
                 {openId === s.id && (
-                  <div className="border-t border-slate-200">
+                  <div className="border-t border">
                     <div className="p-4">
                       <HighlightedContent content={s.content} />
                     </div>
                     {s.words.length > 0 && (
-                      <div className="border-t border-slate-100 px-4 py-3">
+                      <div className="border-t border px-4 py-3">
                         <p className="text-xs font-semibold text-ink-secondary uppercase tracking-wide mb-2">
                           Vocabulary
                         </p>
@@ -467,9 +467,9 @@ export function DailyTopic() {
                             const w = cleanWord(raw);
                             return (
                               <div key={w.word} className="text-sm">
-                                <span className="font-semibold text-slate-700">{w.word}</span>
+                                <span className="font-semibold text-ink-primary">{w.word}</span>
                                 <span className="text-ink-secondary mx-2">—</span>
-                                <span className="text-slate-500">{w.meaning}</span>
+                                <span className="text-ink-muted">{w.meaning}</span>
                               </div>
                             );
                           })}

@@ -46,9 +46,9 @@ const TONE_STYLES: Record<string, { badge: string; active: string; inactive: str
     inactive: "bg-teal-50 text-teal-700 border-teal-200 hover:opacity-80",
   },
   neutral: {
-    badge: "border-blue-200 bg-blue-50 text-blue-800",
-    active: "bg-blue-600 text-white border-blue-600",
-    inactive: "bg-blue-50 text-blue-700 border-blue-200 hover:opacity-80",
+    badge: "border-badge-blue-border bg-badge-blue-bg text-badge-blue-ink",
+    active: "bg-primary text-primary-ink border-primary",
+    inactive: "bg-badge-blue-bg text-primary border-badge-blue-border hover:opacity-80",
   },
   formal: {
     badge: "border-violet-200 bg-violet-50 text-violet-800",
@@ -57,17 +57,17 @@ const TONE_STYLES: Record<string, { badge: string; active: string; inactive: str
   },
 };
 const REGION_STYLE = {
-  badge: "border-emerald-200 bg-emerald-50 text-emerald-700",
-  active: "bg-emerald-600 text-white border-emerald-600",
-  inactive: "bg-emerald-50 text-emerald-700 border-emerald-200 hover:opacity-80",
+  badge: "border-badge-green-border bg-badge-green-bg text-badge-green-ink",
+  active: "bg-good text-primary-ink border-good",
+  inactive: "bg-badge-green-bg text-badge-green-ink border-badge-green-border hover:opacity-80",
 };
 const ALL_STYLE = {
   active: "bg-slate-800 text-white border-slate-800",
-  inactive: "border-slate-200 text-slate-600 hover:border-slate-400",
+  inactive: "border text-ink-secondary hover:border-strong",
 };
 
 function toneClass(tone: string) {
-  return TONE_STYLES[tone.toLowerCase()]?.badge ?? "border-slate-200 bg-slate-50 text-slate-700";
+  return TONE_STYLES[tone.toLowerCase()]?.badge ?? "border bg-surface-sunken text-ink-primary";
 }
 
 function filterChipClass(filter: string, active: boolean) {
@@ -89,17 +89,17 @@ function AlternativeCard({
   emphasized?: boolean;
 }) {
   return (
-    <article className={`rounded-xl border p-4 ${emphasized ? "border-blue-200 bg-blue-50/40" : "border-slate-200 bg-white"}`}>
+    <article className={`rounded-xl border p-4 ${emphasized ? "border-badge-blue-border bg-badge-blue-bg" : "border bg-surface"}`}>
       <div className="flex items-start justify-between gap-3">
         <div className="flex flex-wrap items-center gap-2">
-          <p className="text-base font-semibold text-slate-800">{item.text}</p>
+          <p className="text-base font-semibold text-ink-primary">{item.text}</p>
           {item.tone && (
             <span className={`inline-flex rounded-full border px-2 py-0.5 text-xs font-medium ${toneClass(item.tone)}`}>
               {item.tone}
             </span>
           )}
           {item.region && item.region.toLowerCase() !== "general" && (
-            <span className="inline-flex rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-700">
+            <span className="inline-flex rounded-full border border-badge-green-border bg-badge-green-bg px-2 py-0.5 text-xs font-medium text-badge-green-ink">
               {item.region}
             </span>
           )}
@@ -107,26 +107,26 @@ function AlternativeCard({
         <button
           type="button"
           onClick={onCopy}
-          className="flex-shrink-0 rounded-lg border border-slate-200 px-2.5 py-1 text-xs font-medium text-slate-500 hover:bg-slate-50 transition-colors"
+          className="flex-shrink-0 rounded-lg border px-2.5 py-1 text-xs font-medium text-ink-muted hover:bg-surface-sunken transition-colors"
         >
           {copied ? "Copied" : "Copy"}
         </button>
       </div>
       {item.example && (
-        <p className="mt-3 border-l-2 border-slate-200 pl-3 text-sm italic leading-relaxed text-slate-500">
+        <p className="mt-3 border-l-2 border pl-3 text-sm italic leading-relaxed text-ink-muted">
           {item.example}
         </p>
       )}
       <div className="mt-3 grid gap-2 text-sm">
         {item.whenToUse && (
-          <p className="text-slate-600">
-            <span className="mr-2 rounded-md bg-slate-100 px-2 py-0.5 text-xs font-semibold text-slate-500">Best for</span>
+          <p className="text-ink-secondary">
+            <span className="mr-2 rounded-md bg-surface-sunken px-2 py-0.5 text-xs font-semibold text-ink-muted">Best for</span>
             {item.whenToUse}
           </p>
         )}
         {item.avoidWhen && (
-          <p className="text-slate-600">
-            <span className="mr-2 rounded-md bg-red-50 px-2 py-0.5 text-xs font-semibold text-red-600">Avoid</span>
+          <p className="text-ink-secondary">
+            <span className="mr-2 rounded-md bg-bad-wash px-2 py-0.5 text-xs font-semibold text-bad">Avoid</span>
             {item.avoidWhen}
           </p>
         )}
@@ -206,7 +206,7 @@ export function PhraseExpansion() {
   return (
     <div className="space-y-6">
       <form onSubmit={generate} className="space-y-3">
-        <label className="block text-sm font-medium text-slate-700">
+        <label className="block text-sm font-medium text-ink-primary">
           Enter a phrase or expression
         </label>
         <div className="flex flex-col gap-2 sm:flex-row">
@@ -215,12 +215,12 @@ export function PhraseExpansion() {
             value={phrase}
             onChange={(e) => setPhrase(e.target.value)}
             placeholder="e.g. keep going"
-            className="flex-1 border border-strong rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="flex-1 bg-surface text-ink-primary border border-strong rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
           />
           <button
             type="submit"
             disabled={loading || !phrase.trim()}
-            className="bg-blue-600 text-white rounded-xl px-5 py-2.5 text-sm font-medium hover:bg-blue-700 disabled:opacity-50 transition-colors whitespace-nowrap"
+            className="bg-primary text-primary-ink rounded-xl px-5 py-2.5 text-sm font-medium hover:bg-primary-hover disabled:opacity-50 transition-colors whitespace-nowrap"
           >
             {loading ? "Generating..." : "Generate"}
           </button>
@@ -231,31 +231,31 @@ export function PhraseExpansion() {
               key={item}
               type="button"
               onClick={() => setPhrase(item)}
-              className="rounded-full border border-slate-200 px-3 py-1 text-xs font-medium text-slate-500 hover:border-blue-300 hover:text-blue-600 transition-colors"
+              className="rounded-full border px-3 py-1 text-xs font-medium text-ink-muted hover:border-primary hover:text-primary transition-colors"
             >
               {item}
             </button>
           ))}
         </div>
-        {error && <p className="text-sm text-red-500">{error}</p>}
+        {error && <p className="text-sm text-bad">{error}</p>}
       </form>
 
       {!result && !loading && (
-        <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5">
-          <p className="text-sm font-semibold text-slate-700">Say It Differently</p>
-          <p className="mt-1 text-sm text-slate-500">
+        <div className="rounded-2xl border bg-surface-sunken p-5">
+          <p className="text-sm font-semibold text-ink-primary">Say It Differently</p>
+          <p className="mt-1 text-sm text-ink-muted">
             Learn natural alternatives, tone, examples, and when to avoid each phrase.
           </p>
         </div>
       )}
 
       {loading && (
-        <div className="space-y-3 rounded-2xl border border-slate-200 bg-white p-5">
-          <div className="h-4 w-32 rounded bg-slate-100" />
-          <div className="h-7 w-56 rounded bg-slate-100" />
+        <div className="space-y-3 rounded-2xl border bg-surface p-5">
+          <div className="h-4 w-32 rounded bg-surface-sunken" />
+          <div className="h-7 w-56 rounded bg-surface-sunken" />
           <div className="grid gap-3 sm:grid-cols-2">
             {[0, 1].map((item) => (
-              <div key={item} className="h-24 rounded-xl border border-slate-200 bg-slate-50" />
+              <div key={item} className="h-24 rounded-xl border bg-surface-sunken" />
             ))}
           </div>
         </div>
@@ -264,33 +264,33 @@ export function PhraseExpansion() {
       {result && (
         <div className="space-y-5">
           {/* Hero — the searched phrase itself, elevated */}
-          <section className="rounded-2xl border-2 border-blue-200 bg-blue-50/40 p-6 shadow-sm">
-            <p className="text-xs font-semibold uppercase tracking-wide text-blue-600">
+          <section className="rounded-2xl border-2 border-badge-blue-border bg-badge-blue-bg p-6 shadow-sm">
+            <p className="text-xs font-semibold uppercase tracking-wide text-primary">
               {result.cached ? "Viewing saved phrase" : "You searched"}
             </p>
             <div className="mt-1 flex flex-wrap items-center gap-3">
-              <h2 className="text-2xl font-bold text-slate-800">{result.phrase}</h2>
+              <h2 className="text-2xl font-bold text-ink-primary">{result.phrase}</h2>
               <button
                 type="button"
                 onClick={() => speaking ? stop() : speak(result.phrase)}
                 title={speaking ? "Stop" : "Listen"}
-                className="text-ink-secondary hover:text-blue-600 transition-colors text-lg"
+                className="text-ink-secondary hover:text-primary transition-colors text-lg"
               >
                 {speaking ? "⏹" : "🔊"}
               </button>
               <button
                 type="button"
                 onClick={() => copyText(result.phrase)}
-                className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50 transition-colors"
+                className="rounded-lg border bg-surface px-3 py-1.5 text-xs font-medium text-ink-secondary hover:bg-surface-sunken transition-colors"
               >
                 {copied === result.phrase ? "Copied" : "Copy"}
               </button>
             </div>
             {result.meaning && (
-              <p className="mt-2 max-w-2xl text-sm leading-relaxed text-slate-600">{result.meaning}</p>
+              <p className="mt-2 max-w-2xl text-sm leading-relaxed text-ink-secondary">{result.meaning}</p>
             )}
             {result.savedToWordBank && (
-              <p className="mt-3 rounded-lg border border-green-200 bg-green-50 px-3 py-2 text-xs font-medium text-green-700">
+              <p className="mt-3 rounded-lg border border-good-border bg-good-wash px-3 py-2 text-xs font-medium text-good">
                 {result.cached ? "Loaded from saved phrases." : "Saved to phrase history."} You can review this phrase later in Words Review.
               </p>
             )}
@@ -314,7 +314,7 @@ export function PhraseExpansion() {
           {recommended.length > 0 && (
             <section className="space-y-3">
               <div>
-                <h3 className="text-sm font-semibold text-slate-700">Best ways to say it</h3>
+                <h3 className="text-sm font-semibold text-ink-primary">Best ways to say it</h3>
                 <p className="mt-0.5 text-xs text-ink-secondary">The most natural, most commonly used options.</p>
               </div>
               <div className="grid gap-3 sm:grid-cols-2">
@@ -333,7 +333,7 @@ export function PhraseExpansion() {
 
           {rest.length > 0 && (
             <section className="space-y-3">
-              <h3 className="text-sm font-semibold text-slate-700">More ways to say it</h3>
+              <h3 className="text-sm font-semibold text-ink-primary">More ways to say it</h3>
               <div className="grid gap-3 sm:grid-cols-2">
                 {rest.map((item) => (
                   <AlternativeCard
@@ -352,11 +352,11 @@ export function PhraseExpansion() {
           )}
 
           {result.notes.length > 0 && (
-            <section className="rounded-2xl border border-amber-200 bg-amber-50 p-5">
-              <h3 className="text-sm font-semibold text-amber-900">Notes</h3>
+            <section className="rounded-2xl border border-badge-amber-border bg-badge-amber-bg p-5">
+              <h3 className="text-sm font-semibold text-badge-amber-ink">Notes</h3>
               <ul className="mt-2 space-y-1.5">
                 {result.notes.map((note, index) => (
-                  <li key={index} className="text-sm leading-relaxed text-amber-900/80">
+                  <li key={index} className="text-sm leading-relaxed text-badge-amber-ink">
                     {note}
                   </li>
                 ))}
@@ -367,10 +367,10 @@ export function PhraseExpansion() {
       )}
 
       {history.length > 0 && (
-        <section className="rounded-2xl border border-slate-200 bg-slate-50/70 p-5">
+        <section className="rounded-2xl border bg-surface-sunken/70 p-5">
           <div className="mb-3 flex items-center justify-between gap-2">
             <div>
-              <h3 className="text-sm font-semibold text-slate-700">Saved Phrase History</h3>
+              <h3 className="text-sm font-semibold text-ink-primary">Saved Phrase History</h3>
               <p className="mt-0.5 text-xs text-ink-secondary">Tap a saved phrase to load it instantly from cache.</p>
             </div>
             <span className="text-xs text-ink-secondary">{history.length} saved</span>
@@ -386,8 +386,8 @@ export function PhraseExpansion() {
                 }}
                 className={`rounded-full border px-3 py-1.5 text-xs font-medium transition-colors ${
                   result?.phrase.toLowerCase() === entry.expansion.phrase.toLowerCase()
-                    ? "border-blue-300 bg-white text-blue-700 shadow-sm ring-2 ring-blue-100"
-                    : "border-slate-200 text-slate-600 hover:border-blue-400 hover:text-blue-600"
+                    ? "border-primary bg-surface text-primary shadow-sm ring-2 ring-primary/30"
+                    : "border text-ink-secondary hover:border-primary hover:text-primary"
                 }`}
               >
                 {entry.expansion.phrase}
@@ -398,7 +398,7 @@ export function PhraseExpansion() {
             <button
               type="button"
               onClick={() => setShowAllHistory(true)}
-              className="mt-3 text-xs text-blue-600 hover:underline"
+              className="mt-3 text-xs text-primary hover:underline"
             >
               Show all ({history.length})
             </button>

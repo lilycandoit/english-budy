@@ -84,7 +84,7 @@ type StoryResult =
 function HighlightedStory({ text }: { text: string }) {
   const parts = text.split(/(\*\*[^*]+\*\*)/g);
   return (
-    <p className="text-sm text-slate-700 leading-relaxed whitespace-pre-wrap">
+    <p className="text-sm text-ink-primary leading-relaxed whitespace-pre-wrap">
       {parts.map((part, i) => {
         if (part.startsWith("**") && part.endsWith("**")) {
           return (
@@ -101,21 +101,21 @@ function HighlightedStory({ text }: { text: string }) {
 
 function BilingualStory({ rows }: { rows: BilingualStoryRow[] }) {
   return (
-    <div className="overflow-hidden rounded-xl border border-slate-200">
-      <div className="hidden sm:grid sm:grid-cols-2 bg-slate-50 text-xs font-semibold uppercase tracking-wide text-ink-secondary">
-        <div className="border-r border-slate-200 px-4 py-2">English</div>
+    <div className="overflow-hidden rounded-xl border">
+      <div className="hidden sm:grid sm:grid-cols-2 bg-surface-sunken text-xs font-semibold uppercase tracking-wide text-ink-secondary">
+        <div className="border-r border px-4 py-2">English</div>
         <div className="px-4 py-2">{DEFAULT_NATIVE_LANGUAGE.nativeName}</div>
       </div>
       <div className="divide-y divide-slate-200">
         {rows.map((row, index) => (
           <div key={index} className="grid gap-0 sm:grid-cols-2">
-            <div className="border-slate-200 px-4 py-3 sm:border-r">
+            <div className="border px-4 py-3 sm:border-r">
               <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-ink-secondary sm:hidden">
                 English
               </p>
               <HighlightedStory text={row.english} />
             </div>
-            <div className="bg-slate-50/60 px-4 py-3 sm:bg-white">
+            <div className="bg-surface-sunken/60 px-4 py-3 sm:bg-surface">
               <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-ink-secondary sm:hidden">
                 {DEFAULT_NATIVE_LANGUAGE.nativeName}
               </p>
@@ -172,22 +172,22 @@ function FlashcardViewer({
     const knownCount = Object.values(ratings).filter((r) => r === "known").length;
     const reviewCount = Object.values(ratings).filter((r) => r === "review").length;
     return (
-      <div className="border border-slate-200 rounded-2xl p-6 text-center space-y-4">
-        <p className="text-xl font-bold text-slate-800">Session complete!</p>
+      <div className="border rounded-2xl p-6 text-center space-y-4">
+        <p className="text-xl font-bold text-ink-primary">Session complete!</p>
         <div className="flex gap-4 justify-center">
-          <div className="bg-green-50 border border-green-200 rounded-xl px-6 py-3">
-            <p className="text-2xl font-bold text-green-600">{knownCount}</p>
-            <p className="text-xs text-slate-500">Known</p>
+          <div className="bg-good-wash border border-good-border rounded-xl px-6 py-3">
+            <p className="text-2xl font-bold text-good">{knownCount}</p>
+            <p className="text-xs text-ink-muted">Known</p>
           </div>
-          <div className="bg-orange-50 border border-orange-200 rounded-xl px-6 py-3">
-            <p className="text-2xl font-bold text-orange-500">{reviewCount}</p>
-            <p className="text-xs text-slate-500">Review Again</p>
+          <div className="bg-badge-amber-bg border border-badge-amber-border rounded-xl px-6 py-3">
+            <p className="text-2xl font-bold text-badge-amber-ink">{reviewCount}</p>
+            <p className="text-xs text-ink-muted">Review Again</p>
           </div>
         </div>
         <button
           onClick={handleSave}
           disabled={saving}
-          className="w-full bg-blue-600 text-white rounded-xl py-2.5 text-sm font-medium hover:bg-blue-700 disabled:opacity-50 transition-colors"
+          className="w-full bg-primary text-primary-ink rounded-xl py-2.5 text-sm font-medium hover:bg-primary-hover disabled:opacity-50 transition-colors"
         >
           {saving ? "Saving…" : "Save & update schedule"}
         </button>
@@ -200,9 +200,9 @@ function FlashcardViewer({
       {/* Progress */}
       <div className="flex items-center justify-between text-xs text-ink-secondary">
         <span>{index + 1} / {cards.length}</span>
-        <div className="flex-1 mx-3 bg-slate-100 rounded-full h-1.5">
+        <div className="flex-1 mx-3 bg-surface-sunken rounded-full h-1.5">
           <div
-            className="bg-blue-500 h-1.5 rounded-full transition-all"
+            className="bg-badge-blue-bg0 h-1.5 rounded-full transition-all"
             style={{ width: `${((index + 1) / cards.length) * 100}%` }}
           />
         </div>
@@ -227,9 +227,9 @@ function FlashcardViewer({
           {/* Front — word */}
           <div
             style={{ backfaceVisibility: "hidden" }}
-            className="absolute inset-0 border-2 border-blue-200 rounded-2xl bg-gradient-to-br from-blue-50 to-white flex flex-col items-center justify-center p-6"
+            className="absolute inset-0 border-2 border-badge-blue-border rounded-2xl bg-badge-blue-bg flex flex-col items-center justify-center p-6"
           >
-            <p className="text-3xl font-bold text-slate-800">{card.word}</p>
+            <p className="text-3xl font-bold text-ink-primary">{card.word}</p>
             {phraseExpansion && (
               <p className="mt-2 rounded-full bg-teal-50 px-3 py-1 text-xs font-medium text-teal-700">
                 phrase
@@ -244,13 +244,13 @@ function FlashcardViewer({
           {/* Back — definition */}
           <div
             style={{ backfaceVisibility: "hidden", transform: "rotateY(180deg)" }}
-            className="absolute inset-0 border-2 border-teal-200 rounded-2xl bg-gradient-to-br from-teal-50 to-white p-5 overflow-y-auto"
+            className="absolute inset-0 border-2 border-badge-teal-border rounded-2xl bg-badge-teal-bg p-5 overflow-y-auto"
           >
-            <p className="text-lg font-bold text-slate-800 mb-3">{card.word}</p>
+            <p className="text-lg font-bold text-ink-primary mb-3">{card.word}</p>
             {phraseExpansion ? (
               <div className="space-y-3">
                 {phraseExpansion.meaning && (
-                  <p className="text-sm text-slate-600">{phraseExpansion.meaning}</p>
+                  <p className="text-sm text-ink-secondary">{phraseExpansion.meaning}</p>
                 )}
                 <div>
                   <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-ink-secondary">
@@ -258,14 +258,14 @@ function FlashcardViewer({
                   </p>
                   <div className="flex flex-wrap gap-1.5">
                     {getTopAlternatives(phraseExpansion).map((item) => (
-                      <span key={item.text} className="rounded-full border border-blue-200 bg-blue-50 px-2 py-0.5 text-xs font-medium text-blue-700">
+                      <span key={item.text} className="rounded-full border border-badge-blue-border bg-badge-blue-bg px-2 py-0.5 text-xs font-medium text-primary">
                         {item.text}
                       </span>
                     ))}
                   </div>
                 </div>
                 {getTopAlternatives(phraseExpansion, 2).map((item) => item.example).filter(Boolean).map((example) => (
-                  <p key={example} className="text-xs text-ink-secondary italic border-l-2 border-teal-200 pl-3">
+                  <p key={example} className="text-xs text-ink-secondary italic border-l-2 border-badge-teal-border pl-3">
                     {example}
                   </p>
                 ))}
@@ -273,12 +273,12 @@ function FlashcardViewer({
             ) : (
               <>
                 {getMeanings(card.wordInfo).slice(0, 3).map((m, i) => (
-                  <li key={i} className="text-sm text-slate-600 list-none">
+                  <li key={i} className="text-sm text-ink-secondary list-none">
                     <span className="text-ink-secondary mr-1">{i + 1}.</span>{m}
                   </li>
                 ))}
                 {card.wordInfo?.examples?.[0] && (
-                  <p className="text-xs text-ink-secondary italic border-l-2 border-teal-200 pl-3">
+                  <p className="text-xs text-ink-secondary italic border-l-2 border-badge-teal-border pl-3">
                     {card.wordInfo.examples[0]}
                   </p>
                 )}
@@ -293,13 +293,13 @@ function FlashcardViewer({
         <div className="flex gap-3">
           <button
             onClick={() => rate("review")}
-            className="flex-1 border-2 border-orange-300 text-orange-600 rounded-xl py-3 text-sm font-medium hover:bg-orange-50 transition-colors"
+            className="flex-1 border-2 border-orange-300 text-badge-amber-ink rounded-xl py-3 text-sm font-medium hover:bg-badge-amber-bg transition-colors"
           >
             🔁 Review Again
           </button>
           <button
             onClick={() => rate("known")}
-            className="flex-1 border-2 border-green-400 text-green-700 rounded-xl py-3 text-sm font-medium hover:bg-green-50 transition-colors"
+            className="flex-1 border-2 border-green-400 text-good rounded-xl py-3 text-sm font-medium hover:bg-good-wash transition-colors"
           >
             ✓ Known
           </button>
@@ -462,8 +462,8 @@ export function WordsReview() {
       {fcCards && (
         <div>
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-sm font-semibold text-slate-700">Flashcard Review</h3>
-            <button onClick={() => setFcCards(null)} className="text-xs text-ink-secondary hover:text-slate-600">
+            <h3 className="text-sm font-semibold text-ink-primary">Flashcard Review</h3>
+            <button onClick={() => setFcCards(null)} className="text-xs text-ink-secondary hover:text-ink-secondary">
               ✕ Cancel
             </button>
           </div>
@@ -485,7 +485,7 @@ export function WordsReview() {
               </div>
               <button
                 onClick={() => startFlashcards(dueCards.map((c) => ({ word: c.word, wordInfo: c.wordInfo })))}
-                className="bg-white text-orange-600 font-semibold text-sm px-4 py-2 rounded-xl hover:bg-orange-50 transition-colors whitespace-nowrap"
+                className="bg-surface text-badge-amber-ink font-semibold text-sm px-4 py-2 rounded-xl hover:bg-badge-amber-bg transition-colors whitespace-nowrap"
               >
                 Start Review →
               </button>
@@ -495,11 +495,11 @@ export function WordsReview() {
           {/* ── Word selection + review actions ── */}
           <div>
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-sm font-semibold text-slate-700">Select Words to Review</h3>
+              <h3 className="text-sm font-semibold text-ink-primary">Select Words to Review</h3>
               {wbEntries.length > 0 && (
                 <button
                   onClick={() => startFlashcards(wbEntries)}
-                  className="text-xs text-ink-secondary hover:text-blue-600 transition-colors"
+                  className="text-xs text-ink-secondary hover:text-primary transition-colors"
                 >
                   Study all {wbEntries.length} →
                 </button>
@@ -507,7 +507,7 @@ export function WordsReview() {
             </div>
 
             {wbEntries.length >= 50 && (
-              <p className="text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 mb-4">
+              <p className="text-xs text-badge-amber-ink bg-badge-amber-bg border border-badge-amber-border rounded-lg px-3 py-2 mb-4">
                 💡 You have {wbEntries.length} words — consider reviewing before adding more to keep them manageable.
               </p>
             )}
@@ -520,9 +520,9 @@ export function WordsReview() {
                     const words = wordsByDate[date];
                     const allSel = words.every((w) => selectedWords.includes(w));
                     return (
-                      <div key={date} className="border border-slate-200 rounded-xl p-3">
+                      <div key={date} className="border rounded-xl p-3">
                         <div className="flex items-center justify-between mb-2">
-                          <span className="text-xs font-medium text-slate-500">
+                          <span className="text-xs font-medium text-ink-muted">
                             {new Date(date).toLocaleDateString("en-AU", {
                               weekday: "short", day: "numeric", month: "short",
                             })}
@@ -530,7 +530,7 @@ export function WordsReview() {
                           <button
                             type="button"
                             onClick={() => selectGroup(words)}
-                            className="text-xs text-blue-600 hover:underline"
+                            className="text-xs text-primary hover:underline"
                           >
                             {allSel ? "Deselect all" : "Select all"}
                           </button>
@@ -543,8 +543,8 @@ export function WordsReview() {
                               onClick={() => toggleWord(word)}
                               className={`text-xs px-2.5 py-1 rounded-full border transition-colors ${
                                 selectedWords.includes(word)
-                                  ? "bg-blue-600 text-white border-blue-600"
-                                  : "border-slate-200 text-slate-600 hover:border-blue-400"
+                                  ? "bg-primary text-primary-ink border-primary"
+                                  : "border text-ink-secondary hover:border-primary"
                               }`}
                             >
                               {word}
@@ -559,7 +559,7 @@ export function WordsReview() {
                       <button
                         type="button"
                         onClick={() => setDatePage((p) => p + 1)}
-                        className="text-xs text-blue-600 hover:underline"
+                        className="text-xs text-primary hover:underline"
                       >
                         Show more ({Math.min(remainingWordsCount, WORDS_PER_PAGE)} more words)
                       </button>
@@ -586,11 +586,11 @@ export function WordsReview() {
                   value={customInput}
                   onChange={(e) => setCustomInput(e.target.value)}
                   placeholder="e.g. reckon, keen, arvo"
-                  className="w-full border border-strong rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full bg-surface text-ink-primary border border-strong rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
                 />
               </div>
 
-              {storyError && <p className="text-red-500 text-sm">{storyError}</p>}
+              {storyError && <p className="text-bad text-sm">{storyError}</p>}
 
               {!isActionBarVisible && (
                 <p className="text-xs text-ink-secondary text-center py-2">
@@ -601,10 +601,10 @@ export function WordsReview() {
 
             {/* Story output */}
             {storyResult && (
-              <div className="mt-4 space-y-3 rounded-2xl border border-slate-200 p-5">
+              <div className="mt-4 space-y-3 rounded-2xl border p-5">
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                   <div>
-                    <h3 className="text-sm font-semibold text-slate-700">
+                    <h3 className="text-sm font-semibold text-ink-primary">
                       {storyResult.mode === "bilingual" ? "Bilingual story" : "Story"}
                     </h3>
                     <p className="mt-0.5 text-xs text-ink-secondary">
@@ -616,7 +616,7 @@ export function WordsReview() {
                       type="button"
                       onClick={() => handleGenerateStory(currentStoryMode, "fresh")}
                       disabled={storyLoading}
-                      className="rounded-xl border border-blue-200 px-3 py-2 text-xs font-medium text-blue-600 hover:bg-blue-50 disabled:opacity-50"
+                      className="rounded-xl border border-badge-blue-border px-3 py-2 text-xs font-medium text-primary hover:bg-badge-blue-bg disabled:opacity-50"
                     >
                       Fresh version
                     </button>
@@ -624,7 +624,7 @@ export function WordsReview() {
                       type="button"
                       onClick={() => handleGenerateStory(storyResult.mode === "bilingual" ? "english" : "bilingual")}
                       disabled={storyLoading}
-                      className="rounded-xl border border-slate-200 px-3 py-2 text-xs font-medium text-slate-600 hover:bg-slate-50 disabled:opacity-50"
+                      className="rounded-xl border px-3 py-2 text-xs font-medium text-ink-secondary hover:bg-surface-sunken disabled:opacity-50"
                     >
                       {storyResult.mode === "bilingual" ? "English only" : "Bilingual"}
                     </button>
@@ -641,7 +641,7 @@ export function WordsReview() {
 
           {/* ── Sticky action bar — reachable without scrolling past the word list ── */}
           {isActionBarVisible && (
-            <div className="fixed inset-x-0 bottom-0 z-30 border-t border-slate-200 bg-white/95 px-4 py-3 backdrop-blur shadow-[0_-4px_12px_rgba(0,0,0,0.06)]">
+            <div className="fixed inset-x-0 bottom-0 z-30 border-t bg-surface px-4 py-3 backdrop-blur shadow-[0_-4px_12px_rgba(0,0,0,0.06)]">
               <div className="mx-auto grid max-w-4xl gap-2 sm:grid-cols-3 sm:gap-3">
                 <button
                   type="button"
@@ -657,7 +657,7 @@ export function WordsReview() {
                   type="button"
                   onClick={() => handleGenerateStory("english")}
                   disabled={storyLoading}
-                  className="bg-blue-600 text-white rounded-xl py-2.5 text-sm font-medium hover:bg-blue-700 disabled:opacity-50 transition-colors"
+                  className="bg-primary text-primary-ink rounded-xl py-2.5 text-sm font-medium hover:bg-primary-hover disabled:opacity-50 transition-colors"
                 >
                   {storyLoading ? "Generating…" : `📖 Story (${activeWordsCount} words)`}
                 </button>

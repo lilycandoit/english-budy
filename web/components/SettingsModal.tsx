@@ -39,24 +39,24 @@ export function SettingsModal({ onClose }: { onClose: () => void }) {
       onClick={onClose}
     >
       <div
-        className="bg-white rounded-2xl shadow-xl p-6 w-full max-w-md"
+        className="bg-surface rounded-2xl shadow-xl p-6 w-full max-w-md"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
         <div className="flex items-center justify-between mb-5">
-          <h2 className="text-lg font-bold text-slate-800">Settings</h2>
-          <button onClick={onClose} className="text-ink-secondary hover:text-slate-600 text-lg">✕</button>
+          <h2 className="text-lg font-bold text-ink-primary">Settings</h2>
+          <button onClick={onClose} className="text-ink-secondary hover:text-ink-secondary text-lg">✕</button>
         </div>
 
         {/* ── Groq API Key ── */}
         <div>
           <div className="flex items-center gap-2 mb-1">
-            <h3 className="text-sm font-semibold text-slate-700">Groq API Key</h3>
+            <h3 className="text-sm font-semibold text-ink-primary">Groq API Key</h3>
             {session?.user?.hasGroqKey && (
-              <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-medium">Active</span>
+              <span className="text-xs bg-green-100 text-good px-2 py-0.5 rounded-full font-medium">Active</span>
             )}
           </div>
-          <p className="text-xs text-slate-500 mb-3">
+          <p className="text-xs text-ink-muted mb-3">
             Powers all AI features — sentence check, vocab builder, daily topic.
           </p>
           <form onSubmit={saveGroqKey} className="flex gap-2">
@@ -65,18 +65,18 @@ export function SettingsModal({ onClose }: { onClose: () => void }) {
               value={groqKey}
               onChange={(e) => setGroqKey(e.target.value)}
               placeholder={session?.user?.hasGroqKey ? "Enter new key to update…" : "gsk_..."}
-              className="flex-1 border border-strong rounded-lg px-3 py-2 text-xs font-mono focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="flex-1 bg-surface text-ink-primary border border-strong rounded-lg px-3 py-2 text-xs font-mono focus:outline-none focus:ring-2 focus:ring-primary"
             />
             <button
               type="submit"
               disabled={groqLoading || !groqKey.startsWith("gsk_")}
-              className="bg-blue-600 text-white rounded-lg px-3 py-2 text-xs font-medium hover:bg-blue-700 disabled:opacity-50 whitespace-nowrap"
+              className="bg-primary text-primary-ink rounded-lg px-3 py-2 text-xs font-medium hover:bg-primary-hover disabled:opacity-50 whitespace-nowrap"
             >
               {groqLoading ? "Saving…" : "Update"}
             </button>
           </form>
           {groqMsg && (
-            <p className={`text-xs mt-1.5 ${groqMsg === "Saved!" ? "text-green-600" : "text-red-500"}`}>
+            <p className={`text-xs mt-1.5 ${groqMsg === "Saved!" ? "text-good" : "text-bad"}`}>
               {groqMsg}
             </p>
           )}

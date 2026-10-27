@@ -16,10 +16,10 @@ export default function ResetPasswordPage() {
 function ResetPasswordShell() {
   return (
     <div className="min-h-screen flex items-center justify-center px-4">
-      <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-8 w-full max-w-sm">
+      <div className="bg-surface rounded-2xl shadow-sm border border p-8 w-full max-w-sm">
         <div className="mb-6">
-          <h1 className="text-2xl font-bold text-slate-800">Choose new password</h1>
-          <p className="text-slate-500 text-sm mt-1">Loading reset link...</p>
+          <h1 className="text-2xl font-bold text-ink-primary">Choose new password</h1>
+          <p className="text-ink-muted text-sm mt-1">Loading reset link...</p>
         </div>
       </div>
     </div>
@@ -67,54 +67,54 @@ function ResetPasswordForm() {
 
   return (
     <div className="min-h-screen flex items-center justify-center px-4">
-      <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-8 w-full max-w-sm">
+      <div className="bg-surface rounded-2xl shadow-sm border border p-8 w-full max-w-sm">
         <div className="mb-6">
-          <h1 className="text-2xl font-bold text-slate-800">Choose new password</h1>
-          <p className="text-slate-500 text-sm mt-1">Use at least 8 characters.</p>
+          <h1 className="text-2xl font-bold text-ink-primary">Choose new password</h1>
+          <p className="text-ink-muted text-sm mt-1">Use at least 8 characters.</p>
         </div>
 
         {!token ? (
           <div className="space-y-4">
-            <p className="text-red-500 text-sm">Reset link is missing a token.</p>
-            <Link href="/forgot-password" className="block text-center text-blue-600 hover:underline text-sm font-medium">
+            <p className="text-bad text-sm">Reset link is missing a token.</p>
+            <Link href="/forgot-password" className="block text-center text-primary hover:underline text-sm font-medium">
               Request a new link
             </Link>
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">New password</label>
+              <label className="block text-sm font-medium text-ink-primary mb-1">New password</label>
               <input
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 minLength={8}
-                className="w-full border border-strong rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full bg-surface text-ink-primary border border-strong rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
                 placeholder="At least 8 characters"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Confirm password</label>
+              <label className="block text-sm font-medium text-ink-primary mb-1">Confirm password</label>
               <input
                 type="password"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 required
                 minLength={8}
-                className="w-full border border-strong rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full bg-surface text-ink-primary border border-strong rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
                 placeholder="Repeat new password"
               />
             </div>
 
-            {message && <p className="text-green-600 text-sm">{message}</p>}
-            {error && <p className="text-red-500 text-sm">{error}</p>}
+            {message && <p className="text-good text-sm">{message}</p>}
+            {error && <p className="text-bad text-sm">{error}</p>}
 
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-blue-600 text-white rounded-lg py-2.5 text-sm font-medium hover:bg-blue-700 disabled:opacity-50 transition-colors"
+              className="w-full bg-primary text-primary-ink rounded-lg py-2.5 text-sm font-medium hover:bg-primary-hover disabled:opacity-50 transition-colors"
             >
               {loading ? "Resetting…" : "Reset password"}
             </button>

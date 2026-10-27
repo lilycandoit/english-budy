@@ -22,10 +22,10 @@ interface Stats {
 }
 
 const TYPE_LABELS: Record<string, { label: string; color: string }> = {
-  grammar:     { label: "Grammar",     color: "bg-red-100 text-red-700" },
-  spelling:    { label: "Spelling",    color: "bg-yellow-100 text-yellow-700" },
-  punctuation: { label: "Punctuation", color: "bg-purple-100 text-purple-700" },
-  none:        { label: "Correct",     color: "bg-green-100 text-green-700" },
+  grammar:     { label: "Grammar",     color: "bg-badge-red-bg text-badge-red-ink" },
+  spelling:    { label: "Spelling",    color: "bg-badge-amber-bg text-badge-amber-ink" },
+  punctuation: { label: "Punctuation", color: "bg-badge-violet-bg text-badge-violet-ink" },
+  none:        { label: "Correct",     color: "bg-badge-green-bg text-badge-green-ink" },
 };
 
 export function SentenceCheck() {
@@ -140,7 +140,7 @@ export function SentenceCheck() {
     <div className="space-y-6">
       {/* Input */}
       <form onSubmit={handleSubmit} className="space-y-3">
-        <label className="block text-sm font-medium text-slate-700">
+        <label className="block text-sm font-medium text-ink-primary">
           Write a sentence — AI will correct it and suggest a native rewrite
         </label>
         <textarea
@@ -154,13 +154,13 @@ export function SentenceCheck() {
           }}
           rows={3}
           placeholder="e.g. I have went to the shops yesterday and buyed some milk."
-          className="w-full border border-strong rounded-xl px-4 py-3 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          className="w-full bg-surface text-ink-primary border border-strong rounded-xl px-4 py-3 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
         />
-        {error && <p className="text-red-500 text-sm">{error}</p>}
+        {error && <p className="text-bad text-sm">{error}</p>}
         <button
           type="submit"
           disabled={loading || !input.trim()}
-          className="w-full sm:w-auto sm:mx-auto sm:block bg-blue-600 text-white rounded-xl px-5 py-2.5 text-sm font-medium hover:bg-blue-700 disabled:opacity-50 transition-colors"
+          className="w-full sm:w-auto sm:mx-auto sm:block bg-primary text-primary-ink rounded-xl px-5 py-2.5 text-sm font-medium hover:bg-primary-hover disabled:opacity-50 transition-colors"
         >
           {loading ? "Checking…" : "Check sentence"}
         </button>
@@ -169,60 +169,60 @@ export function SentenceCheck() {
       {/* Result boxes */}
       {result && (
         <div className="space-y-3">
-          <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">You wrote</p>
-            <p className="text-sm text-slate-800 leading-relaxed whitespace-pre-wrap">{result.originalText}</p>
+          <div className="rounded-xl border bg-surface p-4 shadow-sm">
+            <p className="text-xs font-semibold text-ink-muted uppercase tracking-wide mb-2">You wrote</p>
+            <p className="text-sm text-ink-primary leading-relaxed whitespace-pre-wrap">{result.originalText}</p>
             <button
               type="button"
               onClick={() => copyText("original", result.originalText)}
-              className="mt-3 inline-flex items-center rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50 transition-colors"
+              className="mt-3 inline-flex items-center rounded-lg border px-3 py-1.5 text-xs font-medium text-ink-secondary hover:bg-surface-sunken transition-colors"
             >
               {copiedKey === "original" ? "Copied" : "Copy text"}
             </button>
           </div>
 
-          <div className="rounded-xl border border-blue-200 bg-blue-50 p-4 shadow-sm">
+          <div className="rounded-xl border border-badge-blue-border bg-badge-blue-bg p-4 shadow-sm">
             <div className="flex items-center gap-2 mb-2">
-              <p className="text-xs font-semibold text-blue-700 uppercase tracking-wide">Corrected</p>
+              <p className="text-xs font-semibold text-badge-blue-ink uppercase tracking-wide">Corrected</p>
               <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${TYPE_LABELS[result.mistakeType]?.color}`}>
                 {TYPE_LABELS[result.mistakeType]?.label}
               </span>
             </div>
-            <p className="text-sm text-slate-800 leading-relaxed whitespace-pre-wrap">{result.correctedText}</p>
+            <p className="text-sm text-ink-primary leading-relaxed whitespace-pre-wrap">{result.correctedText}</p>
             {result.explanation && result.explanation !== "Looks good!" && (
-              <p className="text-xs text-blue-900/70 mt-2 border-l-2 border-blue-300 pl-2">{result.explanation}</p>
+              <p className="text-xs text-badge-blue-ink mt-2 border-l-2 border-badge-blue-border pl-2">{result.explanation}</p>
             )}
             <button
               type="button"
               onClick={() => copyText("corrected", result.correctedText)}
-              className="mt-3 inline-flex items-center rounded-lg border border-blue-200 bg-white/70 px-3 py-1.5 text-xs font-medium text-blue-700 hover:bg-white transition-colors"
+              className="mt-3 inline-flex items-center rounded-lg border border-badge-blue-border bg-surface px-3 py-1.5 text-xs font-medium text-badge-blue-ink hover:bg-surface transition-colors"
             >
               {copiedKey === "corrected" ? "Copied" : "Copy text"}
             </button>
           </div>
 
           {result.naturalText && result.naturalText !== result.correctedText && (
-            <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 shadow-sm">
+            <div className="rounded-xl border border-badge-amber-border bg-badge-amber-bg p-4 shadow-sm">
               <div className="mb-2 flex items-center justify-between gap-3">
-                <p className="text-xs font-semibold text-amber-800 uppercase tracking-wide">Native speaker</p>
+                <p className="text-xs font-semibold text-badge-amber-ink uppercase tracking-wide">Native speaker</p>
                 <button
                   type="button"
                   onClick={refreshNativeRewrite}
                   disabled={nativeRefreshing}
                   title="Generate a different native speaker version"
-                  className="inline-flex items-center rounded-lg border border-amber-200 bg-white/70 px-2.5 py-1 text-xs font-medium text-amber-800 hover:bg-white disabled:opacity-50 transition-colors"
+                  className="inline-flex items-center rounded-lg border border-badge-amber-border bg-surface px-2.5 py-1 text-xs font-medium text-badge-amber-ink hover:bg-surface disabled:opacity-50 transition-colors"
                 >
                   {nativeRefreshing ? "Refreshing…" : "↻ Fresh version"}
                 </button>
               </div>
-              <p className="text-sm text-slate-800 leading-relaxed whitespace-pre-wrap">{result.naturalText}</p>
+              <p className="text-sm text-ink-primary leading-relaxed whitespace-pre-wrap">{result.naturalText}</p>
               {result.naturalnessTip && (
-                <p className="text-xs text-amber-900/75 mt-2 border-l-2 border-amber-300 pl-2">{result.naturalnessTip}</p>
+                <p className="text-xs text-badge-amber-ink mt-2 border-l-2 border-badge-amber-border pl-2">{result.naturalnessTip}</p>
               )}
               <button
                 type="button"
                 onClick={() => copyText("natural", result.naturalText!)}
-                className="mt-3 inline-flex items-center rounded-lg border border-amber-200 bg-white/70 px-3 py-1.5 text-xs font-medium text-amber-800 hover:bg-white transition-colors"
+                className="mt-3 inline-flex items-center rounded-lg border border-badge-amber-border bg-surface px-3 py-1.5 text-xs font-medium text-badge-amber-ink hover:bg-surface transition-colors"
               >
                 {copiedKey === "natural" ? "Copied" : "Copy text"}
               </button>
@@ -235,13 +235,13 @@ export function SentenceCheck() {
       {stats && stats.total > 0 && (
         <div className="flex gap-3 text-center">
           {[
-            { key: "grammar",     label: "Grammar",     color: "text-red-600" },
-            { key: "spelling",    label: "Spelling",    color: "text-yellow-600" },
-            { key: "punctuation", label: "Punctuation", color: "text-purple-600" },
+            { key: "grammar",     label: "Grammar",     color: "text-badge-red-ink" },
+            { key: "spelling",    label: "Spelling",    color: "text-badge-amber-ink" },
+            { key: "punctuation", label: "Punctuation", color: "text-badge-violet-ink" },
           ].map(({ key, label, color }) => (
-            <div key={key} className="flex-1 bg-slate-50 rounded-xl py-3">
+            <div key={key} className="flex-1 bg-surface-sunken rounded-xl py-3">
               <p className={`text-xl font-bold ${color}`}>{stats[key as keyof Stats]}</p>
-              <p className="text-xs text-slate-500 mt-0.5">{label}</p>
+              <p className="text-xs text-ink-muted mt-0.5">{label}</p>
             </div>
           ))}
         </div>
@@ -251,7 +251,7 @@ export function SentenceCheck() {
       {stats && stats.total > 0 && (
         <div>
           <div className="mb-3 space-y-2">
-            <h3 className="text-sm font-semibold text-slate-700">History</h3>
+            <h3 className="text-sm font-semibold text-ink-primary">History</h3>
             <div className="flex flex-wrap gap-1">
               {["all", "grammar", "spelling", "punctuation", "none"].map((type) => (
                 <button
@@ -259,8 +259,8 @@ export function SentenceCheck() {
                   onClick={() => handleFilterChange(type)}
                   className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-colors ${
                     filter === type
-                      ? "bg-blue-600 text-white"
-                      : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                      ? "bg-primary text-primary-ink"
+                      : "bg-surface-sunken text-ink-secondary hover:opacity-80"
                   }`}
                 >
                   {type === "all" ? "All" : type === "none" ? "Correct" : type.charAt(0).toUpperCase() + type.slice(1)}
@@ -285,7 +285,7 @@ export function SentenceCheck() {
                     openHistoryEntry(m);
                   }
                 }}
-                className="border border-slate-200 rounded-xl p-4 text-sm cursor-pointer hover:border-blue-300 hover:bg-slate-50 transition-colors"
+                className="border rounded-xl p-4 text-sm cursor-pointer hover:border-primary hover:bg-surface-sunken transition-colors"
               >
                 <div className="flex items-start justify-between gap-2 mb-3">
                   <div className="flex items-center gap-2 flex-wrap">
@@ -303,19 +303,19 @@ export function SentenceCheck() {
                       e.stopPropagation();
                       handleDelete(m.id);
                     }}
-                    className="text-ink-muted hover:text-red-400 transition-colors text-xs flex-shrink-0"
+                    className="text-ink-muted hover:text-bad transition-colors text-xs flex-shrink-0"
                   >
                     ✕
                   </button>
                 </div>
 
-                <p className="text-slate-500 line-through text-xs leading-relaxed whitespace-pre-wrap">{m.originalText}</p>
-                <p className="text-slate-800 text-sm mt-2 leading-relaxed whitespace-pre-wrap">{m.correctedText}</p>
+                <p className="text-ink-muted line-through text-xs leading-relaxed whitespace-pre-wrap">{m.originalText}</p>
+                <p className="text-ink-primary text-sm mt-2 leading-relaxed whitespace-pre-wrap">{m.correctedText}</p>
                 {m.naturalText && m.naturalText !== m.correctedText && (
-                  <p className="text-teal-700 mt-2 text-xs leading-relaxed whitespace-pre-wrap">💬 {m.naturalText}</p>
+                  <p className="text-badge-teal-ink mt-2 text-xs leading-relaxed whitespace-pre-wrap">💬 {m.naturalText}</p>
                 )}
                 {m.explanation && m.explanation !== "Looks good!" && (
-                  <p className="text-slate-600 text-xs mt-2 leading-relaxed">💡 {m.explanation}</p>
+                  <p className="text-ink-secondary text-xs mt-2 leading-relaxed">💡 {m.explanation}</p>
                 )}
               </div>
             ))}

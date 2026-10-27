@@ -31,17 +31,17 @@ function activityLevel(day: ActivityDay): 0 | 1 | 2 | 3 {
 }
 
 const HEAT_COLORS = [
-  "bg-slate-100",
+  "bg-surface-sunken",
   "bg-blue-200",
   "bg-blue-400",
-  "bg-blue-600",
+  "bg-primary",
 ];
 
-function StatCard({ label, value, sub, color = "text-slate-800" }: {
+function StatCard({ label, value, sub, color = "text-ink-primary" }: {
   label: string; value: string | number; sub?: string; color?: string;
 }) {
   return (
-    <div className="bg-white border border-slate-200 rounded-2xl p-4 flex flex-col gap-1">
+    <div className="bg-surface border rounded-2xl p-4 flex flex-col gap-1">
       <p className="text-xs text-ink-secondary font-medium uppercase tracking-wide">{label}</p>
       <p className={`text-3xl font-bold ${color}`}>{value}</p>
       {sub && <p className="text-xs text-ink-secondary">{sub}</p>}
@@ -114,13 +114,13 @@ export function Progress() {
           label="Words learned"
           value={stats.words.total}
           sub={`+${stats.words.thisWeek} this week`}
-          color="text-blue-600"
+          color="text-primary"
         />
         <StatCard
           label="Mastered"
           value={`${masteredPct}%`}
           sub={`${stats.mastery.mastered} of ${masteryTotal} reviewed`}
-          color="text-green-600"
+          color="text-good"
         />
         <StatCard
           label="Quiz avg"
@@ -132,7 +132,7 @@ export function Progress() {
 
       {/* ── Mastery breakdown ── */}
       {masteryTotal > 0 && (
-        <div className="bg-white border border-slate-200 rounded-2xl p-4">
+        <div className="bg-surface border rounded-2xl p-4">
           <p className="text-xs text-ink-secondary font-medium uppercase tracking-wide mb-3">Mastery breakdown</p>
           <div className="flex rounded-full overflow-hidden h-3 mb-3">
             {stats.mastery.mastered > 0 && (
@@ -142,31 +142,31 @@ export function Progress() {
               <div className="bg-blue-400 transition-all" style={{ width: `${(stats.mastery.learning / masteryTotal) * 100}%` }} />
             )}
             {stats.mastery.new > 0 && (
-              <div className="bg-slate-200 transition-all" style={{ width: `${(stats.mastery.new / masteryTotal) * 100}%` }} />
+              <div className="bg-surface-sunken transition-all" style={{ width: `${(stats.mastery.new / masteryTotal) * 100}%` }} />
             )}
           </div>
-          <div className="flex gap-4 text-xs text-slate-500">
+          <div className="flex gap-4 text-xs text-ink-muted">
             <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-green-400 inline-block" />Mastered ({stats.mastery.mastered})</span>
             <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-blue-400 inline-block" />Learning ({stats.mastery.learning})</span>
-            <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-slate-200 inline-block" />New ({stats.mastery.new})</span>
+            <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-surface-sunken inline-block" />New ({stats.mastery.new})</span>
           </div>
         </div>
       )}
 
       {/* ── Sentence check breakdown ── */}
       {stats.sentences.total > 0 && (
-        <div className="bg-white border border-slate-200 rounded-2xl p-4">
+        <div className="bg-surface border rounded-2xl p-4">
           <p className="text-xs text-ink-secondary font-medium uppercase tracking-wide mb-3">
             Sentence checks — {stats.sentences.total} total
           </p>
           <div className="grid grid-cols-4 gap-2 text-center">
             {[
-              { key: "grammar",     label: "Grammar",     color: "text-red-500" },
+              { key: "grammar",     label: "Grammar",     color: "text-bad" },
               { key: "spelling",    label: "Spelling",    color: "text-yellow-500" },
               { key: "punctuation", label: "Punctuation", color: "text-purple-500" },
               { key: "none",        label: "Correct",     color: "text-green-500" },
             ].map(({ key, label, color }) => (
-              <div key={key} className="bg-slate-50 rounded-xl py-3">
+              <div key={key} className="bg-surface-sunken rounded-xl py-3">
                 <p className={`text-2xl font-bold ${color}`}>
                   {stats.sentences[key as keyof typeof stats.sentences]}
                 </p>
@@ -178,7 +178,7 @@ export function Progress() {
       )}
 
       {/* ── Activity heatmap ── */}
-      <div className="bg-white border border-slate-200 rounded-2xl p-4">
+      <div className="bg-surface border rounded-2xl p-4">
         <p className="text-xs text-ink-secondary font-medium uppercase tracking-wide mb-3">Activity — last 4 weeks</p>
 
         {/* Month labels */}
@@ -236,16 +236,16 @@ export function Progress() {
 
       {/* ── Quick stats row ── */}
       <div className="grid grid-cols-3 gap-3 text-center">
-        <div className="bg-white border border-slate-200 rounded-2xl py-4">
-          <p className="text-2xl font-bold text-slate-800">{stats.topics}</p>
+        <div className="bg-surface border rounded-2xl py-4">
+          <p className="text-2xl font-bold text-ink-primary">{stats.topics}</p>
           <p className="text-xs text-ink-secondary mt-0.5">Topics explored</p>
         </div>
-        <div className="bg-white border border-slate-200 rounded-2xl py-4">
-          <p className="text-2xl font-bold text-slate-800">{stats.words.today}</p>
+        <div className="bg-surface border rounded-2xl py-4">
+          <p className="text-2xl font-bold text-ink-primary">{stats.words.today}</p>
           <p className="text-xs text-ink-secondary mt-0.5">Words today</p>
         </div>
-        <div className="bg-white border border-slate-200 rounded-2xl py-4">
-          <p className="text-2xl font-bold text-slate-800">{stats.sentences.none}</p>
+        <div className="bg-surface border rounded-2xl py-4">
+          <p className="text-2xl font-bold text-ink-primary">{stats.sentences.none}</p>
           <p className="text-xs text-ink-secondary mt-0.5">Perfect sentences</p>
         </div>
       </div>

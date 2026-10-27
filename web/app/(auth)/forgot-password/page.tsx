@@ -33,40 +33,40 @@ export default function ForgotPasswordPage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center px-4">
-      <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-8 w-full max-w-sm">
+      <div className="bg-surface rounded-2xl shadow-sm border border p-8 w-full max-w-sm">
         <div className="mb-6">
-          <h1 className="text-2xl font-bold text-slate-800">Reset password</h1>
-          <p className="text-slate-500 text-sm mt-1">Enter your account email to receive a reset link.</p>
+          <h1 className="text-2xl font-bold text-ink-primary">Reset password</h1>
+          <p className="text-ink-muted text-sm mt-1">Enter your account email to receive a reset link.</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Email</label>
+            <label className="block text-sm font-medium text-ink-primary mb-1">Email</label>
             <input
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              className="w-full border border-strong rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full bg-surface text-ink-primary border border-strong rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
               placeholder="you@example.com"
             />
           </div>
 
-          {message && <p className="text-green-600 text-sm">{message}</p>}
-          {error && <p className="text-red-500 text-sm">{error}</p>}
+          {message && <p className="text-good text-sm">{message}</p>}
+          {error && <p className="text-bad text-sm">{error}</p>}
 
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-blue-600 text-white rounded-lg py-2.5 text-sm font-medium hover:bg-blue-700 disabled:opacity-50 transition-colors"
+            className="w-full bg-primary text-primary-ink rounded-lg py-2.5 text-sm font-medium hover:bg-primary-hover disabled:opacity-50 transition-colors"
           >
             {loading ? "Sending…" : "Send reset link"}
           </button>
         </form>
 
-        <p className="text-center text-sm text-slate-500 mt-5">
+        <p className="text-center text-sm text-ink-muted mt-5">
           Remembered it?{" "}
-          <Link href="/login" className="text-blue-600 hover:underline font-medium">
+          <Link href="/login" className="text-primary hover:underline font-medium">
             Sign in
           </Link>
         </p>

@@ -14,7 +14,7 @@ export default async function DashboardPage() {
       <Navbar />
 
       <main className="flex-1 max-w-4xl mx-auto w-full px-4 py-6">
-        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+        <div className="bg-surface rounded-2xl shadow-sm border overflow-hidden">
           <TabShell />
         </div>
       </main>
