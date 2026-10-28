@@ -1,8 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { signIn } from "next-auth/react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
 
 export default function SignupPage() {
@@ -11,7 +9,7 @@ export default function SignupPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const router = useRouter();
+  const [done, setDone] = useState(false);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -25,17 +23,34 @@ export default function SignupPage() {
     });
 
     const data = await res.json();
+    setLoading(false);
 
     if (!res.ok) {
-      setLoading(false);
       setError(data.error || "Something went wrong");
       return;
     }
 
-    // Auto sign in after signup
-    await signIn("credentials", { email, password, redirect: false });
-    router.push("/dashboard");
-    router.refresh();
+    setDone(true);
+  }
+
+  if (done) {
+    return (
+      <div className="min-h-screen flex items-center justify-center px-4">
+        <div className="bg-surface rounded-2xl shadow-sm border border p-8 w-full max-w-sm">
+          <h1 className="text-2xl font-bold text-ink-primary">Check your email</h1>
+          <p className="text-ink-muted text-sm mt-2">
+            We sent a verification link to <span className="text-ink-primary font-medium">{email}</span>.
+            Click it to activate your account, then sign in.
+          </p>
+          <Link
+            href="/login"
+            className="block text-center bg-primary text-primary-ink rounded-lg py-2.5 text-sm font-medium hover:bg-primary-hover transition-colors mt-5"
+          >
+            Go to sign in
+          </Link>
+        </div>
+      </div>
+    );
   }
 
   return (

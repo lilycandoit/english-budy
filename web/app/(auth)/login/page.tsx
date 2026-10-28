@@ -9,6 +9,7 @@ export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [needsVerification, setNeedsVerification] = useState(false);
   const [loading, setLoading] = useState(false);
   const router = useRouter();
 
@@ -16,12 +17,18 @@ export default function LoginPage() {
     e.preventDefault();
     setLoading(true);
     setError("");
+    setNeedsVerification(false);
 
     const res = await signIn("credentials", { email, password, redirect: false });
 
     setLoading(false);
     if (res?.error) {
-      setError("Invalid email or password");
+      if (res.error === "EMAIL_NOT_VERIFIED") {
+        setError("Please verify your email before signing in. Check your inbox, or request a new link below.");
+        setNeedsVerification(true);
+      } else {
+        setError("Invalid email or password");
+      }
     } else {
       router.push("/dashboard");
       router.refresh();
@@ -67,6 +74,11 @@ export default function LoginPage() {
           </div>
 
           {error && <p className="text-bad text-sm">{error}</p>}
+          {needsVerification && (
+            <Link href="/verify-email" className="block text-sm text-primary hover:underline font-medium">
+              Resend verification link
+            </Link>
+          )}
 
           <button
             type="submit"
