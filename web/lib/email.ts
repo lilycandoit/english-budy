@@ -1,24 +1,28 @@
+import nodemailer from "nodemailer";
+
 interface SendPasswordResetEmailParams {
   to: string;
   resetUrl: string;
 }
 
 export async function sendPasswordResetEmail({ to, resetUrl }: SendPasswordResetEmailParams) {
-  const apiKey = process.env.RESEND_API_KEY;
-  const from = process.env.EMAIL_FROM;
+  const user = process.env.GMAIL_USER;
+  const pass = process.env.GMAIL_APP_PASSWORD;
 
-  if (!apiKey || !from) {
+  if (!user || !pass) {
     throw new Error("EMAIL_NOT_CONFIGURED");
   }
 
-  const res = await fetch("https://api.resend.com/emails", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      from,
+  const transport = nodemailer.createTransport({
+    host: "smtp.gmail.com",
+    port: 465,
+    secure: true,
+    auth: { user, pass },
+  });
+
+  try {
+    await transport.sendMail({
+      from: user,
       to,
       subject: "Reset your Daily English Buddy password",
       html: `
@@ -32,10 +36,9 @@ export async function sendPasswordResetEmail({ to, resetUrl }: SendPasswordReset
         "",
         "This link expires in 1 hour. If you did not request it, you can ignore this email.",
       ].join("\n"),
-    }),
-  });
-
-  if (!res.ok) {
-    throw new Error(`EMAIL_SEND_FAILED:${res.status}:${await res.text()}`);
+    });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    throw new Error(`EMAIL_SEND_FAILED:${message}`);
   }
 }
