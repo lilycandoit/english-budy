@@ -216,7 +216,7 @@ export function Progress() {
                   <div
                     key={di}
                     title={tooltip}
-                    className={`w-5 h-5 rounded-sm ${HEAT_COLORS[level]} ${isToday ? "ring-2 ring-blue-500 ring-offset-1" : ""} transition-colors`}
+                    className={`w-5 h-5 rounded-sm ${HEAT_COLORS[level]} ${isToday ? "ring-2 ring-blue-500 ring-offset-1 ring-offset-surface" : ""} transition-colors`}
                   />
                 );
               })}

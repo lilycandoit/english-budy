@@ -106,7 +106,7 @@ function BilingualStory({ rows }: { rows: BilingualStoryRow[] }) {
         <div className="border-r border px-4 py-2">English</div>
         <div className="px-4 py-2">{DEFAULT_NATIVE_LANGUAGE.nativeName}</div>
       </div>
-      <div className="divide-y divide-slate-200">
+      <div className="divide-y divide-[var(--color-border)]">
         {rows.map((row, index) => (
           <div key={index} className="grid gap-0 sm:grid-cols-2">
             <div className="border px-4 py-3 sm:border-r">
