@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { DEFAULT_NATIVE_LANGUAGE } from "@/lib/languages";
 import { simplifyPhonetic } from "@/lib/ipaLookup";
+import { Badge } from "@/components/ui/Badge";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -14,6 +15,7 @@ interface WbEntry {
     meanings?: string[];                                    // legacy format
     forms?: { pos: string; meanings: string[] }[];          // new format
     synonyms?: string[];
+    antonyms?: string[];
     examples?: string[];
     phraseExpansion?: PhraseExpansion;
   };
@@ -221,13 +223,13 @@ function FlashcardViewer({
             transition: "transform 0.4s ease",
             transform: flipped ? "rotateY(180deg)" : "rotateY(0deg)",
             position: "relative",
-            minHeight: "220px",
+            minHeight: "290px",
           }}
         >
           {/* Front — word */}
           <div
             style={{ backfaceVisibility: "hidden" }}
-            className="absolute inset-0 border-2 border-badge-blue-border rounded-2xl bg-badge-blue-bg flex flex-col items-center justify-center p-6"
+            className="absolute inset-0 border-2 border-badge-blue-border rounded-2xl bg-badge-blue-bg flex flex-col items-center justify-center p-6 overflow-y-auto"
           >
             <p className="text-3xl font-bold text-ink-primary">{card.word}</p>
             {phraseExpansion && (
@@ -238,6 +240,34 @@ function FlashcardViewer({
             {card.wordInfo?.ipa && (
               <p className="text-ink-secondary font-mono text-sm mt-2">{simplifyPhonetic(card.wordInfo.ipa)}</p>
             )}
+            {!phraseExpansion && (card.wordInfo?.synonyms?.length || card.wordInfo?.antonyms?.length) ? (
+              <div className="mt-5 w-full space-y-3">
+                {card.wordInfo.synonyms?.length ? (
+                  <div>
+                    <p className="mb-1.5 text-center text-[10px] font-semibold uppercase tracking-wide text-ink-muted">
+                      Synonyms
+                    </p>
+                    <div className="flex flex-wrap justify-center gap-1.5">
+                      {card.wordInfo.synonyms.slice(0, 4).map((s) => (
+                        <Badge key={s} color="green">{s}</Badge>
+                      ))}
+                    </div>
+                  </div>
+                ) : null}
+                {card.wordInfo.antonyms?.length ? (
+                  <div>
+                    <p className="mb-1.5 text-center text-[10px] font-semibold uppercase tracking-wide text-ink-muted">
+                      Antonyms
+                    </p>
+                    <div className="flex flex-wrap justify-center gap-1.5">
+                      {card.wordInfo.antonyms.slice(0, 3).map((a) => (
+                        <Badge key={a} color="red">{a}</Badge>
+                      ))}
+                    </div>
+                  </div>
+                ) : null}
+              </div>
+            ) : null}
             <p className="text-xs text-ink-muted mt-6">Tap to reveal</p>
           </div>
 
