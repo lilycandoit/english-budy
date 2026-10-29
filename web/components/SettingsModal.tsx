@@ -3,14 +3,39 @@
 import { useState } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
+import { Avatar } from "@/components/ui/Avatar";
 
 export function SettingsModal({ onClose }: { onClose: () => void }) {
   const { data: session, update } = useSession();
   const router = useRouter();
 
+  const [name, setName] = useState(session?.user?.name ?? "");
+  const [nameLoading, setNameLoading] = useState(false);
+  const [nameMsg, setNameMsg] = useState("");
+
   const [groqKey, setGroqKey] = useState("");
   const [groqLoading, setGroqLoading] = useState(false);
   const [groqMsg, setGroqMsg] = useState("");
+
+  async function saveName(e: React.SyntheticEvent) {
+    e.preventDefault();
+    setNameLoading(true);
+    setNameMsg("");
+    const res = await fetch("/api/user/profile", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name }),
+    });
+    setNameLoading(false);
+    if (res.ok) {
+      setNameMsg("Saved!");
+      await update();
+      router.refresh();
+    } else {
+      const d = await res.json();
+      setNameMsg(d.error || "Failed to save");
+    }
+  }
 
   async function saveGroqKey(e: React.SyntheticEvent) {
     e.preventDefault();
@@ -46,6 +71,36 @@ export function SettingsModal({ onClose }: { onClose: () => void }) {
         <div className="flex items-center justify-between mb-5">
           <h2 className="text-lg font-bold text-ink-primary">Settings</h2>
           <button onClick={onClose} className="text-ink-secondary hover:text-ink-secondary text-lg">✕</button>
+        </div>
+
+        {/* ── Profile ── */}
+        <div className="mb-5 pb-5 border-b">
+          <h3 className="text-sm font-semibold text-ink-primary mb-3">Profile</h3>
+          <div className="flex items-center gap-3 mb-3">
+            <Avatar name={name} email={session?.user?.email} id={session?.user?.id} size={40} />
+            <form onSubmit={saveName} className="flex-1 flex gap-2">
+              <input
+                type="text"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                maxLength={60}
+                placeholder="Your name"
+                className="flex-1 bg-surface text-ink-primary border border-strong rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+              />
+              <button
+                type="submit"
+                disabled={nameLoading}
+                className="bg-primary text-primary-ink rounded-lg px-3 py-2 text-xs font-medium hover:bg-primary-hover disabled:opacity-50 whitespace-nowrap"
+              >
+                {nameLoading ? "Saving…" : "Save"}
+              </button>
+            </form>
+          </div>
+          {nameMsg && (
+            <p className={`text-xs ${nameMsg === "Saved!" ? "text-good" : "text-bad"}`}>
+              {nameMsg}
+            </p>
+          )}
         </div>
 
         {/* ── Groq API Key ── */}

@@ -4,6 +4,7 @@ import { signOut, useSession } from "next-auth/react";
 import { useState } from "react";
 import { SettingsModal } from "@/components/SettingsModal";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
+import { Avatar } from "@/components/ui/Avatar";
 
 export function Navbar() {
   const { data: session } = useSession();
@@ -18,9 +19,12 @@ export function Navbar() {
             <span className="font-semibold text-ink-primary text-sm">Daily English Buddy</span>
           </div>
           <div className="flex items-center gap-3">
-            <span className="text-sm text-ink-secondary hidden sm:block">
-              {session?.user?.name || session?.user?.email}
-            </span>
+            <div className="flex items-center gap-2">
+              <Avatar name={session?.user?.name} email={session?.user?.email} id={session?.user?.id} size={28} />
+              {session?.user?.name && (
+                <span className="text-sm text-ink-secondary hidden sm:block">{session.user.name}</span>
+              )}
+            </div>
             <ThemeToggle />
             <button
               onClick={() => setShowSettings(true)}

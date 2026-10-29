@@ -51,10 +51,11 @@ export const authOptions: NextAuthOptions = {
         const u = user as unknown as { hasGroqKey: boolean };
         token.hasGroqKey = u.hasGroqKey;
       }
-      // Refresh key flags on session update (after user saves/removes a key)
+      // Refresh key flags and name on session update (after user saves a key or profile change)
       if (trigger === "update") {
         const dbUser = await prisma.user.findUnique({ where: { id: token.id as string } });
         token.hasGroqKey = !!dbUser?.groqApiKey;
+        token.name = dbUser?.name ?? null;
       }
       return token;
     },
