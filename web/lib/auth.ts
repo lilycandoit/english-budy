@@ -40,6 +40,7 @@ export const authOptions: NextAuthOptions = {
           email: user.email,
           name: user.name,
           hasGroqKey: !!user.groqApiKey,
+          nativeLanguage: user.nativeLanguage,
         };
       },
     }),
@@ -48,20 +49,23 @@ export const authOptions: NextAuthOptions = {
     async jwt({ token, user, trigger }) {
       if (user) {
         token.id = user.id;
-        const u = user as unknown as { hasGroqKey: boolean };
+        const u = user as unknown as { hasGroqKey: boolean; nativeLanguage: string | null };
         token.hasGroqKey = u.hasGroqKey;
+        token.nativeLanguage = u.nativeLanguage;
       }
-      // Refresh key flags and name on session update (after user saves a key or profile change)
+      // Refresh key flags, name, and native language on session update (after a profile/key change)
       if (trigger === "update") {
         const dbUser = await prisma.user.findUnique({ where: { id: token.id as string } });
         token.hasGroqKey = !!dbUser?.groqApiKey;
         token.name = dbUser?.name ?? null;
+        token.nativeLanguage = dbUser?.nativeLanguage ?? null;
       }
       return token;
     },
     async session({ session, token }) {
       session.user.id = token.id as string;
       session.user.hasGroqKey = token.hasGroqKey as boolean;
+      session.user.nativeLanguage = token.nativeLanguage as string | null;
       return session;
     },
   },

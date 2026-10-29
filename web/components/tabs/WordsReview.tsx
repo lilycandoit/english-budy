@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { DEFAULT_NATIVE_LANGUAGE } from "@/lib/languages";
+import { useSession } from "next-auth/react";
+import { resolveNativeLanguage } from "@/lib/languages";
 import { simplifyPhonetic } from "@/lib/ipaLookup";
 import { Badge } from "@/components/ui/Badge";
 
@@ -101,12 +102,12 @@ function HighlightedStory({ text }: { text: string }) {
   );
 }
 
-function BilingualStory({ rows }: { rows: BilingualStoryRow[] }) {
+function BilingualStory({ rows, nativeLanguageLabel }: { rows: BilingualStoryRow[]; nativeLanguageLabel: string }) {
   return (
     <div className="overflow-hidden rounded-xl border">
       <div className="hidden sm:grid sm:grid-cols-2 bg-surface-sunken text-xs font-semibold uppercase tracking-wide text-ink-secondary">
         <div className="border-r border px-4 py-2">English</div>
-        <div className="px-4 py-2">{DEFAULT_NATIVE_LANGUAGE.nativeName}</div>
+        <div className="px-4 py-2">{nativeLanguageLabel}</div>
       </div>
       <div className="divide-y divide-[var(--color-border)]">
         {rows.map((row, index) => (
@@ -119,7 +120,7 @@ function BilingualStory({ rows }: { rows: BilingualStoryRow[] }) {
             </div>
             <div className="bg-surface-sunken/60 px-4 py-3 sm:bg-surface">
               <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-ink-secondary sm:hidden">
-                {DEFAULT_NATIVE_LANGUAGE.nativeName}
+                {nativeLanguageLabel}
               </p>
               <HighlightedStory text={row.native} />
             </div>
@@ -344,6 +345,9 @@ function FlashcardViewer({
 const WORDS_PER_PAGE = 30;
 
 export function WordsReview() {
+  const { data: session } = useSession();
+  const nativeLanguageLabel = resolveNativeLanguage(session?.user?.nativeLanguage);
+
   const [wordsByDate, setWordsByDate] = useState<Record<string, string[]>>({});
   const [selectedWords, setSelectedWords] = useState<string[]>([]);
   const [customInput, setCustomInput] = useState("");
@@ -661,7 +665,7 @@ export function WordsReview() {
                   </div>
                 </div>
                 {storyResult.mode === "bilingual" ? (
-                  <BilingualStory rows={storyResult.rows} />
+                  <BilingualStory rows={storyResult.rows} nativeLanguageLabel={nativeLanguageLabel} />
                 ) : (
                   <HighlightedStory text={storyResult.story} />
                 )}
@@ -697,7 +701,7 @@ export function WordsReview() {
                   disabled={storyLoading}
                   className="bg-violet-600 text-white rounded-xl py-2.5 text-sm font-medium hover:bg-violet-700 disabled:opacity-50 transition-colors"
                 >
-                  {storyLoading ? "Generating…" : `🌐 Bilingual (${DEFAULT_NATIVE_LANGUAGE.nativeName})`}
+                  {storyLoading ? "Generating…" : `🌐 Bilingual (${nativeLanguageLabel})`}
                 </button>
               </div>
             </div>

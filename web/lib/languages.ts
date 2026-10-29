@@ -1,21 +1,19 @@
-export const SUPPORTED_NATIVE_LANGUAGES = {
-  vi: {
-    code: "vi",
-    englishName: "Vietnamese",
-    nativeName: "Tiếng Việt",
-  },
-} as const;
+export const DEFAULT_NATIVE_LANGUAGE_NAME = "Vietnamese";
 
-export type NativeLanguageCode = keyof typeof SUPPORTED_NATIVE_LANGUAGES;
+// Shown as <datalist> suggestions in Settings — convenience only, any text is accepted.
+export const COMMON_LANGUAGE_SUGGESTIONS = [
+  "Vietnamese",
+  "Spanish",
+  "Mandarin Chinese",
+  "Korean",
+  "Japanese",
+  "Portuguese",
+  "Hindi",
+  "Arabic",
+  "French",
+  "Thai",
+];
 
-export type NativeLanguage = (typeof SUPPORTED_NATIVE_LANGUAGES)[NativeLanguageCode];
-
-export const DEFAULT_NATIVE_LANGUAGE: NativeLanguage = SUPPORTED_NATIVE_LANGUAGES.vi;
-
-export function getNativeLanguage(code: NativeLanguageCode = DEFAULT_NATIVE_LANGUAGE.code): NativeLanguage {
-  return SUPPORTED_NATIVE_LANGUAGES[code];
-}
-
-export function formatNativeLanguageForPrompt(language: NativeLanguage = DEFAULT_NATIVE_LANGUAGE): string {
-  return `${language.englishName} (${language.nativeName})`;
+export function resolveNativeLanguage(nativeLanguage?: string | null): string {
+  return nativeLanguage?.trim() || DEFAULT_NATIVE_LANGUAGE_NAME;
 }

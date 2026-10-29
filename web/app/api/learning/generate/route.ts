@@ -3,15 +3,12 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { getUserGroqKey, groqChatJson, GroqRateLimitError } from "@/lib/groq";
-import { DEFAULT_NATIVE_LANGUAGE, formatNativeLanguageForPrompt } from "@/lib/languages";
+import { resolveNativeLanguage } from "@/lib/languages";
 import { lookupIpa } from "@/lib/ipaLookup";
 
 const SYSTEM = "You are an English vocabulary teacher for Australian learners. Always respond with valid JSON only.";
 
-function buildPrompt(words: string[]): string {
-  const nativeLanguage = DEFAULT_NATIVE_LANGUAGE;
-  const nativeLanguageLabel = formatNativeLanguageForPrompt(nativeLanguage);
-
+function buildPrompt(words: string[], nativeLanguageLabel: string): string {
   return (
     `Generate a vocabulary lesson for these word(s): ${words.join(", ")}\n\n` +
     `Return ONLY valid JSON — no markdown, no extra text:\n` +
@@ -20,7 +17,7 @@ function buildPrompt(words: string[]): string {
     `    {\n` +
     `      "word": "sanction",\n` +
     `      "ipa": "/ˈsæŋkʃən/",\n` +
-    `      "translations": { "${nativeLanguage.code}": "hình phạt; sự cho phép chính thức" },\n` +
+    `      "translation": "<1-3 compact equivalents in the learner's native language, see rules below>",\n` +
     `      "forms": [\n` +
     `        {\n` +
     `          "pos": "noun",\n` +
@@ -68,7 +65,7 @@ function buildPrompt(words: string[]): string {
     `\n` +
     `For ALL inputs:\n` +
     `- Include ALL ${words.length} word(s)/phrase(s) in the words array\n` +
-    `- translations.${nativeLanguage.code}: one compact ${nativeLanguageLabel} translation with 1-3 natural equivalents; do not translate examples\n` +
+    `- translation: one compact ${nativeLanguageLabel} translation with 1-3 natural equivalents; do not translate examples\n` +
     `- synonyms: 6–8 items\n` +
     `- antonyms: 4–6 items (empty array [] if none apply)\n` +
     `- collocations: 8–10 natural phrases or collocations\n` +
@@ -77,18 +74,15 @@ function buildPrompt(words: string[]): string {
   );
 }
 
-function buildQuickLookupPrompt(word: string): string {
-  const nativeLanguage = DEFAULT_NATIVE_LANGUAGE;
-  const nativeLanguageLabel = formatNativeLanguageForPrompt(nativeLanguage);
-
+function buildQuickLookupPrompt(word: string, nativeLanguageLabel: string): string {
   return (
     `Look up this word or phrase for an Australian English learner: "${word}"\n\n` +
     `Return ONLY valid JSON — no markdown, no extra text:\n` +
-    `{ "words": [ { "word": "...", "ipa": "...", "translations": { "${nativeLanguage.code}": "..." }, "forms": [...], "synonyms": [...], "antonyms": [...], "collocations": [...], "examples": [...] } ] }\n\n` +
+    `{ "words": [ { "word": "...", "ipa": "...", "translation": "...", "forms": [...], "synonyms": [...], "antonyms": [...], "collocations": [...], "examples": [...] } ] }\n\n` +
     `Rules:\n` +
     `- Same word/phrase structure as a full vocabulary lesson\n` +
     `- Always use the base/lemma form; detect if it's a phrase/idiom/slang\n` +
-    `- translations.${nativeLanguage.code}: one compact ${nativeLanguageLabel} translation with 1-3 natural equivalents; do not translate examples\n` +
+    `- translation: one compact ${nativeLanguageLabel} translation with 1-3 natural equivalents; do not translate examples\n` +
     `- synonyms: 4–6, antonyms: 2–4, collocations: 4–6, examples: 2–3 Australian English sentences\n` +
     `- No "quiz" field needed`
   );
@@ -178,8 +172,10 @@ export async function POST(req: NextRequest) {
   let wordInfos: unknown[] = [];
   let quiz: unknown[] = [];
 
+  const nativeLanguageLabel = resolveNativeLanguage(session.user.nativeLanguage);
+
   try {
-    const prompt = quickLookup ? buildQuickLookupPrompt(words[0]) : buildPrompt(words);
+    const prompt = quickLookup ? buildQuickLookupPrompt(words[0], nativeLanguageLabel) : buildPrompt(words, nativeLanguageLabel);
     const parsed = await groqChatJson<{ words: unknown[]; quiz?: unknown[] }>(
       apiKey,
       [
@@ -195,7 +191,8 @@ export async function POST(req: NextRequest) {
         model: "openai/gpt-oss-20b",
       }
     );
-    wordInfos = applyVerifiedIpa((parsed.words ?? []) as { word: string; ipa?: string }[]);
+    wordInfos = applyVerifiedIpa((parsed.words ?? []) as { word: string; ipa?: string }[])
+      .map((w) => ({ ...w, translationLanguage: nativeLanguageLabel }));
     quiz = [];
   } catch (err) {
     if (err instanceof GroqRateLimitError) {

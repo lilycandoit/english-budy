@@ -3,10 +3,11 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { getUserGroqKey, groqChat, groqChatJson, GroqRateLimitError } from "@/lib/groq";
-import { DEFAULT_NATIVE_LANGUAGE, formatNativeLanguageForPrompt } from "@/lib/languages";
+import { resolveNativeLanguage } from "@/lib/languages";
 
-const SYSTEM =
-  "You are an Australian English creative writing teacher and a professional English-to-Vietnamese translator. Your Vietnamese translations always read as natural, idiomatic Vietnamese written by a native speaker — never literal, word-for-word renderings.";
+function buildSystemPrompt(nativeLanguageName: string): string {
+  return `You are an Australian English creative writing teacher and a professional English-to-${nativeLanguageName} translator. Your ${nativeLanguageName} translations always read as natural, idiomatic ${nativeLanguageName} written by a native speaker — never literal, word-for-word renderings.`;
+}
 
 type StoryMode = "english" | "bilingual";
 type StoryVariant = "fresh" | "paraphrase";
@@ -30,9 +31,7 @@ function buildEnglishPrompt(words: string[], variant?: StoryVariant): string {
   );
 }
 
-function buildBilingualPrompt(words: string[], variant?: StoryVariant): string {
-  const nativeLanguage = DEFAULT_NATIVE_LANGUAGE;
-  const nativeLanguageLabel = formatNativeLanguageForPrompt(nativeLanguage);
+function buildBilingualPrompt(words: string[], nativeLanguageLabel: string, variant?: StoryVariant): string {
   const variantInstruction = variant
     ? `Make this a noticeably different version from any previous story, with a fresh situation and wording.\n`
     : "";
@@ -95,12 +94,14 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "No Groq API key set" }, { status: 422 });
   }
 
+  const nativeLanguageLabel = resolveNativeLanguage(session.user.nativeLanguage);
+
   let story = "";
   let rows: BilingualStoryRow[] = [];
   try {
     const messages: { role: "system" | "user"; content: string }[] = [
-      { role: "system", content: SYSTEM },
-      { role: "user", content: mode === "bilingual" ? buildBilingualPrompt(words, variant) : buildEnglishPrompt(words, variant) },
+      { role: "system", content: buildSystemPrompt(nativeLanguageLabel) },
+      { role: "user", content: mode === "bilingual" ? buildBilingualPrompt(words, nativeLanguageLabel, variant) : buildEnglishPrompt(words, variant) },
     ];
     const opts = {
       max_tokens: mode === "bilingual" ? 1800 : 600,

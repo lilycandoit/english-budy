@@ -1,6 +1,5 @@
 // Shared WordCard component — used by VocabBuilder and DailyTopic lookup
 
-import { DEFAULT_NATIVE_LANGUAGE, type NativeLanguageCode } from "@/lib/languages";
 import { useSpeech } from "@/lib/useSpeech";
 import { simplifyPhonetic } from "@/lib/ipaLookup";
 import { Card } from "@/components/ui/Card";
@@ -16,7 +15,9 @@ export interface WordForm {
 export interface WordInfo {
   word: string;
   ipa: string;
-  translations?: Partial<Record<NativeLanguageCode, string>>;
+  translation?: string;            // current format — set at generation/lookup time
+  translationLanguage?: string;    // which language `translation` is in (may differ from the user's current preference)
+  translations?: { vi?: string };  // legacy format, pre-dating free-text language support — read-only fallback
   forms?: WordForm[];    // rich per-POS data (new format)
   meanings?: string[];  // legacy fallback for old word bank entries
   synonyms: string[];
@@ -48,7 +49,8 @@ export function WordCard({
   onDrilldown: (tag: string) => void;
 }) {
   const { speak, stop, speaking } = useSpeech();
-  const nativeTranslation = w.translations?.[DEFAULT_NATIVE_LANGUAGE.code];
+  const nativeTranslation = w.translation ?? w.translations?.vi;
+  const translationLabel = w.translation ? w.translationLanguage : w.translations?.vi ? "Vietnamese" : undefined;
 
   return (
     <Card>
@@ -61,7 +63,9 @@ export function WordCard({
           </div>
           {nativeTranslation && (
             <p className="mt-1 text-sm text-ink-secondary">
-              <span className="font-medium text-ink-secondary">{DEFAULT_NATIVE_LANGUAGE.nativeName}:</span>{" "}
+              {translationLabel && (
+                <span className="font-medium text-ink-secondary">{translationLabel}:</span>
+              )}{" "}
               {nativeTranslation}
             </p>
           )}

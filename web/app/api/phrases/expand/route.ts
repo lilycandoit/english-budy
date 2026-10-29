@@ -3,7 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { getUserGroqKey, groqChatJson, GroqRateLimitError } from "@/lib/groq";
-import { DEFAULT_NATIVE_LANGUAGE, formatNativeLanguageForPrompt } from "@/lib/languages";
+import { resolveNativeLanguage } from "@/lib/languages";
 
 const SYSTEM = "You are an English phrase coach who helps learners sound natural in everyday conversation. Prioritize how native speakers actually talk over textbook or stiff phrasing.";
 
@@ -167,9 +167,7 @@ async function saveToWordBank(userId: string, expansion: PhraseExpansion) {
   }
 }
 
-function buildPrompt(phrase: string): string {
-  const nativeLanguageLabel = formatNativeLanguageForPrompt(DEFAULT_NATIVE_LANGUAGE);
-
+function buildPrompt(phrase: string, nativeLanguageLabel: string): string {
   return (
     `Teach this English phrase or expression to a ${nativeLanguageLabel} learner of English: "${phrase}"\n\n` +
     `Return ONLY valid JSON, no markdown and no extra explanation:\n` +
@@ -216,7 +214,7 @@ export async function POST(req: NextRequest) {
       apiKey,
       [
         { role: "system", content: SYSTEM },
-        { role: "user", content: buildPrompt(input) },
+        { role: "user", content: buildPrompt(input, resolveNativeLanguage(session.user.nativeLanguage)) },
       ],
       { max_tokens: 1500, temperature: 0.65 }
     );
