@@ -18,6 +18,8 @@ function buildPrompt(words: string[], nativeLanguageLabel: string): string {
     `      "word": "sanction",\n` +
     `      "ipa": "/ˈsæŋkʃən/",\n` +
     `      "translation": "<1-3 compact equivalents in the learner's native language, see rules below>",\n` +
+    `      "compareTo": "<OPTIONAL — see rules below. Example style: \\"vs. 'warn': warn means alert someone to danger; sanction (verb) means officially approve or permit (<short native-language gloss>)\\">",\n` +
+    `      "memoryHook": "<OPTIONAL — see rules below. One short mnemonic written entirely in the learner's native language>",\n` +
     `      "forms": [\n` +
     `        {\n` +
     `          "pos": "noun",\n` +
@@ -66,6 +68,8 @@ function buildPrompt(words: string[], nativeLanguageLabel: string): string {
     `For ALL inputs:\n` +
     `- Include ALL ${words.length} word(s)/phrase(s) in the words array\n` +
     `- translation: one compact ${nativeLanguageLabel} translation with 1-3 natural equivalents; do not translate examples\n` +
+    `- compareTo: OPTIONAL. Only include when there is a genuinely confusable word that learners commonly mix this one up with — it does NOT have to be in "synonyms". If no natural confusion word exists, omit the key entirely or use "". When included: 1-2 sentences in English naming the other word and explaining the contrast, with a short ${nativeLanguageLabel} gloss woven in. Do NOT force this for every word — most words will NOT have one.\n` +
+    `- memoryHook: OPTIONAL. Only include when a natural, non-forced mnemonic connection exists (an image, a related word, wordplay) — not a generic restatement of the meaning. If none applies, omit the key entirely or use "". When included: one short sentence written entirely in ${nativeLanguageLabel}. Do NOT force this for every word — most words will NOT have one.\n` +
     `- synonyms: 6–8 items\n` +
     `- antonyms: 4–6 items (empty array [] if none apply)\n` +
     `- collocations: 8–10 natural phrases or collocations\n` +
@@ -78,11 +82,13 @@ function buildQuickLookupPrompt(word: string, nativeLanguageLabel: string): stri
   return (
     `Look up this word or phrase for an Australian English learner: "${word}"\n\n` +
     `Return ONLY valid JSON — no markdown, no extra text:\n` +
-    `{ "words": [ { "word": "...", "ipa": "...", "translation": "...", "forms": [...], "synonyms": [...], "antonyms": [...], "collocations": [...], "examples": [...] } ] }\n\n` +
+    `{ "words": [ { "word": "...", "ipa": "...", "translation": "...", "compareTo": "...", "memoryHook": "...", "forms": [...], "synonyms": [...], "antonyms": [...], "collocations": [...], "examples": [...] } ] }\n\n` +
     `Rules:\n` +
     `- Same word/phrase structure as a full vocabulary lesson\n` +
     `- Always use the base/lemma form; detect if it's a phrase/idiom/slang\n` +
     `- translation: one compact ${nativeLanguageLabel} translation with 1-3 natural equivalents; do not translate examples\n` +
+    `- compareTo: OPTIONAL, only if there's a genuinely confusable word (not necessarily a synonym) — omit or use "" otherwise. English sentence contrasting the two, with a short ${nativeLanguageLabel} gloss woven in. Do not force this.\n` +
+    `- memoryHook: OPTIONAL, only if a natural mnemonic exists — omit or use "" otherwise. One short sentence entirely in ${nativeLanguageLabel}. Do not force this.\n` +
     `- synonyms: 4–6, antonyms: 2–4, collocations: 4–6, examples: 2–3 Australian English sentences\n` +
     `- No "quiz" field needed`
   );

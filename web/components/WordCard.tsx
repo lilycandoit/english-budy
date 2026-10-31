@@ -18,6 +18,8 @@ export interface WordInfo {
   translation?: string;            // current format — set at generation/lookup time
   translationLanguage?: string;    // which language `translation` is in (may differ from the user's current preference)
   translations?: { vi?: string };  // legacy format, pre-dating free-text language support — read-only fallback
+  compareTo?: string;   // optional bilingual contrastive note against a commonly confused word
+  memoryHook?: string;  // optional mnemonic, written entirely in the learner's native language
   forms?: WordForm[];    // rich per-POS data (new format)
   meanings?: string[];  // legacy fallback for old word bank entries
   synonyms: string[];
@@ -115,6 +117,20 @@ export function WordCard({
       <TagRow label="Synonyms" tags={w.synonyms ?? []} color="blue" onDrilldown={onDrilldown} />
       <TagRow label="Antonyms" tags={w.antonyms ?? []} color="red" onDrilldown={onDrilldown} />
       <TagRow label="Collocations" tags={w.collocations ?? []} color="teal" onDrilldown={onDrilldown} />
+
+      {w.compareTo && (
+        <div className="mt-3 rounded-lg border border-badge-amber-border bg-badge-amber-bg px-3 py-2">
+          <p className="text-xs font-medium text-badge-amber-ink mb-0.5">Compare to</p>
+          <p className="text-sm text-ink-primary">{w.compareTo}</p>
+        </div>
+      )}
+
+      {w.memoryHook && (
+        <div className="mt-3 rounded-lg border border-badge-violet-border bg-badge-violet-bg px-3 py-2">
+          <p className="text-xs font-medium text-badge-violet-ink mb-0.5">Memory hook</p>
+          <p className="text-sm text-ink-primary">{w.memoryHook}</p>
+        </div>
+      )}
 
       {(w.examples?.length ?? 0) > 0 && (
         <div className="mt-3 space-y-1.5">
