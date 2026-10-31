@@ -31,6 +31,7 @@ model User {
   wordSchedules    WordSchedule[]
   passwordResetTokens PasswordResetToken[]
   translationEntries TranslationEntry[]
+  writingEntries WritingEntry[]
 }
 
 model Mistake {
@@ -183,6 +184,19 @@ model TranslationEntry {
   sourceText String   @db.Text
   rows       String   @db.Text // JSON: { english: string; native: string }[]
   createdAt  DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+}
+
+model WritingEntry {
+  id          String   @id @default(cuid())
+  userId      String
+  nativeText  String   @db.Text
+  englishText String   @db.Text
+  tip         String   @db.Text
+  createdAt   DateTime @default(now())
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { SentenceCheck } from "@/components/tabs/SentenceCheck";
+import { Writing } from "@/components/tabs/Writing";
 import { VocabBuilder } from "@/components/tabs/VocabBuilder";
 import { DailyTopic } from "@/components/tabs/DailyTopic";
 import { Translating } from "@/components/tabs/Translating";
@@ -11,6 +12,7 @@ import { PhraseExpansion } from "@/components/tabs/PhraseExpansion";
 
 const TABS = [
   { id: "sentence", label: "Sentence Check", icon: "✏️" },
+  { id: "writing", label: "Writing", icon: "✍️" },
   { id: "vocab", label: "Vocabulary Builder", icon: "📖" },
   { id: "phrases", label: "Say It Differently", icon: "🗣️" },
   { id: "topic", label: "Daily Topic", icon: "💬" },
@@ -58,6 +60,7 @@ export function TabShell() {
       {/* Tab content — placeholder panels, filled in Phase B–E */}
       <div className="p-6">
         {active === "sentence" && <SentenceCheck />}
+        {active === "writing" && <Writing />}
         {active === "vocab" && (
           <VocabBuilder handoff={vocabHandoff} onHandoffConsumed={() => setVocabHandoff(null)} />
         )}
