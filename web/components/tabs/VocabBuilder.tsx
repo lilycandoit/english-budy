@@ -67,7 +67,18 @@ function ExpandedWordCard({
 
 // ── Main component ────────────────────────────────────────────────────────────
 
-export function VocabBuilder() {
+interface VocabHandoff {
+  term: string;
+  nonce: number;
+}
+
+export function VocabBuilder({
+  handoff,
+  onHandoffConsumed,
+}: {
+  handoff?: VocabHandoff | null;
+  onHandoffConsumed?: () => void;
+} = {}) {
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -137,9 +148,8 @@ export function VocabBuilder() {
     }
   }
 
-  async function handleGenerate(e: React.SyntheticEvent) {
-    e.preventDefault();
-    if (!input.trim()) return;
+  async function runGenerate(term: string) {
+    if (!term.trim()) return;
     setLoading(true);
     setError("");
     setResult(null);
@@ -152,7 +162,7 @@ export function VocabBuilder() {
     const res = await fetch("/api/learning/generate", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ words: input }),
+      body: JSON.stringify({ words: term }),
     });
 
     const data = await res.json();
@@ -165,6 +175,19 @@ export function VocabBuilder() {
     loadWordBank();
     loadSessions();
   }
+
+  async function handleGenerate(e: React.SyntheticEvent) {
+    e.preventDefault();
+    await runGenerate(input);
+  }
+
+  useEffect(() => {
+    if (!handoff) return;
+    setInput(handoff.term);
+    runGenerate(handoff.term);
+    onHandoffConsumed?.();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [handoff?.nonce]);
 
   async function handleGenerateQuiz() {
     if (!result?.sessionId) return;

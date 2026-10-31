@@ -21,8 +21,19 @@ const TABS = [
 
 type TabId = (typeof TABS)[number]["id"];
 
+interface VocabHandoff {
+  term: string;
+  nonce: number;
+}
+
 export function TabShell() {
   const [active, setActive] = useState<TabId>("sentence");
+  const [vocabHandoff, setVocabHandoff] = useState<VocabHandoff | null>(null);
+
+  function handleFullSearch(term: string) {
+    setVocabHandoff({ term, nonce: Date.now() });
+    setActive("vocab");
+  }
 
   return (
     <div>
@@ -47,10 +58,12 @@ export function TabShell() {
       {/* Tab content — placeholder panels, filled in Phase B–E */}
       <div className="p-6">
         {active === "sentence" && <SentenceCheck />}
-        {active === "vocab" && <VocabBuilder />}
+        {active === "vocab" && (
+          <VocabBuilder handoff={vocabHandoff} onHandoffConsumed={() => setVocabHandoff(null)} />
+        )}
         {active === "phrases" && <PhraseExpansion />}
         {active === "topic" && <DailyTopic />}
-        {active === "translate" && <Translating />}
+        {active === "translate" && <Translating onFullSearch={handleFullSearch} />}
         {active === "review" && <WordsReview />}
         {active === "progress" && <Progress />}
       </div>
