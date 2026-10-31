@@ -13,7 +13,7 @@ export function Navbar() {
   return (
     <>
       <header className="bg-surface border-b px-4 py-3">
-        <div className="max-w-4xl mx-auto flex items-center justify-between">
+        <div className="max-w-6xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-2">
             <span className="text-xl">📚</span>
             <span className="font-semibold text-ink-primary text-sm">Daily English Buddy</span>

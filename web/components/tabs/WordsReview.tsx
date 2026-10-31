@@ -653,7 +653,7 @@ export function WordsReview() {
           {/* ── Sticky action bar — reachable without scrolling past the word list ── */}
           {isActionBarVisible && (
             <div className="fixed inset-x-0 bottom-0 z-30 border-t bg-surface px-4 py-3 backdrop-blur shadow-[0_-4px_12px_rgba(0,0,0,0.06)]">
-              <div className="mx-auto grid max-w-4xl gap-2 sm:grid-cols-3 sm:gap-3">
+              <div className="mx-auto grid max-w-6xl gap-2 sm:grid-cols-3 sm:gap-3">
                 <button
                   type="button"
                   onClick={() => {
