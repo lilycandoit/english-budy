@@ -30,6 +30,7 @@ model User {
   flashcardReviews FlashcardReview[]
   wordSchedules    WordSchedule[]
   passwordResetTokens PasswordResetToken[]
+  translationEntries TranslationEntry[]
 }
 
 model Mistake {
@@ -174,6 +175,18 @@ model VerificationToken {
   expires    DateTime
 
   @@unique([identifier, token])
+}
+
+model TranslationEntry {
+  id         String   @id @default(cuid())
+  userId     String
+  sourceText String   @db.Text
+  rows       String   @db.Text // JSON: { english: string; native: string }[]
+  createdAt  DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
 }
 
 model PasswordResetToken {

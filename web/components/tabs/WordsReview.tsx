@@ -5,6 +5,7 @@ import { useSession } from "next-auth/react";
 import { resolveNativeLanguage } from "@/lib/languages";
 import { simplifyPhonetic } from "@/lib/ipaLookup";
 import { Badge } from "@/components/ui/Badge";
+import { BilingualTable } from "@/components/BilingualTable";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -99,35 +100,6 @@ function HighlightedStory({ text }: { text: string }) {
         return <span key={i}>{part}</span>;
       })}
     </p>
-  );
-}
-
-function BilingualStory({ rows, nativeLanguageLabel }: { rows: BilingualStoryRow[]; nativeLanguageLabel: string }) {
-  return (
-    <div className="overflow-hidden rounded-xl border">
-      <div className="hidden sm:grid sm:grid-cols-2 bg-surface-sunken text-xs font-semibold uppercase tracking-wide text-ink-secondary">
-        <div className="border-r border px-4 py-2">English</div>
-        <div className="px-4 py-2">{nativeLanguageLabel}</div>
-      </div>
-      <div className="divide-y divide-[var(--color-border)]">
-        {rows.map((row, index) => (
-          <div key={index} className="grid gap-0 sm:grid-cols-2">
-            <div className="border px-4 py-3 sm:border-r">
-              <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-ink-secondary sm:hidden">
-                English
-              </p>
-              <HighlightedStory text={row.english} />
-            </div>
-            <div className="bg-surface-sunken/60 px-4 py-3 sm:bg-surface">
-              <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-ink-secondary sm:hidden">
-                {nativeLanguageLabel}
-              </p>
-              <HighlightedStory text={row.native} />
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
   );
 }
 
@@ -665,7 +637,12 @@ export function WordsReview() {
                   </div>
                 </div>
                 {storyResult.mode === "bilingual" ? (
-                  <BilingualStory rows={storyResult.rows} nativeLanguageLabel={nativeLanguageLabel} />
+                  <BilingualTable
+                    rows={storyResult.rows}
+                    nativeLanguageLabel={nativeLanguageLabel}
+                    renderEnglish={(text) => <HighlightedStory text={text} />}
+                    renderNative={(text) => <HighlightedStory text={text} />}
+                  />
                 ) : (
                   <HighlightedStory text={storyResult.story} />
                 )}

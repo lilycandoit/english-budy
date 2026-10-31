@@ -4,6 +4,7 @@ import { useState } from "react";
 import { SentenceCheck } from "@/components/tabs/SentenceCheck";
 import { VocabBuilder } from "@/components/tabs/VocabBuilder";
 import { DailyTopic } from "@/components/tabs/DailyTopic";
+import { Translating } from "@/components/tabs/Translating";
 import { WordsReview } from "@/components/tabs/WordsReview";
 import { Progress } from "@/components/tabs/Progress";
 import { PhraseExpansion } from "@/components/tabs/PhraseExpansion";
@@ -13,6 +14,7 @@ const TABS = [
   { id: "vocab", label: "Vocabulary Builder", icon: "📖" },
   { id: "phrases", label: "Say It Differently", icon: "🗣️" },
   { id: "topic", label: "Daily Topic", icon: "💬" },
+  { id: "translate", label: "Translating", icon: "🌐" },
   { id: "review", label: "Words Review", icon: "🔁" },
   { id: "progress", label: "Progress", icon: "📊" },
 ] as const;
@@ -48,6 +50,7 @@ export function TabShell() {
         {active === "vocab" && <VocabBuilder />}
         {active === "phrases" && <PhraseExpansion />}
         {active === "topic" && <DailyTopic />}
+        {active === "translate" && <Translating />}
         {active === "review" && <WordsReview />}
         {active === "progress" && <Progress />}
       </div>
