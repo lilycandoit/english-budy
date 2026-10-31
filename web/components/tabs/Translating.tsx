@@ -3,12 +3,11 @@
 import { useEffect, useRef, useState } from "react";
 import { useSession } from "next-auth/react";
 import { resolveNativeLanguage } from "@/lib/languages";
-import { BilingualTable, type BilingualTableRow } from "@/components/BilingualTable";
+import { BilingualTable, HighlightedText, type BilingualTableRow } from "@/components/BilingualTable";
 
 // Keep in sync with app/api/translate/generate/route.ts's MAX_INPUT_CHARS.
 const MAX_INPUT_CHARS = 2000;
 const GROUPS_PER_PAGE = 10;
-const QUICK_TRANSLATE_DEBOUNCE_MS = 400;
 const MIN_SELECTION_CHARS = 2;
 const MAX_SELECTION_CHARS = 200;
 
@@ -23,9 +22,8 @@ interface TranslateResult {
   rows: BilingualTableRow[];
 }
 
-interface QuickPopup {
+interface SelectionPopup {
   text: string;
-  context: string;
   x: number;
   y: number;
 }
@@ -46,14 +44,9 @@ export function Translating({ onFullSearch }: { onFullSearch: (term: string) => 
   const [openEntryRows, setOpenEntryRows] = useState<Record<string, BilingualTableRow[]>>({});
   const [openEntryLoading, setOpenEntryLoading] = useState<string | null>(null);
 
-  // ── Selection popup / quick translate ───────────────────────────────────────
-  const [popup, setPopup] = useState<QuickPopup | null>(null);
-  const [quickTranslation, setQuickTranslation] = useState<string | null>(null);
-  const [quickLoading, setQuickLoading] = useState(false);
-  const [quickError, setQuickError] = useState(false);
-  const popupRef = useRef<HTMLDivElement>(null);
-  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const requestIdRef = useRef(0);
+  // ── Selection popup (Full search only) ──────────────────────────────────────
+  const [popup, setPopup] = useState<SelectionPopup | null>(null);
+  const popupRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
     loadHistory();
@@ -80,42 +73,13 @@ export function Translating({ onFullSearch }: { onFullSearch: (term: string) => 
       setPopup(null);
       return;
     }
-    const context = e.currentTarget.dataset.rowText ?? selectedText;
     const range = sel!.getRangeAt(0);
     const rect = range.getBoundingClientRect();
-    setPopup({ text: selectedText, context, x: rect.left + rect.width / 2, y: rect.bottom + window.scrollY + 8 });
-    scheduleQuickTranslate(selectedText, context);
+    setPopup({ text: selectedText, x: rect.left + rect.width / 2, y: rect.bottom + window.scrollY + 8 });
   }
 
-  function scheduleQuickTranslate(selection: string, context: string) {
-    if (debounceRef.current) clearTimeout(debounceRef.current);
-    setQuickTranslation(null);
-    setQuickError(false);
-    setQuickLoading(true);
-    const myRequestId = ++requestIdRef.current;
-
-    debounceRef.current = setTimeout(async () => {
-      const res = await fetch("/api/translate/quick", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ selection, context }),
-      });
-      if (myRequestId !== requestIdRef.current) return; // a newer selection superseded this one
-      const data = await res.json();
-      setQuickLoading(false);
-      if (!res.ok) {
-        setQuickError(true);
-        return;
-      }
-      setQuickTranslation(data.translation);
-    }, QUICK_TRANSLATE_DEBOUNCE_MS);
-  }
-
-  function englishCellProps(text: string) {
-    return {
-      "data-row-text": text,
-      onMouseUp: handleMouseUp,
-    };
+  function englishCellProps() {
+    return { onMouseUp: handleMouseUp };
   }
 
   function handleFullSearch() {
@@ -208,11 +172,12 @@ export function Translating({ onFullSearch }: { onFullSearch: (term: string) => 
       {result && (
         <div>
           <h3 className="text-sm font-semibold text-ink-primary mb-2">Translation</h3>
-          <p className="text-xs text-ink-muted mb-2">Select any English text to see a quick translation.</p>
+          <p className="text-xs text-ink-muted mb-2">Select any English text to look it up in Vocabulary Builder.</p>
           <BilingualTable
             rows={result.rows}
             nativeLanguageLabel={nativeLanguageLabel}
-            renderEnglish={(t) => <span {...englishCellProps(t)}>{t}</span>}
+            renderEnglish={(t) => <span {...englishCellProps()}><HighlightedText text={t} /></span>}
+            renderNative={(t) => <HighlightedText text={t} />}
           />
         </div>
       )}
@@ -250,7 +215,8 @@ export function Translating({ onFullSearch }: { onFullSearch: (term: string) => 
                             <BilingualTable
                               rows={openEntryRows[entry.id]}
                               nativeLanguageLabel={nativeLanguageLabel}
-                              renderEnglish={(t) => <span {...englishCellProps(t)}>{t}</span>}
+                              renderEnglish={(t) => <span {...englishCellProps()}><HighlightedText text={t} /></span>}
+                              renderNative={(t) => <HighlightedText text={t} />}
                             />
                           ) : null}
                         </div>
@@ -277,27 +243,14 @@ export function Translating({ onFullSearch }: { onFullSearch: (term: string) => 
 
       {/* ── Selection popup (fixed, follows cursor) ── */}
       {popup && (
-        <div
+        <button
           ref={popupRef}
+          onClick={handleFullSearch}
           style={{ position: "fixed", left: popup.x, top: popup.y - window.scrollY, transform: "translateX(-50%)" }}
-          className="z-50 w-64 max-w-[80vw] bg-ink-primary text-page text-sm rounded-xl shadow-lg px-3 py-2.5"
+          className="z-50 bg-slate-800 text-white text-xs font-medium px-3 py-1.5 rounded-full shadow-lg hover:bg-slate-700 transition-colors whitespace-nowrap"
         >
-          <p className="text-xs opacity-70 mb-1 truncate">&ldquo;{popup.text}&rdquo;</p>
-          {quickLoading ? (
-            <p className="text-sm opacity-90">Translating…</p>
-          ) : quickError ? (
-            <p className="text-sm opacity-90">Couldn&apos;t translate — try again.</p>
-          ) : quickTranslation ? (
-            <p className="text-sm font-medium">{quickTranslation}</p>
-          ) : null}
-          <button
-            type="button"
-            onClick={handleFullSearch}
-            className="mt-2 text-xs font-medium underline opacity-90 hover:opacity-100"
-          >
-            🔍 Full search
-          </button>
-        </div>
+          🔍 Full search &ldquo;{popup.text.length > 30 ? popup.text.slice(0, 30) + "…" : popup.text}&rdquo;
+        </button>
       )}
     </div>
   );

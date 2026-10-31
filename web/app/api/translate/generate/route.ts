@@ -23,13 +23,14 @@ function buildTranslatePrompt(text: string, nativeLanguageLabel: string): string
     `Return ONLY valid JSON, no markdown and no extra explanation:\n` +
     `{\n` +
     `  "rows": [\n` +
-    `    { "english": "A segment of the original text, reproduced exactly.", "native": "Natural ${nativeLanguageLabel} translation of that segment." }\n` +
+    `    { "english": "A **notable** segment of the original text, reproduced exactly.", "native": "Natural ${nativeLanguageLabel} translation with the matching **word** marked too." }\n` +
     `  ]\n` +
     `}\n\n` +
     `Rules:\n` +
     `- Split the text into natural rows by sentence, clause, or short-paragraph breakpoints. Don't fragment a single short line into multiple tiny rows; don't under-split a multi-paragraph block into one giant row.\n` +
     `- The "english" field must reproduce that row's portion of the ORIGINAL text EXACTLY — same wording, spelling, capitalization, and punctuation, even if informal, slangy, or containing typos or grammar mistakes. This is a translation, not a correction — never fix, clean up, or paraphrase the English text.\n` +
-    `- Every row's "english" segments, concatenated in order, must reconstruct the original text with nothing added, removed, or reworded.\n` +
+    `- Every row's "english" segments, concatenated in order (ignoring ** marker characters), must reconstruct the original text with nothing added, removed, or reworded.\n` +
+    `- In each row, pick 1-3 notable or genuinely useful words/phrases (interesting vocabulary, idioms, or key terms — not just any word) and wrap each with **word** markers in the "english" field, and wrap the matching translated word/phrase with **word** markers in the "native" field. Wrapping with ** is purely a highlight marker — it must not change the spelling, wording, or punctuation of the text inside or around it. Skip marking entirely on rows that are too short or have nothing notable (e.g. a row of only 2-3 common words) — not every row needs markers.\n` +
     `- Before translating each row, first work out what it actually means in context (words are often polysemous — e.g. "delicate" can mean fragile, subtle, or sensitive depending on context). Choose the ${nativeLanguageLabel} wording a native speaker would naturally use for that specific contextual meaning, not just the most common dictionary sense.\n` +
     `- Translate into natural, idiomatic ${nativeLanguageLabel} — write it the way a native speaker would actually say it. Reorder clauses, drop or add particles, and rephrase where needed so it reads smoothly. Never produce a translation that sounds nonsensical in ${nativeLanguageLabel} even if it matches the English literally.\n` +
     `- Never leave a row's "native" field in English.`

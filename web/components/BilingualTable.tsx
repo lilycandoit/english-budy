@@ -16,6 +16,25 @@ function defaultRender(text: string): ReactNode {
   return <span>{text}</span>;
 }
 
+/** Render text with **word** markers highlighted — opt-in, pass as a cell renderer. */
+export function HighlightedText({ text }: { text: string }) {
+  const parts = text.split(/(\*\*[^*]+\*\*)/g);
+  return (
+    <>
+      {parts.map((part, i) => {
+        if (part.startsWith("**") && part.endsWith("**")) {
+          return (
+            <mark key={i} className="bg-yellow-200 text-yellow-900 px-0.5 rounded font-medium">
+              {part.slice(2, -2)}
+            </mark>
+          );
+        }
+        return <span key={i}>{part}</span>;
+      })}
+    </>
+  );
+}
+
 export function BilingualTable({
   rows,
   nativeLanguageLabel,
