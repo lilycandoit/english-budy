@@ -148,6 +148,12 @@ export function Translating({ onFullSearch }: { onFullSearch: (term: string) => 
         <textarea
           value={text}
           onChange={(e) => setText(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && !e.shiftKey) {
+              e.preventDefault();
+              if (text.trim() && !loading) handleSubmit(e as unknown as React.SyntheticEvent);
+            }
+          }}
           maxLength={MAX_INPUT_CHARS}
           rows={5}
           placeholder="Paste text here — a sentence, a YouTube comment, a transcript line..."
