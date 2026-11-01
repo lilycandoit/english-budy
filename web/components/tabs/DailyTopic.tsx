@@ -123,7 +123,10 @@ function HighlightLine({ text, words, scope = "" }: { text: string; words: Topic
 
 /** Render content — detects dialog lines (Name: text) and styles them */
 function HighlightedContent({ content, words, scope = "" }: { content: string; words: TopicWord[]; scope?: string }) {
-  const lines = content.split("\n");
+  // Some already-saved sessions have a literal backslash-n (two characters)
+  // instead of a real newline between speaker turns — normalize at render
+  // time too, so older content heals without needing to be regenerated.
+  const lines = content.replace(/\\n/g, "\n").split("\n");
   const dialogLineRe = /^([A-Za-z]+):\s*(.*)$/;
 
   return (

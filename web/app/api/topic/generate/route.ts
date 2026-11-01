@@ -125,7 +125,13 @@ export async function POST(req: NextRequest) {
       { max_tokens: 1750, temperature: 0.85 }
     );
     title = parsed.title ?? topic;
-    content = (parsed.content ?? "").replace(/(?<!\n)\s+(Alex|Sam):/g, "\n$1:");
+    content = (parsed.content ?? "")
+      // The model occasionally emits a literal backslash-n (two characters)
+      // instead of a real newline — normalize those to real newlines first,
+      // so the existing speaker-boundary fallback below (which only matches
+      // actual whitespace) can catch them too.
+      .replace(/\\n/g, "\n")
+      .replace(/(?<!\n)\s+(Alex|Sam):/g, "\n$1:");
     words = (parsed.words ?? []).map((w) => ({
       ...w,
       word: w.word.replace(/\*\*/g, "").trim(),
