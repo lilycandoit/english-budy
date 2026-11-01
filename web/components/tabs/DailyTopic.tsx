@@ -60,16 +60,58 @@ function levelLabel(level?: string): string {
   return "🌱 Everyday";
 }
 
-/** Render a single line with **word** markers highlighted */
-function HighlightLine({ text }: { text: string }) {
+/** Stable anchor id for a vocabulary word, shared between the highlighted
+ * mentions in the dialog/story and the "Vocabulary" list entries below. */
+function wordSlug(word: string, scope = ""): string {
+  return scope + "vocab-" + word.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+}
+
+function normalizeForMatch(s: string): string {
+  return s.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+}
+
+/** Find the TopicWord a highlighted dialog/story span refers to — handles
+ * minor variants (plurals, casing) via substring matching, since the AI's
+ * inline **marker** text isn't guaranteed byte-identical to the vocab list's
+ * base form. */
+function findVocabWord(highlighted: string, words: TopicWord[]): TopicWord | null {
+  const target = normalizeForMatch(highlighted);
+  if (!target) return null;
+  const exact = words.find((w) => normalizeForMatch(cleanWord(w).word) === target);
+  if (exact) return exact;
+  return (
+    words.find((w) => {
+      const n = normalizeForMatch(cleanWord(w).word);
+      return n.length > 2 && (target.includes(n) || n.includes(target));
+    }) ?? null
+  );
+}
+
+/** Render a single line with **word** markers highlighted — each highlight
+ * links to its matching entry in the Vocabulary list below (a real anchor,
+ * so the browser's native back button/gesture returns to this exact spot). */
+function HighlightLine({ text, words, scope = "" }: { text: string; words: TopicWord[]; scope?: string }) {
   const parts = text.split(/(\*\*[^*]+\*\*)/g);
   return (
     <>
       {parts.map((part, i) => {
         if (part.startsWith("**") && part.endsWith("**")) {
+          const raw = part.slice(2, -2);
+          const match = findVocabWord(raw, words);
+          if (match) {
+            return (
+              <a
+                key={i}
+                href={`#${wordSlug(cleanWord(match).word, scope)}`}
+                className="bg-yellow-200 text-yellow-900 px-0.5 rounded font-medium hover:underline decoration-2 underline-offset-2"
+              >
+                {raw}
+              </a>
+            );
+          }
           return (
             <mark key={i} className="bg-yellow-200 text-yellow-900 px-0.5 rounded font-medium">
-              {part.slice(2, -2)}
+              {raw}
             </mark>
           );
         }
@@ -80,7 +122,7 @@ function HighlightLine({ text }: { text: string }) {
 }
 
 /** Render content — detects dialog lines (Name: text) and styles them */
-function HighlightedContent({ content }: { content: string }) {
+function HighlightedContent({ content, words, scope = "" }: { content: string; words: TopicWord[]; scope?: string }) {
   const lines = content.split("\n");
   const dialogLineRe = /^([A-Za-z]+):\s*(.*)$/;
 
@@ -93,14 +135,14 @@ function HighlightedContent({ content }: { content: string }) {
           return (
             <div key={i} className="flex gap-2">
               <span className="font-bold text-primary min-w-[3.5rem] flex-shrink-0">{speaker}:</span>
-              <span><HighlightLine text={text} /></span>
+              <span><HighlightLine text={text} words={words} scope={scope} /></span>
             </div>
           );
         }
         if (!line.trim()) return <div key={i} className="h-1" />;
         return (
           <p key={i}>
-            <HighlightLine text={line} />
+            <HighlightLine text={line} words={words} scope={scope} />
           </p>
         );
       })}
@@ -358,7 +400,7 @@ export function DailyTopic() {
           </div>
 
           <div className="p-5 select-text" onMouseUp={handleMouseUp}>
-            <HighlightedContent content={result.content} />
+            <HighlightedContent content={result.content} words={result.words} />
           </div>
 
           {/* ── Lookup result ── */}
@@ -390,7 +432,7 @@ export function DailyTopic() {
                 {result.words.map((raw) => {
                   const w = cleanWord(raw);
                   return (
-                    <div key={w.word} className="text-sm">
+                    <div key={w.word} id={wordSlug(w.word)} className="text-sm scroll-mt-4">
                       <span className="font-semibold text-ink-primary">{w.word}</span>
                       <span className="text-ink-secondary mx-2">—</span>
                       <span className="text-ink-secondary">{w.meaning}</span>
@@ -455,7 +497,7 @@ export function DailyTopic() {
                 {openId === s.id && (
                   <div className="border-t border">
                     <div className="p-4">
-                      <HighlightedContent content={s.content} />
+                      <HighlightedContent content={s.content} words={s.words} scope={`${s.id}-`} />
                     </div>
                     {s.words.length > 0 && (
                       <div className="border-t border px-4 py-3">
@@ -466,7 +508,7 @@ export function DailyTopic() {
                           {s.words.map((raw) => {
                             const w = cleanWord(raw);
                             return (
-                              <div key={w.word} className="text-sm">
+                              <div key={w.word} id={wordSlug(w.word, `${s.id}-`)} className="text-sm scroll-mt-4">
                                 <span className="font-semibold text-ink-primary">{w.word}</span>
                                 <span className="text-ink-secondary mx-2">—</span>
                                 <span className="text-ink-muted">{w.meaning}</span>
