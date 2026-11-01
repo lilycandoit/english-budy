@@ -179,7 +179,7 @@ All Groq calls run with `reasoning_effort: "low"`, since the `gpt-oss` models ot
 | Vocab quiz | 900 | Generated on demand after the word lesson |
 | Phrase expansion | 1500 | Flat 4-6 alternative list, tone/region-tagged, best-pick highlights, cached phrase history |
 | Writing compose | 350 + (input × 1.2), max 900 | `gpt-oss-20b`; composes natural English from a native-language thought + one sentence-specific teaching tip |
-| Translating | 600 + (input × 0.9), max 3200 | `gpt-oss-20b`; row-by-row bilingual translation with AI-picked word/phrase highlight pairs |
+| Translating | 1200 + (input × 1.3), max 4000 | `gpt-oss-120b` (bumped up from `gpt-oss-20b` for translation accuracy); row-by-row bilingual translation with AI-picked word/phrase highlight pairs, excluding proper nouns |
 | Review story | 600 | English story mode |
 | Bilingual review story | 1800 | Structured English/native-language rows |
 | Daily topic | 1750 | Higher temp (0.85) for variety; exclusion list in prompt for Fresh version |
