@@ -1,6 +1,6 @@
 # Daily English Buddy
 
-An AI English learning web app — correct your writing, build vocabulary, review words with flashcards, and learn from topic-based stories and dialogs every day.
+An AI English learning web app — correct your writing, compose and translate between English and your native language, build vocabulary, review words with flashcards, and learn from topic-based stories and dialogs every day.
 
 Built with Next.js, PostgreSQL, and Groq AI. Designed for Australian English practice, with a free-text native-language preference per user (not limited to Vietnamese — pick any language in Settings).
 
@@ -13,7 +13,9 @@ Built with Next.js, PostgreSQL, and Groq AI. Designed for Australian English pra
 | **Sentence Check** | Write a sentence → AI corrects grammar/spelling/punctuation → shows a native-speaker rewrite with a naturalness tip → refresh the native version for another natural phrasing → history and stats saved |
 | **Vocabulary Builder** | Enter words or phrases (including slang and idioms) → AI returns full breakdown: dictionary-verified IPA, compact translation in your native language, all parts of speech with inflections, meanings per POS, synonyms, antonyms, collocations, and Australian English examples → generate the quiz only when needed → click any tag to drill down into that word |
 | **Say It Differently** | Enter one phrase → AI explains the meaning and gives natural alternatives grouped by tone/context, with best-pick highlights, examples, avoid-when notes, and usage tips → saves the phrase to history for faster reuse and later review |
+| **Writing** | Write your thought in your native language → AI composes a natural, fluent English version (not a literal translation) plus one teaching tip specific to that sentence's vocabulary/grammar → history saved |
 | **Daily Topic** | Pick a topic + format (Dialog / Story) + level (Everyday / Natural / Advanced) → optional Aussie flavour → AI generates content with 12 vocabulary words highlighted → **🔄 Fresh version** regenerates with different phrases (excludes all previously seen vocab for that topic) → **select any text to look it up instantly** → 🔊 listen aloud |
+| **Translating** | Paste a sentence, comment, or short passage → AI translates it in context, row by row, into a side-by-side English/native-language table → AI also picks 1-3 notable words or phrases per row and highlights the matching pair on both sides → select any English text to send it to Vocabulary Builder for a full lookup → history saved |
 | **Words Review** | Select words by date → **🃏 start flashcards** (front shows pronunciation + synonym/antonym chips, back shows meaning) for chosen words only OR generate an English review story, a fresh version, or a bilingual English/native-language story → SM-2 spaced repetition schedules "Due Today" reviews automatically |
 | **Progress** | Day streak 🔥, words learned, mastery breakdown (new/learning/mastered), sentence check stats, quiz average, 4-week GitHub-style activity heatmap |
 | **Word Bank** | Auto-tracks every studied word (max 200) — searchable chips with full expandable detail card including all POS forms, visible on the Vocabulary Builder tab |
@@ -56,13 +58,16 @@ web/
 │   │   ├── topic/           Daily Topic: generate + sessions
 │   │   ├── review/          Review stories, bilingual stories + words-by-date
 │   │   ├── phrases/         Say It Differently phrase expansion
+│   │   ├── write/           Writing: compose native-language thought into natural English + teaching tip
+│   │   ├── translate/       Translating: in-context bilingual translation with AI word-pair highlighting
 │   │   ├── flashcards/      SM-2 due queue + review submission
 │   │   ├── stats/           Progress dashboard aggregation
 │   │   ├── tts/             Edge TTS proxy (en-AU-NatashaNeural)
 │   │   └── user/            Groq API key + profile (name, native language)
 │   └── dashboard/           Main app page
 ├── components/
-│   ├── tabs/                SentenceCheck, VocabBuilder, PhraseExpansion, DailyTopic, WordsReview, Progress
+│   ├── tabs/                SentenceCheck, Writing, VocabBuilder, PhraseExpansion, DailyTopic, Translating, WordsReview, Progress
+│   ├── BilingualTable.tsx    Shared English/native-language table (Translating + Words Review bilingual story)
 │   ├── ui/                  Card, Button, Badge, Avatar, PasswordInput, ThemeToggle — shared design-token primitives
 │   ├── WordCard.tsx          Shared word detail card (used in Vocab + Topic lookup)
 │   ├── SettingsModal.tsx     Profile (name/avatar/language) + Groq key
@@ -155,6 +160,8 @@ TopicSession        — daily topic sessions (content + vocab)
 ReviewSession        — AI review stories, including structured bilingual story payloads
 FlashcardReview      — raw "known"/"review" ratings log
 WordSchedule         — SM-2 schedule (easeFactor, intervalDays, repetitions, nextReviewAt)
+TranslationEntry     — Translating tab history (bilingual rows with highlight markers)
+WritingEntry         — Writing tab history (native-language input + composed English + tip)
 ```
 
 ---
@@ -171,6 +178,8 @@ All Groq calls run with `reasoning_effort: "low"`, since the `gpt-oss` models ot
 | Vocab quick lookup | 700 | `gpt-oss-20b`; lightweight drill-down lookup; no session saved |
 | Vocab quiz | 900 | Generated on demand after the word lesson |
 | Phrase expansion | 1500 | Flat 4-6 alternative list, tone/region-tagged, best-pick highlights, cached phrase history |
+| Writing compose | 350 + (input × 1.2), max 900 | `gpt-oss-20b`; composes natural English from a native-language thought + one sentence-specific teaching tip |
+| Translating | 600 + (input × 0.9), max 3200 | `gpt-oss-20b`; row-by-row bilingual translation with AI-picked word/phrase highlight pairs |
 | Review story | 600 | English story mode |
 | Bilingual review story | 1800 | Structured English/native-language rows |
 | Daily topic | 1750 | Higher temp (0.85) for variety; exclusion list in prompt for Fresh version |
@@ -196,9 +205,9 @@ Free-tier Groq rate limits are tight relative to some of these budgets, so `lib/
 | Account/Profile Settings (name, generated avatar) | ✅ |
 | Multi-language support (free-text native language, not just Vietnamese) | ✅ |
 | Verified (dictionary-backed) IPA in Vocabulary Builder | ✅ |
+| Writing — compose native-language thoughts into natural English + teaching tip | ✅ |
+| Translating — in-context bilingual translation with AI word-pair highlighting | ✅ |
 | Mistake Pattern Coach | Paused |
-| Translate tab (default to user's native language) | Idea, not scoped |
-| Writing Practice | Deferred |
 | Word Bank export | Deferred |
 
 See `.planning/ROADMAP.md` for full phase-by-phase history and rationale (not checked into a public repo view, but present in this working copy).
