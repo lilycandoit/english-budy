@@ -15,7 +15,7 @@ function getTransport() {
     auth: { user, pass },
   });
 
-  return { transport, from: user };
+  return { transport, from: `Daily English Buddy <${user}>` };
 }
 
 interface SendPasswordResetEmailParams {
